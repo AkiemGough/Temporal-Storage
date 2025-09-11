@@ -38,7 +38,7 @@ agrper23 <- read_excel("data/LTREB_data_2023_recruits_inc.xlsx", sheet= "AGPE")
 fessub23 <- read_excel("data/LTREB_data_2023_recruits_inc.xlsx", sheet= "FESU")
 
 
-unique(ltrebman$year_t1)
+unique(ltrebman$year_t)
 str(ltrebman)
 
 ltrebman %>% filter(species == "POAL" & year_t == 2021) %>% View
@@ -47,14 +47,41 @@ ltrebman %>% filter(species == "POAL" & year_t == 2021) %>% View
 (POAL_22_23 <- ltrebman [ltrebman$species=="POAL" & 
                           ltrebman$year_t == 2021 & ltrebman$surv_t1==1 ,])
 POAL_22_23$year_t <- 2022
+POAL_22_23$age <- POAL_22_23$year_t - POAL_22_23$birth
 POAL_22_23$size_t <- POAL_22_23$size_t1
 POAL_22_23$flw_count_t <- POAL_22_23$flw_count_t1
 POAL_22_23$mean_spike_t <- POAL_22_23$mean_spike_t1
-
 POAL_22_23$year_t1 <- 2023
-#see I was thinking of doing this: 
-POAL_22_23$size_t1 <- poaals23$size_tillers
-#but that would mess up what we did in line 50 no? and would have a different column length
-#the size data might not match with the correct IDs and birth years and such
 
-View(POAL_22_23)
+##Can't we just do lines 49-54 after the code in line 62-65?
+
+poaals23 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T))
+
+
+## need to populate 2023 data for surv, size, flowering, spikelets
+POAL_22_23new <- full_join(x=POAL_22_23,
+          y=poaals23 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+          select(survival,size_tillers,flowering_tillers,mean_spike,id,species,plot,origin,birth_year,distance_A,distance_B),
+          by=c("id","species", "plot"))
+
+## write over the surv, size, flow, spike for 2023
+names(POAL_22_23new)
+POAL_22_23new$birth <- POAL_22_23new$birth_year
+POAL_22_23new$birth <- POAL_22_23new$birth_year
+POAL_22_23new$year_t <- 2022
+POAL_22_23new$year_t1 <- 2023
+POAL_22_23new$age <- POAL_22_23new$year_t - POAL_22_23$birth
+POAL_22_23new$size_t <- POAL_22_23new$size_t1
+POAL_22_23new$flw_count_t <- POAL_22_23new$flw_count_t1
+POAL_22_23new$mean_spike_t <- POAL_22_23new$mean_spike_t1
+POAL_22_23new$surv_t1 <- POAL_22_23new$survival
+POAL_22_23new$size_t1 <- POAL_22_23new$size_tillers
+POAL_22_23new$flw_count_t1 <- POAL_22_23new$flowering_tillers
+POAL_22_23new$dist_a <- POAL_22_23new$distance_A
+POAL_22_23new$dist_b <- POAL_22_23new$distance_B
+
+View(POAL_22_23new)
+
+##what do we do with original and orig since they have different types of data
+##what do we do about endo_01 and endo_status_from_check
+
