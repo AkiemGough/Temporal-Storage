@@ -1,0 +1,23 @@
+species,origin,plot,pos,id,birth_year,observation_year,distance_A,distance_B,survival,size_tillers,flowering_tillers,spikelets_A,spikelets_B,spikelets_C,notes
+POAL,O21,4,3,4_orig21-3,2021,2023,0.87,1.921,0,,,,,,
+POAL,O21,4,2,4_orig21-2,2021,2023,2.077,0.872,0,,,,,,
+POAL,O21,9,1,9_orig21-1,2021,2023,2.701,3.295,0,,,,,,
+POAL,O21,10,2,10_orig21-2,2021,2023,2.906,2.337,0,,,,,,
+POAL,O21,10,1,10_orig21-1,2021,2023,1.277,1.918,0,,,,,,
+POAL,O21,10,3,10_orig21-3,2021,2023,2.146,0.821,0,,,,,,
+POAL,O21,11,1,11_orig21-1,2021,2023,1.849,2.463,0,,,,,,
+POAL,O21,11,3,11_orig21-3,2021,2023,2.026,1.022,0,,,,,,
+POAL,O21,15,1,15_orig21-1,2021,2023,1.848,0.979,0,,,,,,
+POAL,O21,15,2,15_orig21-2,2021,2023,2.617,2.371,0,,,,,,
+POAL,O21,16,1,16_orig21-1,2021,2023,2.571,0.672,0,,,,,,
+POAL,R,16,21-R1,16_21-R1,2021,2023,1.045,2.065,0,,,,,,"This plant was initially recorded as in plot 15, but based on notes last year, it should be in plot 16. We updated this, but double check in the field - jcf (May 24, 2023) Checked in field, update ok, but plant dead in 2023 SZ"
+POAL,R,16,47,16_47,2022,2023,1.057,2.054,0,,,,,,
+POAL,O21,17,2,17_orig21-2,2021,2023,2.871,2.081,0,,,,,,
+POAL,O21,17,1,17_orig21-1,2021,2023,1.846,0.831,1,1,0,,,,
+POAL,O21,17,3,17_orig21-3,2021,2023,1.424,2.004,0,,,,,,
+POAL,R,17,18,17_18,2023,2023,2.403,1.23,1,1,0,,,,2023 recruits would start here
+POAL,R,17,19,19,2023,2023,2.448,2.394,1,1,0,,,,
+POAL,R,17,20,20,2023,2023,2.508,2.398,1,1,0,,,,
+POAL,R,17,21,21,2023,2023,2.53,2.425,1,1,0,,,,
+POAL,O21,19,3,19_orig21-3,2021,2023,2.338,1.709,0,,,,,,
+POAL,R,152,213,152_213,2022,2023,1.881,1.139,0,,,,,,

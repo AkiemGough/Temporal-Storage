@@ -1,0 +1,6 @@
+species,origin,plot,pos,id,birth_year,observation_year,distance_A,distance_B,survival,size_tillers,flowering_tillers,spikelets_A,spikelets_B,spikelets_C,notes
+POAL,O21,17,1,17_orig21-1,2021,2024,1.846,0.831,0,,,,,,
+POAL,R,17,18,17_18,2023,2024,2.403,1.23,0,,,,,,
+POAL,R,17,19,19,2023,2024,2.448,2.394,0,,,,,,
+POAL,R,17,20,20,2023,2024,2.508,2.398,0,,,,,,
+POAL,R,17,21,21,2023,2024,2.53,2.425,0,,,,,,

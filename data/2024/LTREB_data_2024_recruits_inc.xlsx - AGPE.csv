@@ -1,0 +1,26 @@
+species,origin,plot,pos,id,birth_year,observation_year,distance_A,distance_B,survival,size_tillers,flowering_tillers,spikelets_A,spikelets_B,spikelets_C,notes,
+AGPE,R,111,I10,111_I10,2020,2024,1.44,1.042,,,,,,,"2022 TNF, 2023 TNF",
+AGPE,R,111,I31,111_I31,2020,2024,1.901,2.148,,,,,,,"2022 TNF, 2023 TNF",
+AGPE,R,111,I39,111_I39,2020,2024,2.68,1.595,,,,,,,"2022 TNF, 2023 TNF",
+AGPE,O21,111,8,111_orig21-8,2021,2024,1.126,1.333,,,,,,,"2022 TNF, 2023 TNF",
+AGPE,O22,111,2,111_orig22-2,2022,2024,,,,,,,,,"2022 TNF, 2023 TNF",
+AGPE,R,111,K5,K5,2022,2024,1.655,2.179,1,16,0,,,,,
+AGPE,R,111,L1,111_L1,2024,2024,2.071,1.641,1,4,0,,,,,
+AGPE,R,111,L2,111_L2,2024,2024,2.06,1.6,1,2,0,,,,,
+AGPE,R,112,75A,112_75A,,2024,1.239,2.271,,,,,,,"2022 TNF, 2023 TNF","Probably marked as 112-75, but should be updated to 112_75A if the plant is alive"
+AGPE,R,112,G9,112_G9,2019,2024,1.31,2.315,,,,,,,"2023 TNF, 2023 TNF",
+AGPE,R,112,J3,112_J3,2021,2024,2.488,1.703,1,6,0,,,,,
+AGPE,R,112,J4,112_J4,2021,2024,2.49,1.591,1,12,0,,,,,
+AGPE,R,112,L1,112_L1,2024,2024,0.373,2.361,1,19,0,,,,,
+AGPE,R,114,I1,114_I1,2020,2024,1.364,1.404,,,,,,,"2022 TNF, 2023 TNF","underground, beehive, too much air traffic"
+AGPE,R,114,J2,114_J2,2021,2024,2.584,1.651,,,,,,,"2023 TNF, 2023 TNF","underground, beehive, too much air traffic"
+AGPE,O22,114,4,114_orig22-4,2022,2024,,,,,,,,,"2024 TNF, 2023 TNF","underground, beehive, too much air traffic"
+AGPE,R,114,K1,,2022,2024,2.261,1.037,,,,,,,,"underground, beehive, too much air traffic"
+AGPE,O22,115,3,115_orig22-3,2022,2024,,,,,,,,,no data / TNF,
+AGPE,O21,116,3,116_orig21-3,2021,2022,1.784,2.243,,,,,,,no data / TNF,
+AGPE,R,117,K1,K1,2022,2024,1.288,1.569,1,29,0,,,,yellow jackets,
+AGPE,R,117,K2,K2,2022,2024,1.122,1.803,1,17,0,,,,yellow jackets,
+AGPE,O22,119,2,119_orig22-2,2022,2022,,,,,,,,,no data / TNF,
+AGPE,R,119,K1,,2022,2022,1.796,2.182,0,,,,,,,
+AGPE,R,120,K1,K1,2022,2024,2.441,1.725,1,14,0,,,,,
+AGPE,R,120,K2,K2,2022,2024,2.428,1.941,1,31,0,,,,,
