@@ -2,7 +2,9 @@ data {
   int<lower=0> n_obs;
   int<lower=0, upper=1> y[n_obs];
   int<lower=0> n_yrs;
-  int<lower=0> n_plots;
+  int<lower=0> n_plots; 
+  int<lower=1> n_spec; //I DONT REALLY UNDERSTAND
+  int<lower=0> n_orig; //JUST MAKING STUFF UP
   int<lower=0> n_endo;
   int<lower=0,upper=1> endo_01[n_obs];
   real size[n_obs]; //weirdo
@@ -15,6 +17,7 @@ parameters {
   real tau_plot[n_plots];//plot random effects
   real beta_size;//size
   real beta_size_endo;//size:endo
+  real beta_spec_size_endo;//DONT REALLY KNOW WHAT I AM DOING
   real meanflow[n_endo];
   real<lower=0> sigma_year;//year variance
   real<lower=0> sigma_plot;//plot variance

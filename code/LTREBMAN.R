@@ -236,7 +236,9 @@ View(AGPE_22_23)
 
 ##NOW, WHY DOES THE DATA SHEETS ON THE DRIVE HAVE SURVIVING AGPE PLANTS, RECREUITS EVEN,
 ##BUT THE PUBLSIHED LTREB DATA PACKAGE HAS NO AGPE PLANTS SURVIVING 2022?
+ltrebman %>% filter(species == "AGPE",year_t1== 2022, surv_t1==1) 
 
+ltrebman %>% filter(plot==114,id=="114_I2")
 ###Creating fessub23 2022-2023 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2023 data
