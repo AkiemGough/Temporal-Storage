@@ -17,6 +17,7 @@ parameters {
   real tau_plot[n_plots];//plot random effects
   real beta_size;//size
   real beta_size_endo;//size:endo
+  real beat_spec; //species
   real beta_spec_size_endo;//DONT REALLY KNOW WHAT I AM DOING
   real meanflow[n_endo];
   real<lower=0> sigma_year;//year variance
@@ -30,12 +31,14 @@ transformed parameters{
   p[i] = beta_0[(endo_01[i]+1),year_index[i]] 
   + beta_size*size[i] 
   + beta_size_endo*size[i]*endo_01[i]
+  + beta_species*spec[i]
+  +
   + tau_plot[plot[i]];
   }
 }
 
 #akiem asking: can you break down how the model was written?
-#remind me how would you write out the model in a paper?
+
 model {
   tau_plot ~ normal(0,sigma_plot);
   sigma_plot ~ normal(0, 1);
@@ -52,4 +55,3 @@ generated quantities {
     endo_effect[i] = beta_0[2,i] - beta_0[1,i];
   }
 }
-

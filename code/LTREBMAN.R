@@ -1,13 +1,12 @@
 ## load packages
-library(googledrive)
-library(readxl)
 library(tidyverse)
+library(dplyr)
 
 #read in pre-2023 data
-ltrebman <- read.csv("data/ltreb_allspp_qaqc.csv",stringsAsFactors = T)
+ltreb_allspp_qaqc <- read.csv("data/ltreb_allspp_qaqc.csv",stringsAsFactors = T)
 
 #create small table with endo status
-plot_endo <- ltrebman %>% select(species,plot,endo_01) %>% unique()
+plot_endo <- ltreb_allspp_qaqc %>% select(species,plot,endo_01) %>% unique()
 
 ## to be sorted out
 ##it seems I don't have the permission to grab this data file from the google drive
@@ -15,17 +14,15 @@ plot_endo <- ltrebman %>% select(species,plot,endo_01) %>% unique()
 #drive_download(as_id(string23), path = "data/LTREB_data_2024_recruits_inc.xlsx", overwrite=TRUE) 
 ##
 
-
 #### ADDING 2023 DATA________________________________________________________##
 
 ##read in 2023 data
-poaals23 <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - POAL.csv")
-poasyl23 <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - POSY.csv")
-elyvir23 <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - ELVI.csv")
-elyvil23 <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - ELRI.csv")
-agrper23 <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - AGPE.csv")
-fessub23 <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - FESU.csv")
-
+poaals23data <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - POAL.csv")
+poasyl23data <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - POSY.csv")
+elyvir23data <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - ELVI.csv")
+elyvil23data <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - ELRI.csv")
+agrper23data <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - AGPE.csv")
+fessub23data <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - FESU.csv")
 
 ##all the elyvir,elyvil,agrper,fessub have birth_year as chr 
 ##instead of int or num except agreper24 & fessub25
@@ -33,23 +30,20 @@ fessub23 <- read.csv("data/2023/LTREB_data_2023_recruits_inc.xlsx - FESU.csv")
 ###Creating POAL 2022-2023 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2023 data
-poaals23 <- left_join(x=poaals23, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2023 data
-poaals23 <- poaals23 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out POAL that survived in 2022 from 2021-2022 data
-(POAL_22_23 <- ltrebman [ltrebman$species=="POAL" & 
-                           ltrebman$year_t == 2021 & ltrebman$surv_t1==1 ,])
+poaals23 <- left_join(x=poaals23data, y=plot_endo, by=c("species", "plot")) %>% 
+  ##populating original column for new rows especially in 2023 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2023 data (columns and rows) to 2021-2022 table in order to create 2022-2023 data
-POAL_22_23 <- full_join(x=POAL_22_23,
-          y=poaals23 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-          by=c("id","species", "plot","endo_01", "original"))
+POAL_22_23 <- full_join(x=ltreb_allspp_qaqc %>% filter(species=="POAL" & year_t == 2021 & surv_t1==1),
+          y=poaals23,
+          by=c("id","species", "plot","endo_01", "original")) 
 
 ## write over the relevant data for 2023
-names(POAL_22_23)
-str(POAL_22_23)
+#names(POAL_22_23)
+#str(POAL_22_23)
 
 POAL_22_23$birth <- POAL_22_23$birth_year
 POAL_22_23$year_t <- 2022
@@ -63,33 +57,34 @@ POAL_22_23$size_t1 <- POAL_22_23$size_tillers
 POAL_22_23$flw_count_t1 <- POAL_22_23$flowering_tillers
 POAL_22_23$mean_spike_t1 <- POAL_22_23$mean_spike
 POAL_22_23$dist_a <- POAL_22_23$distance_A
-POAL_22_23$dist_b <- POAL_22_23$distance_B
+POAL_22_23$dist_b <- POAL_22_23$distance_B 
 
 ##removing excess columns
-names(POAL_22_23)
+#names(POAL_22_23)
 
-POAL_22_23 <- POAL_22_23[,-c(21:24,26:28),drop=FALSE] 
-View(POAL_22_23)
+POAL_22_23 <- POAL_22_23[ ,c("X","species","plot","endo_01","id","original","endo_status_from_check",
+                            "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",
+                            "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(POAL_22_23)
 
 ###Creating POSY 2022-2023 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2023 data
-poasyl23 <- left_join(x=poasyl23, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2023 data
-poasyl23 <- poasyl23 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
+poasyl23 <- left_join(x=poasyl23data, y=plot_endo, by=c("species", "plot")) %>% 
+  ##populating original column for new rows especially in 2023 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
-##Filtering out POSY that survived in 2022 from 2021-2022 data
-(POSY_22_23 <- ltrebman [ltrebman$species=="POSY" & 
-                           ltrebman$year_t == 2021 & ltrebman$surv_t1==1 ,])
 
 ## adding 2023 data (columns and rows) to 2021-2022 table in order to create 2022-2023 data
-POSY_22_23 <- full_join(x=POSY_22_23,
-                        y=poasyl23 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+POSY_22_23 <- full_join(x=ltreb_allspp_qaqc %>% filter(species=="POSY" & year_t == 2021 & surv_t1==1),
+                        y=poasyl23,
+                        by=c("id","species", "plot","endo_01", "original")) 
 
 ## write over the relevant data for 2023
-names(POSY_22_23)
+#names(POSY_22_23)
+#str(POSY_22_23)
 
 POSY_22_23$birth <- POSY_22_23$birth_year
 POSY_22_23$year_t <- 2022
@@ -108,28 +103,27 @@ POSY_22_23$dist_b <- POSY_22_23$distance_B
 ##removing excess columns
 names(POSY_22_23)
 
-POSY_22_23 <- POSY_22_23[,-c(21:24,26:28),drop=FALSE]  
-View(POSY_22_23)
+POSY_22_23 <- POSY_22_23[,c("X","species","plot","endo_01","id","original","endo_status_from_check",
+                            "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",
+                            "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE]  
+#View(POSY_22_23)
 
 ###Creating elyvir23 2022-2023 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2023 data
-elyvir23 <- left_join(x=elyvir23, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2023 data
-elyvir23 <- elyvir23 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out ELVI that survived in 2022 from 2021-2022 data
-(ELVI_22_23 <- ltrebman [ltrebman$species=="ELVI" & 
-                           ltrebman$year_t == 2021 & ltrebman$surv_t1==1 ,])
+elyvir23 <- left_join(x=elyvir23data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2023 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2023 data (columns and rows) to 2021-2022 table in order to create 2022-2023 data
-ELVI_22_23 <- full_join(x=ELVI_22_23,
-                        y=elyvir23 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01","original"))
+ELVI_22_23 <- full_join(x=ltreb_allspp_qaqc %>% filter(species=="ELVI" & year_t == 2021 & surv_t1==1),
+                        y=elyvir23,
+                        by=c("id","species", "plot","endo_01", "original")) 
 
 ## write over the relevant data for 2023
-names(ELVI_22_23)
+#names(ELVI_22_23)
 
 ELVI_22_23$birth <- ELVI_22_23$birth_year
 ELVI_22_23$year_t <- 2022
@@ -146,32 +140,29 @@ ELVI_22_23$dist_a <- ELVI_22_23$distance_A
 ELVI_22_23$dist_b <- ELVI_22_23$distance_B
 
 ##removing excess columns
-names(ELVI_22_23)
+#names(ELVI_22_23)
 
-ELVI_22_23 <- ELVI_22_23[,-c(21:24,26:28),drop=FALSE]
-View(ELVI_22_23)
+ELVI_22_23 <- ELVI_22_23[,c("X","species","plot","endo_01","id","original","endo_status_from_check",
+                            "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",
+                            "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE]
+#View(ELVI_22_23)
 
 ###Creating elyvil23 2022-2023 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2023 data
-elyvil23 <- left_join(x=elyvil23, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2023 data
-elyvil23 <- elyvil23 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out ELRI that survived in 2022 from 2021-2022 data
-(ELRI_22_23 <- ltrebman [ltrebman$species=="ELRI" & 
-                           ltrebman$year_t == 2021 & ltrebman$surv_t1==1 ,])
+elyvil23 <- left_join(x=elyvil23data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2023 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2023 data (columns and rows) to 2021-2022 table in order to create 2022-2023 data
-
-ELRI_22_23 <- full_join(x=ELRI_22_23,
-                        y=elyvil23 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01","original"))
+ELRI_22_23 <- full_join(x=ltreb_allspp_qaqc %>% filter(species=="ELRI" & year_t == 2021 & surv_t1==1),
+                        y=elyvil23,
+                        by=c("id","species", "plot","endo_01", "original")) 
 
 ## write over the relevant data for 2023
-names(ELRI_22_23)
-str(ELRI_22_23)
+#str(ELRI_22_23)
 
 ELRI_22_23$birth <- ELRI_22_23$birth_year
 ELRI_22_23$year_t <- 2022
@@ -188,31 +179,29 @@ ELRI_22_23$dist_a <- ELRI_22_23$distance_A
 ELRI_22_23$dist_b <- ELRI_22_23$distance_B
 
 ##removing excess columns
-names(ELRI_22_23)
+#names(ELRI_22_23)
 
-ELRI_22_23 <- ELRI_22_23[,-c(21:24,26:28),drop=FALSE] 
-View(ELRI_22_23)
+ELRI_22_23 <- ELRI_22_23[,c("X","species","plot","endo_01","id","original","endo_status_from_check",
+                            "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",
+                            "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(ELRI_22_23)
 
 ###Creating agrper23 2022-2023 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2023 data
-agrper23 <- left_join(x=agrper23, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2023 data
-agrper23 <- agrper23 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out AGPE that survived in 2022 from 2021-2022 data
-(AGPE_22_23 <- ltrebman [ltrebman$species=="AGPE" & 
-                           ltrebman$year_t == 2021 & ltrebman$surv_t1==1 ,])
+agrper23 <- left_join(x=agrper23data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2023 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2023 data (columns and rows) to 2021-2022 table in order to create 2022-2023 data
-
-AGPE_22_23 <- full_join(x=AGPE_22_23,
-                        y=agrper23 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01","original"))
+AGPE_22_23 <- full_join(x=ltreb_allspp_qaqc %>% filter(species=="AGPE" & year_t == 2021 & surv_t1==1),
+                        y=agrper23,
+                        by=c("id","species", "plot","endo_01", "original")) 
 
 ## write over the relevant data for 2023
-names(AGPE_22_23)
+#names(AGPE_22_23)
 
 AGPE_22_23$birth <- AGPE_22_23$birth_year
 AGPE_22_23$year_t <- 2022
@@ -229,36 +218,29 @@ AGPE_22_23$dist_a <- AGPE_22_23$distance_A
 AGPE_22_23$dist_b <- AGPE_22_23$distance_B
 
 ##removing excess columns
-names(AGPE_22_23)
+#names(AGPE_22_23)
 
-AGPE_22_23 <- AGPE_22_23[,-c(21:24,26:28),drop=FALSE] 
-View(AGPE_22_23)
+AGPE_22_23 <- AGPE_22_23[,c("X","species","plot","endo_01","id","original","endo_status_from_check",
+                            "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",
+                            "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(AGPE_22_23)
 
-##NOW, WHY DOES THE DATA SHEETS ON THE DRIVE HAVE SURVIVING AGPE PLANTS, RECREUITS EVEN,
-##BUT THE PUBLSIHED LTREB DATA PACKAGE HAS NO AGPE PLANTS SURVIVING 2022?
-ltrebman %>% filter(species == "AGPE",year_t1== 2022, surv_t1==1) 
-
-ltrebman %>% filter(plot==114,id=="114_I2")
 ###Creating fessub23 2022-2023 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2023 data
-fessub23 <- left_join(x=fessub23, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2023 data
-fessub23 <- fessub23 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out FESU that survived in 2022 from 2021-2022 data
-(FESU_22_23 <- ltrebman [ltrebman$species=="FESU" & 
-                           ltrebman$year_t == 2021 & ltrebman$surv_t1==1 ,])
+fessub23 <- left_join(x=fessub23data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2023 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2023 data (columns and rows) to 2021-2022 table in order to create 2022-2023 data
-
-FESU_22_23 <- full_join(x=FESU_22_23,
-                        y=fessub23 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01","original"))
+FESU_22_23 <- full_join(x=ltreb_allspp_qaqc %>% filter(species=="FESU" & year_t == 2021 & surv_t1==1),
+                        y=fessub23,
+                        by=c("id","species", "plot","endo_01", "original")) 
 
 ## write over the relevant data for 2023
-names(FESU_22_23)
+#names(FESU_22_23)
 
 FESU_22_23$birth <- FESU_22_23$birth_year
 FESU_22_23$year_t <- 2022
@@ -272,25 +254,28 @@ FESU_22_23$size_t1 <- FESU_22_23$size_tillers
 FESU_22_23$flw_count_t1 <- FESU_22_23$flowering_tillers
 FESU_22_23$mean_spike_t1 <- FESU_22_23$mean_spike
 FESU_22_23$dist_a <- FESU_22_23$distance_A
-FESU_22_23$dist_b <- FESU_22_23$distance_B
+FESU_22_23$dist_b <- FESU_22_23$distance_B 
 
+unique(FESU_22_23$distance_B)
 ##removing excess columns
-names(FESU_22_23)
+#names(FESU_22_23)
 
-FESU_22_23 <- FESU_22_23[,-c(21:24,26:28),drop=FALSE] 
-View(FESU_22_23)
+FESU_22_23 <- FESU_22_23[,c("X","species","plot","endo_01","id","original","endo_status_from_check",
+                            "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",
+                            "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE]
+#View(FESU_22_23)
 
 
 
 #### ADDING 2024 DATA________________________________________________________##
 
 ##read in 2024 data
-poaals24 <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - POAL.csv")
-poasyl24 <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - POSY.csv")
-elyvir24 <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - ELVI.csv")
-elyvil24 <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - ELRI.csv")
-agrper24 <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - AGPE.csv")
-fessub24 <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - FESU.csv")
+poaals24data <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - POAL.csv")
+poasyl24data <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - POSY.csv")
+elyvir24data <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - ELVI.csv")
+elyvil24data <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - ELRI.csv")
+agrper24data <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - AGPE.csv")
+fessub24data <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - FESU.csv")
 
 
 ##all the elyvir,elyvil,agrper,fessub have birth_year as chr 
@@ -299,21 +284,23 @@ fessub24 <- read.csv("data/2024/LTREB_data_2024_recruits_inc.xlsx - FESU.csv")
 ###Creating POAL 2023-2024 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2024 data
-poaals24 <- left_join(x=poaals24, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2024 data
-poaals24 <- poaals24 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out POAL that survived in 2023 from 2022-2023 data
-(POAL_23_24 <- POAL_22_23 [POAL_22_23$surv_t1==1 ,])
+poaals24 <- left_join(x=poaals24data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2024 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2024 data (columns and rows) to 2022-2023 table in order to create 2023-2024 data
-POAL_23_24 <- full_join(x=POAL_23_24,
-                        y=poaals24 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+POAL_23_24 <- full_join(x=POAL_22_23 %>% filter(surv_t1==1),
+                        y=poaals24,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
+
+
+##populating original column for new rows especially in 2024 data
+#poaals24 <- poaals24 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
 
 ## write over the relevant data for 2024
-names(POAL_23_24)
+#names(POAL_23_24)
 
 POAL_23_24$birth <- POAL_23_24$birth_year
 POAL_23_24$year_t <- 2023
@@ -330,29 +317,27 @@ POAL_23_24$dist_a <- POAL_23_24$distance_A
 POAL_23_24$dist_b <- POAL_23_24$distance_B
 
 ##removing excess columns
-names(POAL_23_24)
+#names(POAL_23_24)
 
-POAL_23_24 <- POAL_23_24[,-(22:28),drop=FALSE] 
-View(POAL_23_24)
+POAL_23_24 <- POAL_23_24[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                             "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",                             "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(POAL_23_24)
 
 ###Creating POSY 2023-2024 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2024 data
-poasyl24 <- left_join(x=poasyl24, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2024 data
-poasyl24 <- poasyl24 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out POSY that survived in 2023 from 2022-2023 data
-(POSY_23_24 <- POSY_22_23 [POSY_22_23$surv_t1==1 ,])
+poasyl24 <- left_join(x=poasyl24data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2024 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2024 data (columns and rows) to 2022-2023 table in order to create 2023-2024 data
-POSY_23_24 <- full_join(x=POSY_23_24,
-                        y=poasyl24 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+POSY_23_24 <- full_join(x=POSY_22_23 %>% filter(surv_t1==1),
+                        y=poasyl24,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2024
-names(POSY_23_24)
+#names(POSY_23_24)
 
 POSY_23_24$birth <- POSY_23_24$birth_year
 POSY_23_24$year_t <- 2023
@@ -369,31 +354,27 @@ POSY_23_24$dist_a <- POSY_23_24$distance_A
 POSY_23_24$dist_b <- POSY_23_24$distance_B
 
 ##removing excess columns
-names(POSY_23_24)
+#names(POSY_23_24)
 
-POSY_23_24 <- POSY_23_24[,-(22:28),drop=FALSE] 
-View(POSY_23_24)
+POSY_23_24 <- POSY_23_24[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                             "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",                             "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(POSY_23_24)
 
 ###Creating elyvir24 2023-2024 transition year___________________________________##
-
+#View(ELVI_23_24)
 ##creating and populating an endo_01 column in 2024 data
-elyvir24 <- left_join(x=elyvir24, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2024 data
-elyvir24 <- elyvir24 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out ELVI that survived in 2023 from 2022-2023 data
-(ELVI_23_24 <-  ELVI_22_23 [ELVI_22_23$surv_t1==1 ,])
-#WHY ARE THERE ROWS OF NA AFTER THIS?
+elyvir24 <- left_join(x=elyvir24data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2024 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2024 data (columns and rows) to 2022-2023 table in order to create 2023-2024 data
-
-ELVI_23_24 <- full_join(x=ELVI_23_24,
-                        y=elyvir24 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+ELVI_23_24 <- full_join(x=ELVI_22_23 %>% filter(surv_t1==1),
+                        y=elyvir24,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2024
-names(ELVI_23_24)
+#names(ELVI_23_24)
 
 ELVI_23_24$birth <- ELVI_23_24$birth_year
 ELVI_23_24$year_t <- 2023
@@ -410,31 +391,27 @@ ELVI_23_24$dist_a <- ELVI_23_24$distance_A
 ELVI_23_24$dist_b <- ELVI_23_24$distance_B
 
 ##removing excess columns
-names(ELVI_23_24)
+#names(ELVI_23_24)
 
-ELVI_23_24 <- ELVI_23_24[,-(22:28),drop=FALSE] 
-View(ELVI_23_24)
+ELVI_23_24 <- ELVI_23_24[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                             "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",                             "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(ELVI_23_24)
 
 ###Creating elyvil24 2023-2024 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2024 data
-elyvil24 <- left_join(x=elyvil24, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2024 data
-elyvil24 <- elyvil24 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out ELRI that survived in 2023 from 2022-2023 data
-(ELRI_23_24 <- ELRI_22_23 [ELRI_22_23$surv_t1==1 ,])
-#WHY ARE THERE ROWS OF NA AFTER THIS?
+elyvil24 <- left_join(x=elyvil24data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2024 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2024 data (columns and rows) to 2022-2023 table in order to create 2023-2024 data
-
-ELRI_23_24 <- full_join(x=ELRI_23_24,
-                        y=elyvil24 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+ELRI_23_24 <- full_join(x=ELRI_22_23 %>% filter(surv_t1==1),
+                        y=elyvil24,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2024
-names(ELRI_23_24)
+#names(ELRI_23_24)
 
 ELRI_23_24$birth <- ELRI_23_24$birth_year
 ELRI_23_24$year_t <- 2023
@@ -451,31 +428,27 @@ ELRI_23_24$dist_a <- ELRI_23_24$distance_A
 ELRI_23_24$dist_b <- ELRI_23_24$distance_B
 
 ##removing excess columns
-names(ELRI_23_24)
+#names(ELRI_23_24)
 
-ELRI_23_24 <- ELRI_23_24[,-(22:28),drop=FALSE] 
-View(ELRI_23_24)
+ELRI_23_24 <- ELRI_23_24[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                             "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",                             "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(ELRI_23_24)
 
 ###Creating agrper24 2023-2024 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2024 data
-agrper24 <- left_join(x=agrper24, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2024 data
-agrper24 <- agrper24 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out AGPE that survived in 2023 from 2022-2023 data
-(AGPE_23_24 <- AGPE_22_23 [AGPE_22_23$surv_t1==1 ,])
-#WHY ARE THERE ROWS OF NA AFTER THIS?
+agrper24 <- left_join(x=agrper24data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2024 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2024 data (columns and rows) to 2022-2023 table in order to create 2023-2024 data
-
-AGPE_23_24 <- full_join(x=AGPE_23_24,
-                        y=agrper24 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+AGPE_23_24 <- full_join(x=AGPE_22_23 %>% filter(surv_t1==1),
+                        y=agrper24,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2024
-names(AGPE_23_24)
+#names(AGPE_23_24)
 
 AGPE_23_24$birth <- AGPE_23_24$birth_year
 AGPE_23_24$year_t <- 2023
@@ -492,30 +465,27 @@ AGPE_23_24$dist_a <- AGPE_23_24$distance_A
 AGPE_23_24$dist_b <- AGPE_23_24$distance_B
 
 ##removing excess columns
-names(AGPE_23_24)
+#names(AGPE_23_24)
 
-AGPE_23_24 <- AGPE_23_24[,-(22:28),drop=FALSE] 
-View(AGPE_23_24)
+AGPE_23_24 <- AGPE_23_24[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                             "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",                             "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(AGPE_23_24)
 
 ###Creating fessub24 2023-2024 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2024 data
-fessub24 <- left_join(x=fessub24, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2024 data
-fessub24 <- fessub24 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out FESU that survived in 2023 from 2022-2023 data
-(FESU_23_24 <- FESU_22_23 [FESU_22_23$surv_t1==1 ,])
+fessub24 <- left_join(x=fessub24data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2024 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2024 data (columns and rows) to 2022-2023 table in order to create 2023-2024 data
-
-FESU_23_24 <- full_join(x=FESU_23_24,
-                        y=fessub24 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+FESU_23_24 <- full_join(x=FESU_22_23 %>% filter(surv_t1==1),
+                        y=fessub24,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2024
-names(FESU_23_24)
+#names(FESU_23_24)
 
 FESU_23_24$birth <- FESU_23_24$birth_year
 FESU_23_24$year_t <- 2023
@@ -532,22 +502,23 @@ FESU_23_24$dist_a <- FESU_23_24$distance_A
 FESU_23_24$dist_b <- FESU_23_24$distance_B
 
 ##removing excess columns
-names(FESU_23_24)
+#names(FESU_23_24)
 
-FESU_23_24 <- FESU_23_24[,-(22:28),drop=FALSE] 
-View(FESU_23_24)
+FESU_23_24 <- FESU_23_24[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                          
+                            "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",                     
+                            "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(FESU_23_24)
 
 
 #### ADDING 2025 DATA________________________________________________________##
 
 ##read in 2025 data
 #no data for POAL because plots went extinct in 2024
-poasyl25 <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - POSY.csv")
-elyvir25 <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - ELVI.csv")
-elyvil25 <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - ELRI.csv")
-agrper25 <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - AGPE.csv")
-fessub25 <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - FESU.csv")
-## agrper25 data has not be yet collected
+poasyl25data <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - POSY.csv")
+elyvir25data <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - ELVI.csv")
+elyvil25data <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - ELRI.csv")
+agrper25data <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - AGPE.csv")
+fessub25data <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - FESU.csv")
 
 
 ##all the elyvir,elyvil,agrper,fessub have birth_year as chr 
@@ -556,25 +527,22 @@ fessub25 <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - FESU.csv")
 
 ###POAL 2025 has no data___________________________________##
 
-str(POSY_24_25)
 ###Creating POSY 2024-2025 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2025 data
-poasyl25 <- left_join(x=poasyl25, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2025 data
-poasyl25 <- poasyl25 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out POSY that survived in 2024 from 2023-2024 data
-(POSY_24_25 <- POSY_23_24 [POSY_23_24$surv_t1==1 ,])
+poasyl25 <- left_join(x=poasyl25data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2025 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2025 data (columns and rows) to 2023-2024 table in order to create 2024-2025 data
-POSY_24_25 <- full_join(x=POSY_24_25,
-                        y=poasyl25 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+POSY_24_25 <- full_join(x=POSY_23_24 %>% filter(surv_t1==1),
+                        y=poasyl25,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2025
-names(POSY_24_25)
+#names(POSY_24_25)
 
 POSY_24_25$birth <- POSY_24_25$birth_year
 POSY_24_25$year_t <- 2024
@@ -591,31 +559,29 @@ POSY_24_25$dist_a <- POSY_24_25$distance_A
 POSY_24_25$dist_b <- POSY_24_25$distance_B
 
 ##removing excess columns
-names(POSY_24_25)
+#names(POSY_24_25)
 
-POSY_24_25 <- POSY_24_25[,-(22:28),drop=FALSE] 
-View(POSY_24_25)
+POSY_24_25 <- POSY_24_25[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                             
+                            "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1", 
+                            "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(POSY_24_25)
 
 ###Creating elyvir25 2024-2025 transition year___________________________________##
-str(elyvir25)
-##creating and populating an endo_01 column in 2025 data
-elyvir25 <- left_join(x=elyvir25, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2025 data
-elyvir25 <- elyvir25 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
 
-##Filtering out ELVI that survived in 2024 from 2023-2024 data
-(ELVI_24_25 <-  ELVI_23_24 [ELVI_23_24$surv_t1==1 ,])
-#WHY ARE THERE ROWS OF NA AFTER THIS?
+##creating and populating an endo_01 column in 2025 data
+elyvir25 <- left_join(x=elyvir25data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2025 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2025 data (columns and rows) to 2023-2024 table in order to create 2024-2025 data
-
-ELVI_24_25 <- full_join(x=ELVI_24_25,
-                        y=elyvir25 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+ELVI_24_25 <- full_join(x=ELVI_23_24 %>% filter(surv_t1==1),
+                        y=elyvir25,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2025
-names(ELVI_24_25)
+#names(ELVI_24_25)
 
 ELVI_24_25$birth <- ELVI_24_25$birth_year
 ELVI_24_25$year_t <- 2024
@@ -632,31 +598,27 @@ ELVI_24_25$dist_a <- ELVI_24_25$distance_A
 ELVI_24_25$dist_b <- ELVI_24_25$distance_B
 
 ##removing excess columns
-names(ELVI_24_25)
+#names(ELVI_24_25)
 
-ELVI_24_25 <- ELVI_24_25[,-(22:28),drop=FALSE] 
-View(ELVI_24_25)
+ELVI_24_25 <- ELVI_24_25[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                             "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",                             "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(ELVI_24_25)
 
 ###Creating elyvil25 2024-2025 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2025 data
-elyvil25 <- left_join(x=elyvil25, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2025 data
-elyvil25 <- elyvil25 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out ELRI that survived in 2024 from 2023-2024 data
-(ELRI_24_25 <- ELRI_23_24 [ELRI_23_24$surv_t1==1 ,])
-#WHY ARE THERE ROWS OF NA AFTER THIS?
+elyvil25 <- left_join(x=elyvil25data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2025 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2025 data (columns and rows) to 2023-2024 table in order to create 2024-2025 data
-
-ELRI_24_25 <- full_join(x=ELRI_24_25,
-                        y=elyvil25 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+ELRI_24_25 <- full_join(x=ELRI_23_24 %>% filter(surv_t1==1),
+                        y=elyvil25,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2025
-names(ELRI_24_25)
+#names(ELRI_24_25)
 
 ELRI_24_25$birth <- ELRI_24_25$birth_year
 ELRI_24_25$year_t <- 2024
@@ -673,31 +635,27 @@ ELRI_24_25$dist_a <- ELRI_24_25$distance_A
 ELRI_24_25$dist_b <- ELRI_24_25$distance_B
 
 ##removing excess columns
-names(ELRI_24_25)
+#names(ELRI_24_25)
 
-ELRI_24_25 <- ELRI_24_25[,-(22:28),drop=FALSE] 
-View(ELRI_24_25)
+ELRI_24_25 <- ELRI_24_25[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                             "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",                             "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(ELRI_24_25)
 
 ###Creating agrper25 2024-2025 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2025 data
-agrper25 <- left_join(x=agrper25, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2025 data
-agrper25 <- agrper25 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out AGPE that survived in 2024 from 2023-2024 data
-(AGPE_24_25 <- AGPE_23_24 [AGPE_23_24$surv_t1==1 ,])
-#WHY ARE THERE ROWS OF NA AFTER THIS?
+agrper25 <- left_join(x=agrper25data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2025 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2025 data (columns and rows) to 2023-2024 table in order to create 2024-2025 data
-
-AGPE_24_25 <- full_join(x=AGPE_24_25,
-                        y=agrper25 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+AGPE_24_25 <- full_join(x=AGPE_23_24 %>% filter(surv_t1==1),
+                        y=agrper25,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2025
-names(AGPE_24_25)
+#names(AGPE_24_25)
 
 AGPE_24_25$birth <- AGPE_24_25$birth_year
 AGPE_24_25$year_t <- 2024
@@ -714,30 +672,27 @@ AGPE_24_25$dist_a <- AGPE_24_25$distance_A
 AGPE_24_25$dist_b <- AGPE_24_25$distance_B
 
 ##removing excess columns
-names(AGPE_24_25)
+#names(AGPE_24_25)
 
-AGPE_24_25 <- AGPE_24_25[,-(22:28),drop=FALSE] 
-View(AGPE_24_25)
+AGPE_24_25 <- AGPE_24_25[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                             "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",                             "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+#View(AGPE_24_25)
 
 ###Creating fessub25 2024-2025 transition year___________________________________##
 
 ##creating and populating an endo_01 column in 2025 data
-fessub25 <- left_join(x=fessub25, y=plot_endo, by=c("species", "plot"))
-##populating original column for new rows especially in 2025 data
-fessub25 <- fessub25 %>% mutate (original = if_else(origin == "R",0,1), .after= origin)
-
-##Filtering out FESU that survived in 2024 from 2023-2024 data
-(FESU_24_25 <- FESU_23_24 [FESU_23_24$surv_t1==1 ,])
+fessub25 <- left_join(x=fessub25data, y=plot_endo, by=c("species", "plot"))%>% 
+  ##populating original column for new rows especially in 2025 data
+  mutate (original = if_else(origin == "R",0,1), .after= origin) %>% 
+  rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
+  select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original)
 
 ## adding 2025 data (columns and rows) to 2023-2024 table in order to create 2024-2025 data
-
-FESU_24_25 <- full_join(x=FESU_24_25,
-                        y=fessub25 %>% rowwise() %>% mutate(mean_spike=mean(c_across(c(spikelets_A,spikelets_B,spikelets_C)),na.rm=T)) %>%
-                          select(survival,size_tillers,flowering_tillers,mean_spike,id,origin,species,plot,birth_year,distance_A,distance_B,endo_01,original),
-                        by=c("id","species", "plot","endo_01", "origin", "original"))
+FESU_24_25 <- full_join(x=FESU_23_24 %>% filter(surv_t1==1),
+                        y=fessub25,
+                        by=c("id","species", "plot","endo_01", "origin", "original")) 
 
 ## write over the relevant data for 2025
-names(FESU_24_25)
+#names(FESU_24_25)
 
 FESU_24_25$birth <- FESU_24_25$birth_year
 FESU_24_25$year_t <- 2024
@@ -754,7 +709,15 @@ FESU_24_25$dist_a <- FESU_24_25$distance_A
 FESU_24_25$dist_b <- FESU_24_25$distance_B
 
 ##removing excess columns
-names(FESU_24_25)
+#names(FESU_24_25)
 
-FESU_24_25 <- FESU_24_25[,-(22:28),drop=FALSE] 
-View(FESU_24_25)
+FESU_24_25 <- FESU_24_25[,c("X","species","plot","endo_01","id","original","endo_status_from_check",                     
+                            "birth","year_t","age","size_t","flw_count_t","mean_spike_t","year_t1",  
+                            "surv_t1","size_t1","flw_count_t1","mean_spike_t1","dist_a","dist_b","origin"),drop=FALSE] 
+
+bind_rows(ltreb_allspp_qaqc,
+          POAL_22_23,POSY_22_23,ELVI_22_23,ELRI_22_23,AGPE_22_23,FESU_22_23,
+          POAL_23_24,POSY_23_24,ELVI_23_24,ELRI_23_24,AGPE_23_24,FESU_23_24,
+          POSY_24_25,ELVI_24_25,ELRI_24_25,AGPE_24_25,FESU_24_25) %>% write.csv("ltreb_allspp_2007_2025.csv")
+
+##The index column (X) kind of got duplicated
