@@ -7,17 +7,16 @@ data {
   int<lower=0> n_orig; //JUST MAKING STUFF UP
   int<lower=0> n_endo;
   int<lower=0,upper=1> endo_01[n_obs];
-  real size[n_obs]; //weirdo
+  real size[n_obs]; //this is just stylistic colors, its all plain text
   int<lower=1> year_index[n_obs];
   int<lower=1> plot[n_obs];
   int<lower=1> spec[n_obs];
 }
 parameters {
-  real beta_0[n_endo,n_yrs];//year random effects, unique to E+ and E- //functional to maybe put species here
+  real beta_0[n_spec,n_endo,n_yrs];//year random effects, unique to E+ and E- //functional to maybe put species here
   real tau_plot[n_plots];//plot random effects
-  real beta_size;//size
-  real beta_size_endo;//size:endo
-  real beat_spec; //species
+  real beta_size[n_spec];//size
+  real beta_size_endo[n_spec];//size:endo
   real beta_spec_size_endo;//DONT REALLY KNOW WHAT I AM DOING
   real meanflow[n_endo];
   real<lower=0> sigma_year;//year variance

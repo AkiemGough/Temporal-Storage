@@ -302,7 +302,7 @@ agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
 agpe_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
 agpe_flow_sampling<-sampling(agpe_flow_model,
                              data=agpe_flow_dat,
-                             chains = 3,
+                             chains = 1, #following prompt to check when only 1 chain
                              iter = 5000,
                              warmup = 1000)
 
@@ -310,7 +310,7 @@ agpe_flow_sampling<-sampling(agpe_flow_model,
 #mcmc_trace(agpe_flow_sampling,par=c('endo_effect[5]'))
 #mcmc_dens(agpe_flow_sampling,par=c('beta_size'))
 
-#Something is being done
+#pulling the posterior draws 
 params_agpe_f<-rstan::extract(agpe_flow_sampling,pars=c('beta_0','endo_effect'))
 dim(params_agpe_f$beta_0)
 
