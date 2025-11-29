@@ -11,13 +11,13 @@ options(mc.cores = parallel::detectCores())
 
 #setwd("G:/.shortcut-targets-by-id/1o66WMnQligL0_-ahkQMfFOklR3X-6vOA/Akiem PhD Research/Data & Analysis")
 setwd("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage")
-compcoe <- read.csv("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/data/ltreb_allspp_2007_2025.csv")
+gras <- read.csv("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/data/ltreb_allspp_2007_2025.csv")
 
 
 ###POA ALSODES_______________________________________________________________________
 
 ##Species filter
-poaals <- compcoe %>% filter(species == "POAL")
+poaals <- gras %>% filter(species == "POAL")
 
 poaals$log_tillers_centered <- log(poaals$size_t) - mean(log(poaals$size_t),na.rm=T)
 
@@ -38,7 +38,7 @@ poal_flow_dat <- list(n_obs=nrow(poaals_flow),
                     year_index=poaals_flow$year_t-2006,
                     plot=poaals_flow$plot)
 
-poal_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+poal_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 poal_flow_sampling<-sampling(poal_flow_model,
                              data=poal_flow_dat,
                              chains = 3,
@@ -99,7 +99,7 @@ poal_surv_dat<-list(n_obs=nrow(poaals_surv),
                year_index=poaals_surv$year_t-2006,
                plot=poaals_surv$plot)
 
-poal_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+poal_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 poal_surv_sampling<-sampling(poal_surv_model,
                              data=poal_surv_dat,
                              chains = 3,
@@ -147,7 +147,7 @@ ggplot(summary_df_poal_s, aes(x = year, y = median)) +
 ###POA SYLVESTRIS_______________________________________________________________________
 
 ##Species filter
-poasyl <- compcoe %>% filter(species == "POSY")
+poasyl <- gras %>% filter(species == "POSY")
 
 poasyl$log_tillers_centered <- log(poasyl$size_t) - mean(log(poasyl$size_t),na.rm=T)
 
@@ -168,7 +168,7 @@ posy_flow_dat <- list(n_obs=nrow(poasyl_flow),
                       year_index=poasyl_flow$year_t-2006,
                       plot=poasyl_flow$plot)
 
-posy_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+posy_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 posy_flow_sampling<-sampling(posy_flow_model,
                              data=posy_flow_dat,
                              chains = 3,
@@ -230,7 +230,7 @@ posy_surv_dat<-list(n_obs=nrow(poasyl_surv),
                     year_index=poasyl_surv$year_t-2006,
                     plot=poasyl_surv$plot)
 
-posy_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+posy_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 posy_surv_sampling<-sampling(posy_surv_model,
                              data=posy_surv_dat,
                              chains = 3,
@@ -278,7 +278,7 @@ ggplot(summary_df_posy_s, aes(x = year, y = median)) +
 ###AGROSTIS PERENNANS_______________________________________________________________________
 
 ##Species filter
-agrper <- compcoe %>% filter(species == "AGPE")
+agrper <- gras %>% filter(species == "AGPE")
 
 agrper$log_tillers_centered <- log(agrper$size_t) - mean(log(agrper$size_t),na.rm=T)
 
@@ -299,7 +299,7 @@ agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
                       year_index=agrper_flow$year_t-2006,
                       plot=agrper_flow$plot)
 
-agpe_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+agpe_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 agpe_flow_sampling<-sampling(agpe_flow_model,
                              data=agpe_flow_dat,
                              chains = 1, #following prompt to check when only 1 chain
@@ -364,10 +364,10 @@ agpe_surv_dat<-list(n_obs=nrow(agrper_surv),
                     year_index=agrper_surv$year_t-2006,
                     plot=agrper_surv$plot)
 
-agpe_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+agpe_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 agpe_surv_sampling<-sampling(agpe_surv_model,
                              data=agpe_surv_dat,
-                             chains = 3,
+                             chains = 1,
                              iter = 8000,
                              warmup = 2000)
 
@@ -414,7 +414,7 @@ ggplot(summary_df_agpe_s, aes(x = year, y = median)) +
 ###ELYMUS VIRGINICUS_______________________________________________________________________
 
 ##Species filter
-elyvir <- compcoe %>% filter(species == "ELVI")
+elyvir <- gras %>% filter(species == "ELVI")
 
 elyvir$log_tillers_centered <- log(elyvir$size_t) - mean(log(elyvir$size_t),na.rm=T)
 
@@ -435,7 +435,7 @@ elvi_flow_dat <- list(n_obs=nrow(elyvir_flow),
                       year_index=elyvir_flow$year_t-2006,
                       plot=elyvir_flow$plot)
 
-elvi_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+elvi_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 elvi_flow_sampling<-sampling(elvi_flow_model,
                              data=elvi_flow_dat,
                              chains = 3,
@@ -498,7 +498,7 @@ elvi_surv_dat<-list(n_obs=nrow(elyvir_surv),
                     year_index=elyvir_surv$year_t-2006,
                     plot=elyvir_surv$plot)
 
-elvi_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+elvi_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 elvi_surv_sampling<-sampling(elvi_surv_model,
                              data=elvi_surv_dat,
                              chains = 3,
@@ -547,7 +547,7 @@ ggplot(summary_df_elvi_s, aes(x = year, y = median)) +
 ###ELYMUS VILLOSUS_______________________________________________________________________
 
 ##Species filter
-elyvil <- compcoe %>% filter(species == "ELRI")
+elyvil <- gras %>% filter(species == "ELRI")
 
 elyvil$log_tillers_centered <- log(elyvil$size_t) - mean(log(elyvil$size_t),na.rm=T)
 
@@ -568,7 +568,7 @@ elri_flow_dat <- list(n_obs=nrow(elyvil_flow),
                       year_index=elyvil_flow$year_t-2006,
                       plot=elyvil_flow$plot)
 
-elri_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+elri_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 elri_flow_sampling<-sampling(elri_flow_model,
                              data=elri_flow_dat,
                              chains = 3,
@@ -631,7 +631,7 @@ elri_surv_dat<-list(n_obs=nrow(elyvil_surv),
                     year_index=elyvil_surv$year_t-2006,
                     plot=elyvil_surv$plot)
 
-elri_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+elri_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 elri_surv_sampling<-sampling(elri_surv_model,
                              data=elri_surv_dat,
                              chains = 3,
@@ -679,7 +679,7 @@ ggplot(summary_df_elri_s, aes(x = year, y = median)) +
 ###FESTUCA SUBVERTICILLATA_______________________________________________________________________
 
 ##Species filter
-fessub <- compcoe %>% filter(species == "FESU")
+fessub <- gras %>% filter(species == "FESU")
 
 fessub$log_tillers_centered <- log(fessub$size_t) - mean(log(fessub$size_t),na.rm=T)
 
@@ -700,7 +700,7 @@ fesu_flow_dat <- list(n_obs=nrow(fessub_flow),
                       year_index=fessub_flow$year_t-2006,
                       plot=fessub_flow$plot)
 
-fesu_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+fesu_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 fesu_flow_sampling<-sampling(fesu_flow_model,
                              data=fesu_flow_dat,
                              chains = 3,
@@ -768,14 +768,14 @@ fesu_surv_dat<-list(n_obs=nrow(fessub_surv),
                     year_index=fessub_surv$year_t-2006,
                     plot=fessub_surv$plot)
 
-fesu_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering.stan")
+fesu_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
 fesu_surv_sampling<-sampling(fesu_surv_model,
                              data=fesu_surv_dat,
                              chains = 3,
                              iter = 8000,
                              warmup = 2000)
 
-#SAMW WARNING AS WITH FLOWERING
+#SAME WARNING AS WITH FLOWERING
 #mcmc_trace(surv_sampling,pars='tau_plot[111]')
 
 #Something is being done
@@ -812,3 +812,145 @@ ggplot(summary_df_fesu_s, aes(x = year, y = median)) +
 #ggplot(summary_df_fesu_s, aes(x = year, y = probgzero)) +
 #geom_line(linewidth = 1.2) + labs(x = "Year", y = "Pr(E+ > E-)") +
 # theme_minimal()
+
+
+##ONE FOR ALL
+
+##Making integers for species
+gras$spec <- as.factor (case_when(gras$species == "AGPE" ~ 1,
+                                  gras$species == "ELRI" ~ 2,
+                                  gras$species == "ELVI" ~ 3,
+                                  gras$species == "FESU" ~ 4,
+                                  gras$species == "LOAR" ~ 5,
+                                  gras$species == "POAL" ~ 6,
+                                  gras$species == "POAU" ~ 7,
+                                  gras$species == "POSY" ~ 8))
+
+##centering size
+gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
+
+##ALL FLOWERING___________________
+
+##prep data, dropping NAs
+gras %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot,spec) %>% 
+  drop_na() -> all_flow
+
+all_flow_dat <- list(n_obs=nrow(all_flow),
+                      y=all_flow$flw_count_t>0,
+                      n_yrs = length(unique(all_flow$year_t)),
+                      n_plots = max(all_flow$plot),
+                      n_endo = 2,
+                      n_spp = length(unique(all_flow$spec)), #made this up, don't know if it works
+                      endo_01=all_flow$endo_01,
+                      size=all_flow$log_tillers_centered,
+                      year_index=all_flow$year_t-2006,
+                      plot=all_flow$plot,
+                      species=all_flow$spec)
+
+all_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering_mvn.stan")
+all_flow_sampling<-sampling(all_flow_model,
+                             data=all_flow_dat,
+                             chains = 3,
+                             iter = 5000,
+                             warmup = 1000)
+#mcmc_trace(all_flow_sampling,par=c('endo_effect[5]'))
+#mcmc_dens(all_flow_sampling,par=c('beta_size'))
+
+#Something is being done
+params_all_f<-rstan::extract(all_flow_sampling,pars=c('beta_0','endo_effect')) #does species go in this line too?
+dim(params_all_f$beta_0)
+
+#take a random subset of posterior draws
+all_endoeffect_postf<-params_all_f$endo_effect[sample(12000,size=500,replace=F),]
+dim(all_endoeffect_postf)
+
+# Convert to long data frame
+long_df_all_f <- as.data.frame.table(all_endoeffect_postf,
+                                      responseName = "value") %>%
+  rename(draw = iterations, year = Var2) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006) #does species go here
+
+summary_df_all_f <- long_df_all_f %>%
+  group_by(year) %>% #should i group by species as well
+  summarize(
+    median = median(value),
+    lower = quantile(value, 0.05),
+    upper = quantile(value, 0.95),
+    probgzero = mean(value>0),
+    .groups = "drop")
+
+#plot
+ggplot(summary_df_all_f, aes(x = year, y = median)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + #should color = species
+  labs(x = "Year", y = "Endophyte effect",
+       title = "Difference of E+ and E- flowering with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()
+
+
+#ggplot(summary_df_all_f, aes(x = year, y = probgzero)) +
+#geom_line(linewidth = 1.2) + labs(x = "Year", y = "Pr(E+ > E-)") + theme_minimal()
+
+##ALL SURVIVAL___________________
+
+gras %>% 
+  select(surv_t1,endo_01,log_tillers_centered,year_t,plot) %>% 
+  drop_na() -> all_surv
+
+all_surv_dat<-list(n_obs=nrow(all_surv),
+                    y=all_surv$surv_t1,
+                    n_yrs = length(unique(all_surv$year_t)),
+                    n_plots = max(all_surv$plot),
+                    n_endo = 2,
+                    n_spp = length(unique(all_flow$spec)), #made this up, don't know if it works
+                    endo_01=all_surv$endo_01,
+                    size=all_surv$log_tillers_centered,
+                    year_index=all_surv$year_t-2006,
+                    plot=all_surv$plot,
+                    species=all_flow$spec)
+
+all_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+all_surv_sampling<-sampling(all_surv_model,
+                             data=all_surv_dat,
+                             chains = 3,
+                             iter = 8000,
+                             warmup = 2000)
+#mcmc_trace(surv_sampling,pars='tau_plot[111]')
+
+#Something is being done
+params_all_s<-rstan::extract(all_surv_sampling,pars=c('beta_0','endo_effect'))
+dim(params_all_s$beta_0)
+
+#take a random subset of posterior draws
+all_endoeffect_posts<-params_all_s$endo_effect[sample(12000,size=500,replace=F),]
+dim(all_endoeffect_posts)
+
+# Convert to long data frame
+long_df_all_s <- as.data.frame.table(all_endoeffect_posts,
+                                      responseName = "value") %>%
+  rename(draw = iterations, year = Var2) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006)
+
+summary_df_all_s <- long_df_all_s %>%
+  group_by(year) %>%
+  summarize(median = median(value),
+            lower = quantile(value, 0.05),
+            upper = quantile(value, 0.95),
+            probgzero = mean(value>0),
+            .groups = "drop")
+
+# plot
+ggplot(summary_df_all_s, aes(x = year, y = median)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
+  labs(x = "Year", y = "Endophyte effect",
+       title = "Difference of E+ and E- survival with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()
+
+#ggplot(summary_df_all_s, aes(x = year, y = probgzero)) +
+#geom_line(linewidth = 1.2) + labs(x = "Year", y = "Pr(E+ > E-)") +
+# theme_minimal()
+
