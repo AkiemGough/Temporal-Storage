@@ -11,7 +11,7 @@ options(mc.cores = parallel::detectCores())
 
 #setwd("G:/.shortcut-targets-by-id/1o66WMnQligL0_-ahkQMfFOklR3X-6vOA/Akiem PhD Research/Data & Analysis")
 setwd("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage")
-gras <- read.csv("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/data/ltreb_allspp_2007_2025.csv")
+gras <- read.csv("data/ltreb_allspp_2007_2025.csv")
 
 
 ###POA ALSODES_______________________________________________________________________
@@ -833,7 +833,7 @@ gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
 
 ##prep data, dropping NAs
 gras %>% filter (spec!=8) %>%
-  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot,spec,original) %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,size_t,year_t,plot,spec,original) %>% 
   drop_na() -> all_flow
 
 all_flow_dat <- list(n_obs=nrow(all_flow),
@@ -843,17 +843,17 @@ all_flow_dat <- list(n_obs=nrow(all_flow),
                       n_endo = 2,
                       n_spp = length(unique(all_flow$spec)),
                       endo_01=all_flow$endo_01,
-                      size=all_flow$log_tillers_centered,
+                      size=log(all_flow$size_t),#all_flow$log_tillers_centered,
                       year_index=all_flow$year_t-2006,
                       plot=all_flow$plot,
                       species=all_flow$spec,
                       original=all_flow$original)
 
-all_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering_mvn.stan")
+all_flow_model = stan_model(file="code/flowering_mvn.stan")
 all_flow_sampling<-sampling(all_flow_model,
                              data=all_flow_dat,
-                             chains = 1,
-                             iter = 5000,
+                             chains = 3,
+                             iter = 10000,
                              warmup = 1000)
 #mcmc_trace(all_flow_sampling,par=c('endo_effect[5]'))
 #mcmc_dens(all_flow_sampling,par=c('beta_size'))
