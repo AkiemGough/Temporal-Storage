@@ -817,14 +817,14 @@ ggplot(summary_df_fesu_s, aes(x = year, y = median)) +
 ##ONE FOR ALL
 
 ##Making integers for species
-gras$spec <- as.factor (case_when(gras$species == "AGPE" ~ 1,
+gras$spec <- as.integer (case_when(gras$species == "AGPE" ~ 8,
                                   gras$species == "ELRI" ~ 2,
                                   gras$species == "ELVI" ~ 3,
                                   gras$species == "FESU" ~ 4,
                                   gras$species == "LOAR" ~ 5,
                                   gras$species == "POAL" ~ 6,
                                   gras$species == "POAU" ~ 7,
-                                  gras$species == "POSY" ~ 8))
+                                  gras$species == "POSY" ~ 1))
 
 ##centering size
 gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
@@ -832,8 +832,8 @@ gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
 ##ALL FLOWERING___________________
 
 ##prep data, dropping NAs
-gras %>% 
-  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot,spec) %>% 
+gras %>% filter (spec!=8) %>%
+  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot,spec,original) %>% 
   drop_na() -> all_flow
 
 all_flow_dat <- list(n_obs=nrow(all_flow),
@@ -841,17 +841,18 @@ all_flow_dat <- list(n_obs=nrow(all_flow),
                       n_yrs = length(unique(all_flow$year_t)),
                       n_plots = max(all_flow$plot),
                       n_endo = 2,
-                      n_spp = length(unique(all_flow$spec)), #made this up, don't know if it works
+                      n_spp = length(unique(all_flow$spec)),
                       endo_01=all_flow$endo_01,
                       size=all_flow$log_tillers_centered,
                       year_index=all_flow$year_t-2006,
                       plot=all_flow$plot,
-                      species=all_flow$spec)
+                      species=all_flow$spec,
+                      original=all_flow$original)
 
 all_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/flowering_mvn.stan")
 all_flow_sampling<-sampling(all_flow_model,
                              data=all_flow_dat,
-                             chains = 3,
+                             chains = 1,
                              iter = 5000,
                              warmup = 1000)
 #mcmc_trace(all_flow_sampling,par=c('endo_effect[5]'))
