@@ -852,21 +852,23 @@ all_flow_dat <- list(n_obs=nrow(all_flow),
 all_flow_model = stan_model(file="code/flowering_mvn.stan")
 all_flow_sampling<-sampling(all_flow_model,
                              data=all_flow_dat,
-                             chains = 3,
-                             iter = 5000,
-                             warmup = 1000)
+                             chains = 1,
+                             iter = 50,
+                             warmup = 10)
 #there was an error for iter = 10000: vector memory limit of 16.0 Gb reached
 #so I changed it to iter = 5000: no errors, but a warning about divergent transitions after warmup
 
-#mcmc_trace(all_flow_sampling,par=c('endo_effect[5]'))
-#mcmc_dens(all_flow_sampling,par=c('beta_size'))
+mcmc_trace(all_flow_sampling,par=c('endo_effect[1,5]'))
+mcmc_trace(all_flow_sampling,par=c('Omega[1,1,2]'))
+mcmc_dens(all_flow_sampling,par=c('Omega[1,1,2]'))
 
 #Something is being done
-params_all_f<-rstan::extract(all_flow_sampling,pars=c('beta_0','endo_effect')) #does species go in this line too?
+params_all_f<-rstan::extract(all_flow_sampling,pars=c('beta_0','endo_effect','Omega')) #does species go in this line too?
 dim(params_all_f$beta_0)
+dim(params_all_f$Omega)
 
 #take a random subset of posterior draws
-all_endoeffect_postf<-params_all_f$endo_effect[sample(12000,size=500,replace=F),]
+all_endoeffect_postf<-params_all_f$endo_effect[sample(dim(params_all_f$beta_0)[1],size=10,replace=F),,]
 #the above line has the error: incorrect number of dimensions
 #when I ran line 866, the result was 12000 7 2 18. 
 #I don't know how the later 3 numbers related or don't relate to the size in line 869
@@ -875,8 +877,8 @@ dim(all_endoeffect_postf)
 # Convert to long data frame
 long_df_all_f <- as.data.frame.table(all_endoeffect_postf,
                                       responseName = "value") %>%
-  rename(draw = iterations, year = Var2) %>%
-  mutate(draw = as.integer(draw), year = as.integer(year)+2006) #does species go here
+  rename(draw = iterations, species = Var2, year = Var3, endo_effect = value) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species)) #does species go here
 
 summary_df_all_f <- long_df_all_f %>%
   group_by(year) %>% #should i group by species as well
@@ -886,6 +888,26 @@ summary_df_all_f <- long_df_all_f %>%
     upper = quantile(value, 0.95),
     probgzero = mean(value>0),
     .groups = "drop")
+
+## correlation coefficients
+all_corr_postf<-params_all_f$Omega[sample(dim(params_all_f$Omega)[1],size=10,replace=F),,1,2]
+long_df_all_corr <- as.data.frame.table(all_corr_postf,
+                                     responseName = "value") %>%
+  rename(draw = Var1, species = Var2, corr = value) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species)) #does species go here
+long_df_all_corr$spec <- case_when(long_df_all_corr$species == 8 ~ "AGPE",
+                                             long_df_all_corr$species == 2 ~ "ELRI",
+                                             long_df_all_corr$species == 3 ~ "ELVI",
+                                             long_df_all_corr$species == 4 ~ "FESU",
+                                             long_df_all_corr$species == 5 ~ "LOAR",
+                                             long_df_all_corr$species == 6 ~ "POAL",
+                                             long_df_all_corr$species == 7 ~ "POAU",
+                                             long_df_all_corr$species == 1 ~ "POSY")
+
+ggplot(long_df_all_corr)+
+  geom_histogram(aes(x=corr))+
+  facet_grid("spec")+xlim(-1,1)
+
 #i am unsure how (or if i want) to make a graph with all the species, endophyte effect and all the years
 #plot
 ggplot(summary_df_all_f, aes(x = year, y = median)) +
