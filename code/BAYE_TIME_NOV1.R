@@ -853,8 +853,11 @@ all_flow_model = stan_model(file="code/flowering_mvn.stan")
 all_flow_sampling<-sampling(all_flow_model,
                              data=all_flow_dat,
                              chains = 3,
-                             iter = 10000,
+                             iter = 5000,
                              warmup = 1000)
+#there was an error for iter = 10000: vector memory limit of 16.0 Gb reached
+#so I changed it to iter = 5000: no errors, but a warning about divergent transitions after warmup
+
 #mcmc_trace(all_flow_sampling,par=c('endo_effect[5]'))
 #mcmc_dens(all_flow_sampling,par=c('beta_size'))
 
@@ -864,6 +867,9 @@ dim(params_all_f$beta_0)
 
 #take a random subset of posterior draws
 all_endoeffect_postf<-params_all_f$endo_effect[sample(12000,size=500,replace=F),]
+#the above line has the error: incorrect number of dimensions
+#when I ran line 866, the result was 12000 7 2 18. 
+#I don't know how the later 3 numbers related or don't relate to the size in line 869
 dim(all_endoeffect_postf)
 
 # Convert to long data frame
@@ -880,7 +886,7 @@ summary_df_all_f <- long_df_all_f %>%
     upper = quantile(value, 0.95),
     probgzero = mean(value>0),
     .groups = "drop")
-
+#i am unsure how (or if i want) to make a graph with all the species, endophyte effect and all the years
 #plot
 ggplot(summary_df_all_f, aes(x = year, y = median)) +
   geom_line(linewidth = 1.2) +
