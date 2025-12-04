@@ -852,9 +852,9 @@ all_flow_dat <- list(n_obs=nrow(all_flow),
 all_flow_model = stan_model(file="code/flowering_mvn.stan")
 all_flow_sampling<-sampling(all_flow_model,
                              data=all_flow_dat,
-                             chains = 1,
-                             iter = 50,
-                             warmup = 10)
+                             chains = 3,
+                             iter = 5000,
+                             warmup = 1000)
 #there was an error for iter = 10000: vector memory limit of 16.0 Gb reached
 #so I changed it to iter = 5000: no errors, but a warning about divergent transitions after warmup
 
