@@ -852,15 +852,23 @@ all_flow_dat <- list(n_obs=nrow(all_flow),
 all_flow_model = stan_model(file="code/flowering_mvn.stan")
 all_flow_sampling<-sampling(all_flow_model,
                              data=all_flow_dat,
-                             chains = 3,
+                             chains = 3,thin=5,
                              iter = 5000,
-                             warmup = 1000)
-#there was an error for iter = 10000: vector memory limit of 16.0 Gb reached
-#so I changed it to iter = 5000: no errors, but a warning about divergent transitions after warmup
+                             warmup = 1000,
+                            pars=c("beta_0","beta_size","beta_size_endo",
+                                   "meanflow","beta_orig","sigma_year",
+                                   "sigma_plot","Omega","endo_effect"),
+                            save_warmup=F)
+#saveRDS(all_flow_sampling,"all_flow_sampling.rds")
+all_flow_sampling<-readRDS("all_flow_sampling.rds")
+##OR
+all_flow_sampling<-readRDS(url("https://www.dropbox.com/scl/fi/ng6af67efbx22lv9k9lac/all_flow_sampling.rds?rlkey=yakgmbaomu4ss6i7idcz8j9ne&dl=1"))
 
 mcmc_trace(all_flow_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_flow_sampling,par=c('Omega[1,1,2]'))
 mcmc_dens(all_flow_sampling,par=c('Omega[1,1,2]'))
+mcmc_dens(all_flow_sampling,par=c('Omega[2,1,2]'))
+mcmc_dens(all_flow_sampling,par=c('Omega[2,1,2]'))
 
 #Something is being done
 params_all_f<-rstan::extract(all_flow_sampling,pars=c('beta_0','endo_effect','Omega')) #does species go in this line too?
@@ -881,16 +889,16 @@ long_df_all_f <- as.data.frame.table(all_endoeffect_postf,
   mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species)) #does species go here
 
 summary_df_all_f <- long_df_all_f %>%
-  group_by(year) %>% #should i group by species as well
+  group_by(year,species) %>% #should i group by species as well
   summarize(
-    median = median(value),
-    lower = quantile(value, 0.05),
-    upper = quantile(value, 0.95),
-    probgzero = mean(value>0),
+    median = median(endo_effect),
+    lower = quantile(endo_effect, 0.05),
+    upper = quantile(endo_effect, 0.95),
+    probgzero = mean(endo_effect>0),
     .groups = "drop")
 
 ## correlation coefficients
-all_corr_postf<-params_all_f$Omega[sample(dim(params_all_f$Omega)[1],size=10,replace=F),,1,2]
+all_corr_postf<-params_all_f$Omega[sample(dim(params_all_f$Omega)[1],size=1000,replace=F),,1,2]
 long_df_all_corr <- as.data.frame.table(all_corr_postf,
                                      responseName = "value") %>%
   rename(draw = Var1, species = Var2, corr = value) %>%
@@ -916,7 +924,8 @@ ggplot(summary_df_all_f, aes(x = year, y = median)) +
   labs(x = "Year", y = "Endophyte effect",
        title = "Difference of E+ and E- flowering with year") +
   geom_hline(yintercept = 0) +
-  theme_minimal()
+  theme_minimal()+
+  facet_grid("species")
 
 
 #ggplot(summary_df_all_f, aes(x = year, y = probgzero)) +
