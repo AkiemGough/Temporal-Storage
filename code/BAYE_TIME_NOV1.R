@@ -913,7 +913,7 @@ long_df_all_corr$spec <- case_when(long_df_all_corr$species == 8 ~ "AGPE",
                                              long_df_all_corr$species == 1 ~ "POSY")
 
 ggplot(long_df_all_corr)+
-  geom_histogram(aes(x=corr))+
+  geom_histogram(aes(x=corr),binwidth = 0.02)+
   facet_grid("spec")+xlim(-1,1)
 
 #i am unsure how (or if i want) to make a graph with all the species, endophyte effect and all the years
