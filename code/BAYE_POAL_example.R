@@ -45,7 +45,6 @@ poal_flow_dat<-list(n_obs=nrow(poaals_flow),
                endo_01=poaals_flow$endo_01,
                size=poaals_flow$log_tillers_centered,
                year_index=poaals_flow$year_t-2006,
-               plot=poaals_flow$plot
                )
 poal_flow_model = stan_model(file="R Studio Codes/flowering.stan")
 poal_flow_sampling<-sampling(flow_model,
