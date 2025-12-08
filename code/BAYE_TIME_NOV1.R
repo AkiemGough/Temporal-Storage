@@ -924,14 +924,14 @@ long_df_all_corrf <- as.data.frame.table(all_corr_postf,
   rename(draw = Var1, species = Var2, corr = value) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
-long_df_all_corrf$spec <- case_when(long_df_all_corr$species == 8 ~ "AGPE",
-                                   long_df_all_corr$species == 2 ~ "ELRI",
-                                   long_df_all_corr$species == 3 ~ "ELVI",
-                                   long_df_all_corr$species == 4 ~ "FESU",
-                                   long_df_all_corr$species == 5 ~ "LOAR",
-                                   long_df_all_corr$species == 6 ~ "POAL",
-                                   long_df_all_corr$species == 7 ~ "POAU",
-                                   long_df_all_corr$species == 1 ~ "POSY")
+long_df_all_corrf$spec <- case_when(long_df_all_corrf$species == 8 ~ "AGPE",
+                                   long_df_all_corrf$species == 2 ~ "ELRI",
+                                   long_df_all_corrf$species == 3 ~ "ELVI",
+                                   long_df_all_corrf$species == 4 ~ "FESU",
+                                   long_df_all_corrf$species == 5 ~ "LOAR",
+                                   long_df_all_corrf$species == 6 ~ "POAL",
+                                   long_df_all_corrf$species == 7 ~ "POAU",
+                                   long_df_all_corrf$species == 1 ~ "POSY")
 
 #plotting correlation coefficients
 summary_df_all_corrf <- long_df_all_corrf %>%
@@ -986,14 +986,14 @@ summary_df_all_beta0f <- long_df_all_beta0f %>%
     probgzero = mean(estimate>0),
     .groups = "drop")
 
-#plotting endo effect
+#plotting endo estimates
 ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = endo)) +
   scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
   scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
   geom_line(linewidth = 0.5) +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
-  labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- flowering with year") +
+  labs(x = "Year", y = "probability of flowering",
+       title = "Change in probability of E+ and E- flowering with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
