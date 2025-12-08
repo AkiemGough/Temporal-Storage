@@ -1171,7 +1171,8 @@ ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = en
 
 ##prep data, dropping NAs
 gras %>% filter (spec!=8) %>%
-  select(surv_t1,endo_01,size_t,year_t,plot) %>% 
+  select(surv_t1,endo_01,size_t,year_t,plot,original,spec) %>% 
+  filter(size_t>0) %>% ##there is one obs of zero tiller size
   drop_na() -> all_surv
 
 all_surv_dat <- list(n_obs=nrow(all_surv),
@@ -1187,7 +1188,7 @@ all_surv_dat <- list(n_obs=nrow(all_surv),
                      species=all_surv$spec,
                      original=all_surv$original)
 
-all_surv_model = stan_model(file = "code/earlier_flowering.stan")
+all_surv_model = stan_model(file = "code/flowering_mvn.stan")
 all_surv_sampling<-sampling(all_surv_model,
                              data = all_surv_dat,
                              chains = 3,thin = 5,
