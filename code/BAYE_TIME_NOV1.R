@@ -998,174 +998,7 @@ ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = en
   theme_minimal()+
   facet_grid("spec")
 
-##ALL FLOWERING___________________
 
-##prep data, dropping NAs
-gras %>% filter (spec!=8) %>%
-  select(flw_count_t,endo_01,log_tillers_centered,size_t,year_t,plot,spec,original) %>% 
-  drop_na() -> all_flow
-
-all_flow_dat <- list(n_obs=nrow(all_flow),
-                      y=all_flow$flw_count_t>0,
-                      n_yrs = length(unique(all_flow$year_t)),
-                      n_plots = max(all_flow$plot),
-                      n_endo = 2,
-                      n_spp = length(unique(all_flow$spec)),
-                      endo_01=all_flow$endo_01,
-                      size=log(all_flow$size_t),#all_flow$log_tillers_centered,
-                      year_index=all_flow$year_t-2006,
-                      plot=all_flow$plot,
-                      species=all_flow$spec,
-                      original=all_flow$original)
-
-all_flow_model = stan_model(file="code/flowering_mvn.stan")
-all_flow_sampling<-sampling(all_flow_model,
-                             data=all_flow_dat,
-                             chains = 3,thin=5,
-                             iter = 5000,
-                             warmup = 1000,
-                            pars=c("beta_0","beta_size","beta_size_endo",
-                                   "meanflow","beta_orig","sigma_year",
-                                   "sigma_plot","Omega","endo_effect"),
-                            save_warmup=F)
-#saveRDS(all_flow_sampling,"all_flow_sampling.rds")
-all_flow_sampling<-readRDS("all_flow_sampling.rds")
-##OR
-all_flow_sampling<-readRDS(url("https://www.dropbox.com/scl/fi/ng6af67efbx22lv9k9lac/all_flow_sampling.rds?rlkey=yakgmbaomu4ss6i7idcz8j9ne&dl=1"))
-
-mcmc_trace(all_flow_sampling,par=c('endo_effect[1,5]'))
-mcmc_trace(all_flow_sampling,par=c('Omega[1,1,2]'))
-mcmc_dens(all_flow_sampling,par=c('Omega[1,1,2]'))
-mcmc_dens(all_flow_sampling,par=c('Omega[2,1,2]'))
-mcmc_dens(all_flow_sampling,par=c('Omega[2,1,2]'))
-
-#extracting parameters
-params_all_f<-rstan::extract(all_flow_sampling,pars=c('beta_0','endo_effect','Omega'))
-dim(params_all_f$beta_0)
-dim(params_all_f$Omega)
-
-##PLOTTING ENDO EFFECT (DIFFERENCE)
-#take a random subset of posterior draws for endo effect
-all_endoeffect_postf<-params_all_f$endo_effect[sample(dim(params_all_f$endo_effect)[1],size=1000,replace=F),,]
-dim(all_endoeffect_postf)
-
-# Convert to long data frame for endo effect
-long_df_all_f <- as.data.frame.table(all_endoeffect_postf,
-                                      responseName = "value") %>%
-  rename(draw = iterations, species = Var2, year = Var3, endo_effect = value) %>%
-  mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
-long_df_all_f$spec <- case_when(long_df_all_f$species == 8 ~ "AGPE",
-                                long_df_all_f$species == 2 ~ "ELRI",
-                                long_df_all_f$species == 3 ~ "ELVI",
-                                long_df_all_f$species == 4 ~ "FESU",
-                                long_df_all_f$species == 5 ~ "LOAR",
-                                long_df_all_f$species == 6 ~ "POAL",
-                                long_df_all_f$species == 7 ~ "POAU",
-                                long_df_all_f$species == 1 ~ "POSY")
-
-summary_df_all_f <- long_df_all_f %>%
-  group_by(year,spec) %>% #should i group by species as well
-  summarize(
-    median = median(endo_effect),
-    lower = quantile(endo_effect, 0.05),
-    upper = quantile(endo_effect, 0.95),
-    probgzero = mean(endo_effect>0),
-    .groups = "drop")
-
-#plotting endo effect
-ggplot(summary_df_all_f, aes(x = year, y = median)) +
-  geom_line(linewidth = 0.5, col = "mediumpurple3") +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
-  labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- flowering with year") +
-  geom_hline(yintercept = 0) +
-  theme_minimal()+
-  facet_grid("spec")
-
-##PLOTTING CORRELATION COEFFICENTS
-#take a random subset of posterior draws for correlation coefficients
-all_corr_postf<-params_all_f$Omega[sample(dim(params_all_f$Omega)[1],size=1000,replace=F),,1,2]
-dim(all_corr_postf)
-
-## Convert to long data frame for correlation coefficients
-long_df_all_corrf <- as.data.frame.table(all_corr_postf,
-                                     responseName = "value") %>%
-  rename(draw = Var1, species = Var2, corr = value) %>%
-  mutate(draw = as.integer(draw), species=as.integer(species))
-
-long_df_all_corrf$spec <- case_when(long_df_all_corrf$species == 8 ~ "AGPE",
-                                   long_df_all_corrf$species == 2 ~ "ELRI",
-                                   long_df_all_corrf$species == 3 ~ "ELVI",
-                                   long_df_all_corrf$species == 4 ~ "FESU",
-                                   long_df_all_corrf$species == 5 ~ "LOAR",
-                                   long_df_all_corrf$species == 6 ~ "POAL",
-                                   long_df_all_corrf$species == 7 ~ "POAU",
-                                   long_df_all_corrf$species == 1 ~ "POSY")
-
-#plotting correlation coefficients
-summary_df_all_corrf <- long_df_all_corrf %>%
-  group_by(spec) %>% #should i group by species as well
-  summarize(
-    mean = mean(corr),
-    median = median(corr),
-    lower = quantile(corr, 0.05),
-    upper = quantile(corr, 0.95),
-    probgzero = mean(corr>0),
-    .groups = "drop")
-
-ggplot(long_df_all_corrf)+
-  geom_histogram(aes (x=corr), fill="mediumpurple",binwidth = 0.02)+
-  facet_grid("spec")+xlim(-0.5,1) +
-  geom_vline(data = summary_df_all_corrf,
-             aes(xintercept = mean),
-             colour = "mediumpurple4",
-             size=0.75,
-             linetype = "dashed")
-
-#annotate with means manually on google slides
-long_df_all_corrf %>% group_by(spec) %>% summarize(mean = mean(corr, na.rm = TRUE))
-
-
-##PLOTTING ENDO ESTIMATES
-#take a random subset of posterior draws for endo effect
-all_beta0_postf<-params_all_f$beta_0[sample(dim(params_all_f$beta_0)[1],size=1000,replace=F),,,]
-dim(all_beta0_postf)
-
-# Convert to long data frame for endo effect
-long_df_all_beta0f <- as.data.frame.table(all_beta0_postf,
-                                     responseName = "estimate") %>%
-  rename(draw = iterations, species = Var2, endo = Var3, year = Var4, estimate = estimate) %>%
-  mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
-long_df_all_beta0f$spec <- case_when(long_df_all_beta0f$species == 8 ~ "AGPE",
-                                     long_df_all_beta0f$species == 2 ~ "ELRI",
-                                     long_df_all_beta0f$species == 3 ~ "ELVI",
-                                     long_df_all_beta0f$species == 4 ~ "FESU",
-                                     long_df_all_beta0f$species == 5 ~ "LOAR",
-                                     long_df_all_beta0f$species == 6 ~ "POAL",
-                                     long_df_all_beta0f$species == 7 ~ "POAU",
-                                     long_df_all_beta0f$species == 1 ~ "POSY")
-
-
-summary_df_all_beta0f <- long_df_all_beta0f %>%
-  group_by(year,spec,endo) %>% 
-  summarize(
-    median = median(estimate),
-    lower = quantile(estimate, 0.05),
-    upper = quantile(estimate, 0.95),
-    probgzero = mean(estimate>0),
-    .groups = "drop")
-
-#plotting endo effect
-ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = endo)) +
-  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
-  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
-  geom_line(linewidth = 0.5) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
-  labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- flowering with year") +
-  geom_hline(yintercept = 0) +
-  theme_minimal()+
-  facet_grid("spec")
 
 ##ALL SURVIVAL___________________
 
@@ -1227,17 +1060,17 @@ long_df_all_s <- as.data.frame.table(all_endoeffect_posts,
                                      responseName = "value") %>%
   rename(draw = iterations, species = Var2, year = Var3, endo_effect = value) %>%
   mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
-long_df_all_f$spec <- case_when(long_df_all_f$species == 8 ~ "AGPE",
-                                long_df_all_f$species == 2 ~ "ELRI",
-                                long_df_all_f$species == 3 ~ "ELVI",
-                                long_df_all_f$species == 4 ~ "FESU",
-                                long_df_all_f$species == 5 ~ "LOAR",
-                                long_df_all_f$species == 6 ~ "POAL",
-                                long_df_all_f$species == 7 ~ "POAU",
-                                long_df_all_f$species == 1 ~ "POSY")
+long_df_all_s$spec <- case_when(long_df_all_s$species == 8 ~ "AGPE",
+                                long_df_all_s$species == 2 ~ "ELRI",
+                                long_df_all_s$species == 3 ~ "ELVI",
+                                long_df_all_s$species == 4 ~ "FESU",
+                                long_df_all_s$species == 5 ~ "LOAR",
+                                long_df_all_s$species == 6 ~ "POAL",
+                                long_df_all_s$species == 7 ~ "POAU",
+                                long_df_all_s$species == 1 ~ "POSY")
 
 summary_df_all_s <- long_df_all_s %>%
-  group_by(year,spec) %>% #should i group by species as well
+  group_by(year,spec) %>% 
   summarize(
     median = median(endo_effect),
     lower = quantile(endo_effect, 0.05),
@@ -1335,7 +1168,7 @@ ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = en
   geom_line(linewidth = 0.5) +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
   labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- flowering with year") +
+       title = "Change in probability of E+ and E- flowering with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
