@@ -816,6 +816,11 @@ ggplot(summary_df_fesu_s, aes(x = year, y = median)) +
 
 ##ONE FOR ALL
 
+##removing row with size_t = 0, it only applies to one ID in one year
+gras %>% filter (species=="POAU", id=="79 1164 4") %>% View
+
+gras <- gras[!(gras$id=="79 1164 4"),] 
+
 ##Making integers for species
 gras$spec <- as.integer (case_when(gras$species == "AGPE" ~ 8,
                                    gras$species == "ELRI" ~ 2,
@@ -833,7 +838,7 @@ gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
 
 ##prep data, dropping NAs
 gras %>% filter (spec!=8) %>%
-  select(flw_count_t,endo_01,log_tillers_centered,size_t,year_t,plot,spec,original) %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot,spec,original) %>% 
   drop_na() -> all_flow
 
 all_flow_dat <- list(n_obs=nrow(all_flow),
@@ -843,7 +848,7 @@ all_flow_dat <- list(n_obs=nrow(all_flow),
                       n_endo = 2,
                       n_spp = length(unique(all_flow$spec)),
                       endo_01=all_flow$endo_01,
-                      size=log(all_flow$size_t),#all_flow$log_tillers_centered,
+                      size=all_flow$log_tillers_centered,
                       year_index=all_flow$year_t-2006,
                       plot=all_flow$plot,
                       species=all_flow$spec,
@@ -1004,8 +1009,7 @@ ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = en
 
 ##prep data, dropping NAs
 gras %>% filter (spec!=8) %>%
-  select(surv_t1,endo_01,size_t,year_t,plot,original,spec) %>% 
-  filter(size_t>0) %>% ##there is one obs of zero tiller size
+  select(surv_t1,endo_01,log_tillers_centered,year_t,plot,original,spec) %>% 
   drop_na() -> all_surv
 
 all_surv_dat <- list(n_obs=nrow(all_surv),
@@ -1015,7 +1019,7 @@ all_surv_dat <- list(n_obs=nrow(all_surv),
                      n_endo = 2,
                      n_spp = length(unique(all_surv$spec)),
                      endo_01=all_surv$endo_01,
-                     size=log(all_surv$size_t),
+                     size=all_surv$log_tillers_centered,
                      year_index=all_surv$year_t-2006,
                      plot=all_surv$plot,
                      species=all_surv$spec,
@@ -1032,7 +1036,7 @@ all_surv_sampling<-sampling(all_surv_model,
                                     "sigma_plot","Omega","endo_effect"),
                                     save_warmup=F)
 
-saveRDS(all_surv_sampling,"all_surv_sampling.rds")
+#saveRDS(all_surv_sampling,"all_surv_sampling.rds")
 all_surv_sampling<-readRDS("all_surv_sampling.rds")
 ##OR
 all_surv_sampling<-readRDS(url("https://www.dropbox.com/scl/fi/ng6af67efbx22lv9k9lac/all_surv_sampling.rds?rlkey=yakgmbaomu4ss6i7idcz8j9ne&dl=1"))
@@ -1083,7 +1087,7 @@ ggplot(summary_df_all_s, aes(x = year, y = median)) +
   geom_line(linewidth = 0.5, col = "mediumpurple3") +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
   labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- flowering with year") +
+       title = "Difference of E+ and E- survival with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
@@ -1167,8 +1171,8 @@ ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = en
   scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
   geom_line(linewidth = 0.5) +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
-  labs(x = "Year", y = "Endophyte effect",
-       title = "Change in probability of E+ and E- flowering with year") +
+  labs(x = "Year", y = "probaility of surviving",
+       title = "Change in probability of E+ and E- survival with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
