@@ -38,7 +38,7 @@ poal_flow_dat <- list(n_obs=nrow(poaals_flow),
                     year_index=poaals_flow$year_t-2006,
                     plot=poaals_flow$plot)
 
-poal_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+poal_flow_model = stan_model(file="code/earlier_flowering.stan")
 poal_flow_sampling<-sampling(poal_flow_model,
                              data=poal_flow_dat,
                              chains = 3,
@@ -286,7 +286,7 @@ agrper$log_tillers_centered <- log(agrper$size_t) - mean(log(agrper$size_t),na.r
 
 ##prep data, dropping NAs
 agrper %>% 
-  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot) %>% 
+  select(flw_count_t,endo_01,size_t,year_t,plot) %>% 
   drop_na() -> agrper_flow
 
 agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
@@ -295,7 +295,7 @@ agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
                       n_plots = max(agrper_flow$plot),
                       n_endo = 2,
                       endo_01=agrper_flow$endo_01,
-                      size=agrper_flow$log_tillers_centered,
+                      size=log(agrper_flow$size_t),#agrper_flow$log_tillers_centered,
                       year_index=agrper_flow$year_t-2006,
                       plot=agrper_flow$plot)
 
@@ -305,6 +305,10 @@ agpe_flow_sampling<-sampling(agpe_flow_model,
                              chains = 1, #following prompt to check when only 1 chain
                              iter = 5000,
                              warmup = 1000)
+#The problem with this might be whatever was solved when Tom ran it. Try on lab computer again
+
+saveRDS(agpe_flow_sampling,"agpe_flow_sampling.rds")
+agpe_flow_sampling<-readRDS("agpe_flow_sampling.rds")
 
 #A BUNCH OF ERRORS SHOWED UP
 #mcmc_trace(agpe_flow_sampling,par=c('endo_effect[5]'))
@@ -1176,3 +1180,6 @@ ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = en
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
+
+
+
