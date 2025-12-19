@@ -10,8 +10,10 @@ library(lubridate)
 setwd("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage")
 prism_set_dl_dir("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage")
 
+?get_prism_dailys
+  
 get_prism_dailys(
-  type = "ppt", 
+  type = "ppt",
   minDate = "2007-05-01", 
   maxDate = "2025-11-30", 
   resolution = "4km",
@@ -69,14 +71,24 @@ ppt_long24 <- vals24 %>%
   left_join(SiteCords, by = "SiteName")
 
 #_____________________________________________________________________________#
+#VERY USEFUL
+# extracting month from dates and creating census years
+ppt_may <- ppt %>%
+  mutate(month = month(date), 
+         CensusYear = ifelse(month >= 5, (year(date) + 1), year(date)))
+
+ppt_july <- ppt %>%
+  mutate(month = month(date), 
+         CensusYear = ifelse(month >= 7, (year(date) + 1), year(date)))
+
+ppt_sep <- ppt %>%
+  mutate(month = month(date), 
+         CensusYear = ifelse(month >= 9, (year(date) + 1), year(date)))
+#_____________________________________________________________________________#
+
 
 ppt_long24 <- ppt_long24 %>%
-  mutate(
-    month = month(date),
-    CensusYear = ifelse(month >= 5, (year(date) + 1), year(date)))
-
-ppt_long24 <- ppt_long24 %>%
-  mutate(Season = ifelse((month >= 5) & (month <= 10), "Warm", "Cool"))
+mutate(Season = ifelse((month >= 5) & (month <= 10), "Warm", "Cool"))
 
 ppt_long24 <- ppt_long24 %>%
   group_by(
@@ -171,3 +183,156 @@ tmean_long24 <- tmean_long24 %>%
 
 write.csv(ppt_long24,  "Site_PPT.csv",    row.names = FALSE)
 write.csv(tmean_long24, "Site_TMEAN.csv", row.names = FALSE)
+
+
+#__________________________________________________________________________#
+library("googlesheets4")
+library("googledrive")
+library("tidyverse")
+library("dplyr")
+library(lme4)
+library(AICcmodavg)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(DHARMa)
+library(car)
+
+file_id<-"11m_-0KYtLtp5J0EqGWZ8RzNM-JfsDB3B"
+drive_download(as_id(file_id), path = "Data/endo_range_limits_experiment.xlsx", overwrite = TRUE)
+
+plots24 <- readxl::read_excel(
+  "Data//endo_range_limits_experiment.xlsx",
+  sheet = "2024 Data Census",
+  col_types = c("text", rep("guess", 10))) 
+
+plots25 <- readxl::read_excel("Data//endo_range_limits_experiment.xlsx",sheet="2025 Data Census")
+Tag_SiteID <- readxl::read_excel(
+  "Data//endo_range_limits_experiment.xlsx",
+  sheet    = "Initial Plant Data",
+  col_types = "text"
+)
+
+Tag_SiteID <- Tag_SiteID %>%
+  select(Site, Tag_ID, Population, Species, Plot)
+Tag_SiteID <- Tag_SiteID %>%
+  filter(!is.na(Tag_ID))
+Tag_SiteID <- Tag_SiteID %>%
+  mutate(
+    Tag_ID = sub("\\.0$", "", as.character(Tag_ID)),
+    Tag_ID = str_replace(Tag_ID, "^0+", ""))
+
+plots25 <-  plots25 %>%
+  mutate(Tag_ID = as.character(plots25$Tag_ID),
+         Tag_ID = str_replace(Tag_ID, "^0+", ""))
+TagInfo25 <- plots25 %>%
+  select(Tag_ID,Site)
+
+plots24 <- plots24 %>%
+  mutate(Tag_ID = sub("\\.0$", "", as.character(Tag_ID)),
+         Tag_ID = str_replace(Tag_ID, "^0+", ""))
+plots24 <- plots24 %>%
+  left_join(Tag_SiteID, by = "Tag_ID") %>%
+  left_join(TagInfo25,  by = "Tag_ID") 
+
+plots24 <- plots24 %>%
+  mutate(Site = coalesce(Site.x, Site.y)) %>%
+  select(-Site.x, -Site.y)
+
+plots24 <- plots24 %>%
+  mutate(
+    extracted_number = str_extract(Notes, "\\d+"),
+    Stroma = if_else(
+      Stroma >= 1 & !is.na(extracted_number),   
+      as.numeric(extracted_number),
+      Stroma                                    
+    )
+  ) %>%
+  select(-extracted_number)
+
+
+plots24_25 <- plots24 %>%
+  bind_rows(plots25)
+
+plots24_25 <- plots24_25 %>%
+  mutate(Year = str_extract(Date, "\\d{4}")) %>%
+  left_join(Tag_SiteID, by = "Tag_ID") %>%
+  mutate(Site = coalesce(Site.x, Site.y)) %>%
+  select(-Site.x, -Site.y) %>%
+  mutate(Population = coalesce(Population.x, Population.y)) %>%
+  select(-Population.x, -Population.y) %>%
+  mutate(Species = coalesce(Species.x, Species.y)) %>%
+  select(-Species.x, -Species.y) %>%
+  mutate(Plot = coalesce(Plot.x, Plot.y)) %>%
+  select(-Plot.x, -Plot.y) 
+
+
+plots24_25 <- plots24_25 %>%
+  mutate(
+    total_inf = case_when(
+      Year == "2024" ~ coalesce(attachedInf_24, 0) + coalesce(brokenInf_24, 0),
+      Year == "2025" ~ coalesce(attachedInf_25, 0) + coalesce(brokenInf_25, 0),
+      TRUE           ~ NA_real_
+    ),
+    Stroma = case_when(
+      is.na(Stroma) & total_inf > 0 ~ 0,
+      TRUE ~ Stroma),
+    Trans_Per = case_when(
+      total_inf > 0 ~ Stroma / total_inf,  
+      TRUE ~ NA_real_
+        )
+      )
+#Sanity check to make sure the only rows with no Stroma value also had no inf    
+StromaNA <- plots24_25 %>%
+  filter(is.na(Stroma))
+
+
+#Cleaning the climate data 
+ClimateData <- read.csv("Site_PPT.csv")
+TempData    <- read.csv("Site_TMEAN.csv")
+ClimateData <- ClimateData %>%
+  left_join(
+    TempData,
+    by = c("SiteName", "date", "latitude", "longitude", "CensusYear", "month"),
+    relationship = "one-to-one"
+  ) %>%
+  mutate(Season = coalesce(Season.x, Season.y)) %>%
+  select(-Season.x, -Season.y)
+
+ClimateData <- ClimateData %>% 
+  mutate(Year = as.character(CensusYear)) %>%
+  select(-longitude, -latitude,-date, -ppt_mm, -tmean, -month, -Season,
+         -CensusYear) %>% 
+  distinct() %>%
+  select(SiteName, Year, everything())
+
+CombinedData <- plots24_25 %>%
+  left_join(ClimateData, by = c("Site" = "SiteName", "Year" = "Year"))
+CombinedData <- CombinedData %>%
+  select(-Tiller_24, -Spikelet_A, -Spikelet_B, -Spikelet_C, -tiller_Herb, -Species, 
+         -Tiller_25, -Samples, -Date)
+
+Stroma_cand <- list()
+Stroma_cand[[1]] <- glmer(Trans_Per~1 + (1|Site) + (1|Plot) + (Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[2]] <- glmer(Trans_Per~CoolSeason_totalppt + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[3]] <- glmer(Trans_Per~CoolSeason_tmean + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[4]] <- glmer(Trans_Per~CoolSeason_ppt_sd + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[5]] <- glmer(Trans_Per~CoolSeason_tmeansd + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[6]] <- glmer(Trans_Per~WarmSeason_totalppt + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[7]] <- glmer(Trans_Per~WarmSeason_tmean + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[8]] <- glmer(Trans_Per~WarmSeason_ppt_sd + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[9]] <- glmer(Trans_Per~WarmSeason_tmeansd + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[10]] <- glmer(Trans_Per~CensusYear_totalppt + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[11]] <- glmer(Trans_Per~CensusYear_tmean + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[12]]<- glmer(Trans_Per~CensusYear_ppt_sd + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+Stroma_cand[[13]]<- glmer(Trans_Per~CensusYear_tmeansd + (1|Site) + (1|Plot) + (1|Tag_ID), family = "binomial", weights = (total_inf), data=CombinedData)
+
+aictab(Stroma_cand)
+
+
+
+VIFCheck    <-glmer(Trans_Per~CoolSeason_totalppt + CoolSeason_tmean + (1|Site) + (1|Plot) , family = "binomial", weights = (total_inf), data=CombinedData)
+**VIFCheck2 <-glmer(Trans_Per~WarmSeason_totalppt + WarmSeason_tmean + (1|Site) + (1|Plot) , family = "binomial", weights = (total_inf), data=CombinedData)
+VIFCheck3   <-glmer(Trans_Per~CensusYear_totalppt + CensusYear_tmean + (1|Site) + (1|Plot) , family = "binomial", weights = (total_inf), data=CombinedData)
+vif(VIFCheck)
+
