@@ -25,6 +25,7 @@ weather$yearina <- as.numeric (format(weather$Date, "%Y")) + 2000
 
 #creating census years for each data collection period     
 weather$CensusYearMay <- ifelse(weather$monthina >= 5, (weather$yearina + 1), weather$yearina)
+weather$CensusYearJun <- ifelse(weather$monthina >= 6, (weather$yearina + 1), weather$yearina)
 weather$CensusYearJul <- ifelse(weather$monthina >= 7, (weather$yearina + 1), weather$yearina)
 weather$CensusYearSep <- ifelse(weather$monthina >= 9, (weather$yearina + 1), weather$yearina)
 
@@ -36,6 +37,14 @@ weatherMay <- weather %>%
          CensusYearMay_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
          CensusYearMay_tmean_mean = sum(`tmean (degrees F)`, na.rm = TRUE),
          CensusYearMay_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
+
+weatherJun <- weather %>%
+  group_by(
+    CensusYearJun) %>%
+  mutate(CensusYearJun_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         CensusYearJun_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
+         CensusYearJun_tmean_mean = sum(`tmean (degrees F)`, na.rm = TRUE),
+         CensusYearJun_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
 
 weatherJul <- weather %>%
   group_by(
@@ -57,24 +66,33 @@ weatherSep <- weather %>%
 weatherMay <- weatherMay %>% 
   select(-`tmax (degrees F)`,-`tdmean (degrees F)`,-`vpdmin (hPa)`,-`vpdmax (hPa)`,-`tmin (degrees F)`,
     -Date, -monthina, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
-    -CensusYearJul, -CensusYearSep) %>% 
+    -CensusYearJun, -CensusYearJul, -CensusYearSep) %>% 
+  distinct() 
+
+weatherJun <- weatherJun %>% 
+  select(-`tmax (degrees F)`,-`tdmean (degrees F)`,-`vpdmin (hPa)`,-`vpdmax (hPa)`,-`tmin (degrees F)`,
+         -Date, -monthina, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
+         -CensusYearMay, -CensusYearJul, -CensusYearSep) %>% 
   distinct() 
 
 weatherJul <- weatherJul %>% 
   select(-`tmax (degrees F)`,-`tdmean (degrees F)`,-`vpdmin (hPa)`,-`vpdmax (hPa)`,-`tmin (degrees F)`,
          -Date, -monthina, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
-         -CensusYearMay, -CensusYearSep) %>% 
+         -CensusYearMay, -CensusYearJun, -CensusYearSep) %>% 
   distinct() 
 
 weatherSep <- weatherSep %>% 
   select(-`tmax (degrees F)`,-`tdmean (degrees F)`,-`vpdmin (hPa)`,-`vpdmax (hPa)`,-`tmin (degrees F)`,
          -Date, -monthina, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
-         -CensusYearJul, -CensusYearMay) %>% 
+         -CensusYearJun, -CensusYearJul, -CensusYearMay) %>% 
   distinct() 
 
 gras <- read.csv("data/ltreb_allspp_2007_2025.csv")
 
 CombinedMay <- left_join(x=gras, y=weatherMay, by=c("year_t" = "CensusYearMay")) %>% 
+  rowwise()
+
+CombinedJun <- left_join(x=gras, y=weatherJun, by=c("year_t" = "CensusYearJun")) %>% 
   rowwise()
 
 CombinedJul <- left_join(x=CombinedMay, y=weatherJul, by=c("year_t" = "CensusYearJul")) %>%  
@@ -87,37 +105,37 @@ CombinedData <- left_join(x=CombinedJul, y=weatherSep, by=c("year_t" = "CensusYe
 CombinedData$ppt_tot <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedData$CensusYearSep_ppt_tot,
                                               gras$species == "ELRI" ~ CombinedData$CensusYearJul_ppt_tot,
                                               gras$species == "ELVI" ~ CombinedData$CensusYearJul_ppt_tot,
-                                              gras$species == "FESU" ~ CombinedData$CensusYearMay_ppt_tot,
-                                              gras$species == "LOAR" ~ CombinedData$CensusYearMay_ppt_tot, #fake
+                                              gras$species == "FESU" ~ CombinedData$CensusYearJun_ppt_tot,
+                                              gras$species == "LOAR" ~ CombinedData$CensusYearJul_ppt_tot,
                                               gras$species == "POAL" ~ CombinedData$CensusYearMay_ppt_tot,
-                                              gras$species == "POAU" ~ CombinedData$CensusYearMay_ppt_tot, #fake
+                                              gras$species == "POAU" ~ CombinedData$CensusYearMay_ppt_tot, #fake (I don't know the census date)
                                               gras$species == "POSY" ~ CombinedData$CensusYearMay_ppt_tot))
 
 CombinedData$ppt_sd <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedData$CensusYearSep_ppt_sd,
                                               gras$species == "ELRI" ~ CombinedData$CensusYearJul_ppt_sd,
                                               gras$species == "ELVI" ~ CombinedData$CensusYearJul_ppt_sd,
-                                              gras$species == "FESU" ~ CombinedData$CensusYearMay_ppt_sd,
-                                              gras$species == "LOAR" ~ CombinedData$CensusYearMay_ppt_sd, #fake
+                                              gras$species == "FESU" ~ CombinedData$CensusYearJun_ppt_sd,
+                                              gras$species == "LOAR" ~ CombinedData$CensusYearJul_ppt_sd, 
                                               gras$species == "POAL" ~ CombinedData$CensusYearMay_ppt_sd,
-                                              gras$species == "POAU" ~ CombinedData$CensusYearMay_ppt_sd, #fake
+                                              gras$species == "POAU" ~ CombinedData$CensusYearMay_ppt_sd, #fake (I don't know the census date)
                                               gras$species == "POSY" ~ CombinedData$CensusYearMay_ppt_sd))
 
 CombinedData$tmean_mean <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedData$CensusYearSep_tmean_mean,
                                               gras$species == "ELRI" ~ CombinedData$CensusYearJul_tmean_mean,
                                               gras$species == "ELVI" ~ CombinedData$CensusYearJul_tmean_mean,
-                                              gras$species == "FESU" ~ CombinedData$CensusYearMay_tmean_mean,
-                                              gras$species == "LOAR" ~ CombinedData$CensusYearMay_tmean_mean, #fake
+                                              gras$species == "FESU" ~ CombinedData$CensusYearJun_tmean_mean,
+                                              gras$species == "LOAR" ~ CombinedData$CensusYearJul_tmean_mean, #fake
                                               gras$species == "POAL" ~ CombinedData$CensusYearMay_tmean_mean,
-                                              gras$species == "POAU" ~ CombinedData$CensusYearMay_tmean_mean, #fake
+                                              gras$species == "POAU" ~ CombinedData$CensusYearMay_tmean_mean, #fake (I don't know the census date)
                                               gras$species == "POSY" ~ CombinedData$CensusYearMay_tmean_mean))
 
 CombinedData$tmean_sd <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedData$CensusYearSep_tmean_sd,
                                              gras$species == "ELRI" ~ CombinedData$CensusYearJul_tmean_sd,
                                              gras$species == "ELVI" ~ CombinedData$CensusYearJul_tmean_sd,
-                                             gras$species == "FESU" ~ CombinedData$CensusYearMay_tmean_sd,
-                                             gras$species == "LOAR" ~ CombinedData$CensusYearMay_tmean_sd, #fake
+                                             gras$species == "FESU" ~ CombinedData$CensusYearJun_tmean_sd,
+                                             gras$species == "LOAR" ~ CombinedData$CensusYearJul_tmean_sd, 
                                              gras$species == "POAL" ~ CombinedData$CensusYearMay_tmean_sd,
-                                             gras$species == "POAU" ~ CombinedData$CensusYearMay_tmean_sd, #fake
+                                             gras$species == "POAU" ~ CombinedData$CensusYearMay_tmean_sd, #fake (I don't know the census date)
                                              gras$species == "POSY" ~ CombinedData$CensusYearMay_tmean_sd))
 
 
