@@ -17,7 +17,6 @@ library(car)
 weather <- read_csv("data/weather_data.csv")
 
 #extracting month and year from date
-str(weather)
 weather$Date <- as.Date(weather$Date, format= "%m/%d/%Y")
 
 weather$monthina <- as.numeric (format(weather$Date, "%m"))
@@ -87,6 +86,7 @@ weatherSep <- weatherSep %>%
          -CensusYearJun, -CensusYearJul, -CensusYearMay) %>% 
   distinct() 
 
+#Combining demographic data with the weather data
 gras <- read.csv("data/ltreb_allspp_2007_2025.csv")
 
 CombinedMay <- left_join(x=gras, y=weatherMay, by=c("year_t" = "CensusYearMay")) %>% 
