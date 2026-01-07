@@ -7,8 +7,7 @@ library(tidyr)
 library(terra) #AKIEM - doesn't seem to work
 library(lubridate)
 
-setwd("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage")
-prism_set_dl_dir("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage")
+prism_set_dl_dir("C:/Users/ag285/OneDrive - Rice University/Desktop/Akiem G/R Research/Temporal-Storage/ppt_2007_2025")
 
 get_prism_dailys(
   type = "ppt", 
