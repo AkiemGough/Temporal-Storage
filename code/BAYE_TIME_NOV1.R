@@ -38,7 +38,7 @@ poal_flow_dat <- list(n_obs=nrow(poaals_flow),
                     year_index=poaals_flow$year_t-2006,
                     plot=poaals_flow$plot)
 
-poal_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+poal_flow_model = stan_model(file="code/earlier_flowering.stan")
 poal_flow_sampling<-sampling(poal_flow_model,
                              data=poal_flow_dat,
                              chains = 3,
@@ -230,7 +230,7 @@ posy_surv_dat<-list(n_obs=nrow(poasyl_surv),
                     year_index=poasyl_surv$year_t-2006,
                     plot=poasyl_surv$plot)
 
-posy_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+posy_surv_model = stan_model(file="code/earlier_flowering.stan")
 posy_surv_sampling<-sampling(posy_surv_model,
                              data=posy_surv_dat,
                              chains = 3,
@@ -278,16 +278,16 @@ ggplot(summary_df_posy_s, aes(x = year, y = median)) +
 ###AGROSTIS PERENNANS_______________________________________________________________________
 
 ##Species filter
-agrper <- gras %>% filter(species == "AGPE")
-
+agrper <- gras %>% filter(species == "AGPE") 
 agrper$log_tillers_centered <- log(agrper$size_t) - mean(log(agrper$size_t),na.rm=T)
 
 ##AGPE FLOWERING___________________
 
 ##prep data, dropping NAs
 agrper %>% 
-  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot) %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot,size_t) %>% 
   drop_na() -> agrper_flow
+
 
 agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
                       y=agrper_flow$flw_count_t>0,
@@ -295,11 +295,11 @@ agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
                       n_plots = max(agrper_flow$plot),
                       n_endo = 2,
                       endo_01=agrper_flow$endo_01,
-                      size=agrper_flow$log_tillers_centered,
+                      size=log(agrper_flow$size_t),
                       year_index=agrper_flow$year_t-2006,
                       plot=agrper_flow$plot)
 
-agpe_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+agpe_flow_model = stan_model(file="code/earlier_flowering.stan")
 agpe_flow_sampling<-sampling(agpe_flow_model,
                              data=agpe_flow_dat,
                              chains = 1, #following prompt to check when only 1 chain
@@ -364,7 +364,7 @@ agpe_surv_dat<-list(n_obs=nrow(agrper_surv),
                     year_index=agrper_surv$year_t-2006,
                     plot=agrper_surv$plot)
 
-agpe_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+agpe_surv_model = stan_model(file="code/earlier_flowering.stan")
 agpe_surv_sampling<-sampling(agpe_surv_model,
                              data=agpe_surv_dat,
                              chains = 1,
@@ -435,7 +435,7 @@ elvi_flow_dat <- list(n_obs=nrow(elyvir_flow),
                       year_index=elyvir_flow$year_t-2006,
                       plot=elyvir_flow$plot)
 
-elvi_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+elvi_flow_model = stan_model(file="code/earlier_flowering.stan")
 elvi_flow_sampling<-sampling(elvi_flow_model,
                              data=elvi_flow_dat,
                              chains = 3,
@@ -498,7 +498,7 @@ elvi_surv_dat<-list(n_obs=nrow(elyvir_surv),
                     year_index=elyvir_surv$year_t-2006,
                     plot=elyvir_surv$plot)
 
-elvi_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+elvi_surv_model = stan_model(file="code/earlier_flowering.stan")
 elvi_surv_sampling<-sampling(elvi_surv_model,
                              data=elvi_surv_dat,
                              chains = 3,
@@ -568,7 +568,7 @@ elri_flow_dat <- list(n_obs=nrow(elyvil_flow),
                       year_index=elyvil_flow$year_t-2006,
                       plot=elyvil_flow$plot)
 
-elri_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+elri_flow_model = stan_model(file="code/earlier_flowering.stan")
 elri_flow_sampling<-sampling(elri_flow_model,
                              data=elri_flow_dat,
                              chains = 3,
@@ -631,7 +631,7 @@ elri_surv_dat<-list(n_obs=nrow(elyvil_surv),
                     year_index=elyvil_surv$year_t-2006,
                     plot=elyvil_surv$plot)
 
-elri_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+elri_surv_model = stan_model(file="code/earlier_flowering.stan")
 elri_surv_sampling<-sampling(elri_surv_model,
                              data=elri_surv_dat,
                              chains = 3,
@@ -700,7 +700,7 @@ fesu_flow_dat <- list(n_obs=nrow(fessub_flow),
                       year_index=fessub_flow$year_t-2006,
                       plot=fessub_flow$plot)
 
-fesu_flow_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+fesu_flow_model = stan_model(file="code/earlier_flowering.stan")
 fesu_flow_sampling<-sampling(fesu_flow_model,
                              data=fesu_flow_dat,
                              chains = 3,
@@ -768,7 +768,7 @@ fesu_surv_dat<-list(n_obs=nrow(fessub_surv),
                     year_index=fessub_surv$year_t-2006,
                     plot=fessub_surv$plot)
 
-fesu_surv_model = stan_model(file="/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/Temporal-Storage/code/earlier_flowering.stan")
+fesu_surv_model = stan_model(file="code/earlier_flowering.stan")
 fesu_surv_sampling<-sampling(fesu_surv_model,
                              data=fesu_surv_dat,
                              chains = 3,
