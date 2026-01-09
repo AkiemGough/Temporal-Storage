@@ -92,10 +92,10 @@ gras <- read.csv("data/ltreb_allspp_2007_2025.csv")
 CombinedMay <- left_join(x=gras, y=weatherMay, by=c("year_t" = "CensusYearMay")) %>% 
   rowwise()
 
-CombinedJun <- left_join(x=gras, y=weatherJun, by=c("year_t" = "CensusYearJun")) %>% 
+CombinedJun <- left_join(x=CombinedMay, y=weatherJun, by=c("year_t" = "CensusYearJun")) %>% 
   rowwise()
 
-CombinedJul <- left_join(x=CombinedMay, y=weatherJul, by=c("year_t" = "CensusYearJul")) %>%  
+CombinedJul <- left_join(x=CombinedJun, y=weatherJul, by=c("year_t" = "CensusYearJul")) %>%  
   rowwise()
   
 CombinedData <- left_join(x=CombinedJul, y=weatherSep, by=c("year_t" = "CensusYearSep")) %>%  
@@ -146,3 +146,4 @@ CombinedDataRefined <- CombinedData %>% select(X, species, plot, endo_01, id, or
                                                year_t1, surv_t1, size_t1, flw_count_t1, mean_spike_t1,
                                                dist_a, dist_b, ppt_tot, ppt_sd, tmean_mean, tmean_sd) 
 
+write.csv(CombinedDataRefined, "data/CombinedDataRefined")
