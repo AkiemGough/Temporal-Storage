@@ -278,14 +278,14 @@ ggplot(summary_df_posy_s, aes(x = year, y = median)) +
 ###AGROSTIS PERENNANS_______________________________________________________________________
 
 ##Species filter
-agrper <- gras %>% filter(species == "AGPE") 
+agrper <- gras %>% filter(species == "AGPE" & year_t1 < 2022) 
 agrper$log_tillers_centered <- log(agrper$size_t) - mean(log(agrper$size_t),na.rm=T)
 
 ##AGPE FLOWERING___________________
 
 ##prep data, dropping NAs
 agrper %>% 
-  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot,size_t) %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot) %>% 
   drop_na() -> agrper_flow
 
 
@@ -295,14 +295,14 @@ agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
                       n_plots = max(agrper_flow$plot),
                       n_endo = 2,
                       endo_01=agrper_flow$endo_01,
-                      size=log(agrper_flow$size_t),
+                      size=agrper_flow$log_tillers_centered,
                       year_index=agrper_flow$year_t-2006,
                       plot=agrper_flow$plot)
 
 agpe_flow_model = stan_model(file="code/earlier_flowering.stan")
 agpe_flow_sampling<-sampling(agpe_flow_model,
                              data=agpe_flow_dat,
-                             chains = 1, #following prompt to check when only 1 chain
+                             chains = 3, #following prompt to check when only 1 chain
                              iter = 5000,
                              warmup = 1000)
 
