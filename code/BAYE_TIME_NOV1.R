@@ -1176,3 +1176,167 @@ ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = en
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
+
+
+##ONE FOR ALL CLIMATE EXPLICIT
+
+grasclim <-read.csv("data/CombinedDataRefined")
+##removing row with size_t = 0, it only applies to one ID in one year
+#gras %>% filter (species=="POAU", id=="79 1164 4") %>% View
+
+grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 
+
+##Making integers for species
+grasclim$spec <- as.integer (case_when(grasclim$species == "AGPE" ~ 8,
+                                   grasclim$species == "ELRI" ~ 2,
+                                   grasclim$species == "ELVI" ~ 3,
+                                   grasclim$species == "FESU" ~ 4,
+                                   grasclim$species == "LOAR" ~ 5,
+                                   grasclim$species == "POAL" ~ 6,
+                                   grasclim$species == "POAU" ~ 7,
+                                   grasclim$species == "POSY" ~ 1))
+
+##centering size
+gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
+
+##ALL FLOWERING (CLIMATE EXPLICIT)___________________
+grasclim <-read.csv("data/CombinedDataRefined")
+
+##prep data, dropping NAs
+grasclim %>% filter (spec!=8) %>%
+  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot,spec,original) %>% 
+  drop_na() -> all_flow
+
+all_flow_dat <- list(n_obs=nrow(all_flow),
+                     y=all_flow$flw_count_t>0,
+                     n_yrs = length(unique(all_flow$year_t)),
+                     n_plots = max(all_flow$plot),
+                     n_endo = 2,
+                     n_spp = length(unique(all_flow$spec)),
+                     endo_01=all_flow$endo_01,
+                     size=all_flow$log_tillers_centered,
+                     year_index=all_flow$year_t-2006,
+                     plot=all_flow$plot,
+                     species=all_flow$spec,
+                     original=all_flow$original)
+
+all_flow_model = stan_model(file="code/flowering_mvn.stan")
+all_flow_sampling<-sampling(all_flow_model,
+                            data=all_flow_dat,
+                            chains = 3,thin=5,
+                            iter = 5000,
+                            warmup = 1000,
+                            pars=c("beta_0","beta_size","beta_size_endo",
+                                   "meanflow","beta_orig","sigma_year",
+                                   "sigma_plot","Omega","endo_effect"),
+                            save_warmup=F)
+#saveRDS(all_flow_sampling,"all_flow_sampling.rds")
+all_flow_sampling<-readRDS("all_flow_sampling.rds")
+##OR
+all_flow_sampling<-readRDS(url("https://www.dropbox.com/scl/fi/ng6af67efbx22lv9k9lac/all_flow_sampling.rds?rlkey=yakgmbaomu4ss6i7idcz8j9ne&dl=1"))
+
+mcmc_trace(all_flow_sampling,par=c('endo_effect[1,5]'))
+mcmc_trace(all_flow_sampling,par=c('Omega[1,1,2]'))
+mcmc_dens(all_flow_sampling,par=c('Omega[1,1,2]'))
+mcmc_dens(all_flow_sampling,par=c('Omega[2,1,2]'))
+mcmc_dens(all_flow_sampling,par=c('Omega[2,1,2]'))
+
+#extracting parameters
+params_all_f<-rstan::extract(all_flow_sampling,pars=c('beta_0','endo_effect','Omega'))
+dim(params_all_f$beta_0)
+dim(params_all_f$Omega)
+
+##PLOTTING ENDO EFFECT (DIFFERENCE)
+#take a random subset of posterior draws for endo effect
+all_endoeffect_postf<-params_all_f$endo_effect[sample(dim(params_all_f$endo_effect)[1],size=1000,replace=F),,]
+dim(all_endoeffect_postf)
+
+# Convert to long data frame for endo effect
+long_df_all_f <- as.data.frame.table(all_endoeffect_postf,
+                                     responseName = "value") %>%
+  rename(draw = iterations, species = Var2, year = Var3, endo_effect = value) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
+long_df_all_f$spec <- case_when(long_df_all_f$species == 8 ~ "AGPE",
+                                long_df_all_f$species == 2 ~ "ELRI",
+                                long_df_all_f$species == 3 ~ "ELVI",
+                                long_df_all_f$species == 4 ~ "FESU",
+                                long_df_all_f$species == 5 ~ "LOAR",
+                                long_df_all_f$species == 6 ~ "POAL",
+                                long_df_all_f$species == 7 ~ "POAU",
+                                long_df_all_f$species == 1 ~ "POSY")
+
+summary_df_all_f <- long_df_all_f %>%
+  group_by(year,spec) %>% #should i group by species as well
+  summarize(
+    median = median(endo_effect),
+    lower = quantile(endo_effect, 0.05),
+    upper = quantile(endo_effect, 0.95),
+    probgzero = mean(endo_effect>0),
+    .groups = "drop")
+
+
+
+###POA ALSODES CLIMATE EXPLICIT______________________________________________________________________
+
+##Species filter
+poaals_c <- grasclim %>% filter(species == "POAL")
+
+poaals_c$log_tillers_centered <- log(poaals_c$size_t) - mean(log(poaals_c$size_t),na.rm=T)
+
+##POAL FLOWERING___________________
+
+##prep data, dropping NAs
+poaals_c %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,plot,ppt_tot,ppt_sd) %>% 
+  drop_na() -> poaals_flow_c
+
+poal_flow_dat_c <- list(n_obs=nrow(poaals_flow_c),
+                      y=poaals_flow_c$flw_count_t>0,
+                      n_yrs = length(unique(poaals_flow_c$ppt_tot)),
+                      n_plots = max(poaals_flow_c$plot),
+                      n_endo = 2,
+                      endo_01=poaals_flow_c$endo_01,
+                      size=poaals_flow_c$log_tillers_centered,
+                      year_index=poaals_flow_c$ppt_tot,
+                      plot=poaals_flow_c$plot)
+
+poal_flow_model_c = stan_model(file="code/earlier_flowering.stan")
+poal_flow_sampling_c<-sampling(poal_flow_model_c,
+                             data=poal_flow_dat_c,
+                             chains = 3,
+                             iter = 5000,
+                             warmup = 1000)
+#mcmc_trace(poal_flow_sampling,par=c('endo_effect[5]'))
+#mcmc_dens(poal_flow_sampling,par=c('beta_size'))
+
+#Something is being done
+params_poal_f_c<-rstan::extract(poal_flow_sampling_c,pars=c('beta_0','endo_effect'))
+dim(params_poal_f_c$beta_0)
+
+#take a random subset of posterior draws
+poal_endoeffect_postf_c<-params_poal_f_c$endo_effect[sample(12000,size=500,replace=F),]
+dim(poal_endoeffect_postf_c)
+
+# Convert to long data frame
+long_df_poal_f_c <- as.data.frame.table(poal_endoeffect_postf_c,
+                                      responseName = "value") %>%
+  rename(draw = iterations, year = Var2) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006)
+
+summary_df_poal_f_c <- long_df_poal_f_c %>%
+  group_by(year) %>%
+  summarize(
+    median = median(value),
+    lower = quantile(value, 0.05),
+    upper = quantile(value, 0.95),
+    probgzero = mean(value>0),
+    .groups = "drop")
+
+#plot
+ggplot(summary_df_poal_f_c, aes(x = year, y = median)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
+  labs(x = "Year", y = "Endophyte effect",
+       title = "POAL: Difference of E+ and E- flowering with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()
