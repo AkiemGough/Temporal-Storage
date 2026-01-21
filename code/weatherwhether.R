@@ -34,7 +34,7 @@ weatherMay <- weather %>%
     CensusYearMay) %>%
   mutate(CensusYearMay_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
          CensusYearMay_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
-         CensusYearMay_tmean_mean = sum(`tmean (degrees F)`, na.rm = TRUE),
+         CensusYearMay_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE),
          CensusYearMay_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
 
 weatherJun <- weather %>%
@@ -42,7 +42,7 @@ weatherJun <- weather %>%
     CensusYearJun) %>%
   mutate(CensusYearJun_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
          CensusYearJun_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
-         CensusYearJun_tmean_mean = sum(`tmean (degrees F)`, na.rm = TRUE),
+         CensusYearJun_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE),
          CensusYearJun_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
 
 weatherJul <- weather %>%
@@ -50,7 +50,7 @@ weatherJul <- weather %>%
     CensusYearJul) %>%
   mutate(CensusYearJul_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
          CensusYearJul_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
-         CensusYearJul_tmean_mean = sum(`tmean (degrees F)`, na.rm = TRUE),
+         CensusYearJul_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE),
          CensusYearJul_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
 
 weatherSep <- weather %>%
@@ -58,7 +58,7 @@ weatherSep <- weather %>%
     CensusYearSep) %>%
   mutate(CensusYearSep_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
          CensusYearSep_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
-         CensusYearSep_tmean_mean = sum(`tmean (degrees F)`, na.rm = TRUE),
+         CensusYearSep_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE),
          CensusYearSep_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
 
 #making data frames with only necessary data for each census year
