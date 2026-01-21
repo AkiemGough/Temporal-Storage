@@ -1276,31 +1276,34 @@ summary_df_all_f <- long_df_all_f %>%
 
 
 
+
 ###POA ALSODES CLIMATE EXPLICIT______________________________________________________________________
 
+grasclim <-read.csv("data/CombinedDataRefined")
 ##Species filter
 poaals_c <- grasclim %>% filter(species == "POAL")
 
 poaals_c$log_tillers_centered <- log(poaals_c$size_t) - mean(log(poaals_c$size_t),na.rm=T)
 
-##POAL FLOWERING___________________
+##POAL FLOWERING CLIMATE EXPLICIT___________________
 
-##prep data, dropping NAs
+##prep data for total precipitation, dropping NAs
 poaals_c %>% 
-  select(flw_count_t,endo_01,log_tillers_centered,plot,ppt_tot,ppt_sd) %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,plot,year_t,ppt_tot,ppt_sd) %>% 
   drop_na() -> poaals_flow_c
 
-poal_flow_dat_c <- list(n_obs=nrow(poaals_flow_c),
-                      y=poaals_flow_c$flw_count_t>0,
-                      n_yrs = length(unique(poaals_flow_c$ppt_tot)),
-                      n_plots = max(poaals_flow_c$plot),
-                      n_endo = 2,
-                      endo_01=poaals_flow_c$endo_01,
-                      size=poaals_flow_c$log_tillers_centered,
-                      year_index=poaals_flow_c$ppt_tot,
-                      plot=poaals_flow_c$plot)
+poal_surv_dat<-list(n_obs=nrow(poaals_flow_c),
+                    y=poaals_surv$surv_t1,
+                    n_yrs = length(unique(poaals_flow_c$year_t)),
+                    n_plots = max(poaals_flow_c$plot),
+                    n_endo = 2,
+                    endo_01=poaals_flow_c$endo_01,
+                    size=poaals_flow_c$log_tillers_centered,
+                    year_index=poaals_flow_c$year_t-2006,
+                    climate=poaals_flow_c$ppt_tot,
+                    plot=poaals_flow_c$plot)
 
-poal_flow_model_c = stan_model(file="code/earlier_flowering.stan")
+poal_flow_model_c = stan_model(file="code/earlier_climatedemo.stan")
 poal_flow_sampling_c<-sampling(poal_flow_model_c,
                              data=poal_flow_dat_c,
                              chains = 3,
