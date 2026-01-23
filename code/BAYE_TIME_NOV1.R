@@ -1293,7 +1293,7 @@ poaals_c %>%
   drop_na() -> poaals_flow_c
 
 poal_surv_dat<-list(n_obs=nrow(poaals_flow_c),
-                    y=poaals_surv$surv_t1,
+                    y=poaals_flow_c$flw_count_t>0, # should this be flw_count_t1?
                     n_yrs = length(unique(poaals_flow_c$year_t)),
                     n_plots = max(poaals_flow_c$plot),
                     n_endo = 2,
