@@ -32,11 +32,11 @@ transformed parameters{
 }
 model {
   tau_plot ~ normal(0,sigma_plot);
-  sigma_plot ~ normal(0, 1);
+  sigma_plot ~ exponential(1); //exponetial instead because sds cant be negative
   //to_vector(beta_0[1,]) ~ normal(meanflow[1],sigma_year);
   //to_vector(beta_0[2,]) ~ normal(meanflow[2],sigma_year);
   gamma_year ~ normal(0,sigma_year)
-  sigma_year ~ normal(0, 1); 
+  sigma_year ~ exponential(1)
   beta_endo ~ normal(0,1); 
   beta_size ~ normal(1,10); # i dont really know what the 0, 1 and 10 represent
   beta_clim ~ normal(0, 1);
@@ -44,10 +44,10 @@ model {
   beta_clim_endo ~ normal(0,10);
   y ~ bernoulli_logit(p);
 }
-generated quantities { //do we need this amymore?
-  real endo_effect[n_yrs]; //if not years, whst would endo effect be indexed by
-  for (i in 1:n_yrs) {
-    endo_effect[i] = beta_0[2,i] - beta_0[1,i];
-  }
-}
+//generated quantities { //do we need this amymore?
+ // real endo_effect[n_yrs]; //if not years, whst would endo effect be indexed by
+ // for (i in 1:n_yrs) {
+ //   endo_effect[i] = beta_0[2,i] - beta_0[1,i];
+ // }
+//}
 

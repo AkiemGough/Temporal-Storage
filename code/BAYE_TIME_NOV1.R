@@ -1284,12 +1284,13 @@ grasclim <-read.csv("data/CombinedDataRefined")
 poaals_c <- grasclim %>% filter(species == "POAL")
 
 poaals_c$log_tillers_centered <- log(poaals_c$size_t) - mean(log(poaals_c$size_t),na.rm=T)
+poaals_c$log_ppt_tot_centered <- log(poaals_c$ppt_tot) - mean(log(poaals_c$ppt_tot),na.rm=T)
 
 ##POAL FLOWERING CLIMATE EXPLICIT___________________
 
 ##prep data for total precipitation, dropping NAs
 poaals_c %>% 
-  select(flw_count_t,endo_01,log_tillers_centered,plot,year_t,ppt_tot,ppt_sd) %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,log_ppt_tot_centered,plot,year_t) %>% 
   drop_na() -> poaals_flow_c
 
 poal_surv_dat<-list(n_obs=nrow(poaals_flow_c),
@@ -1300,7 +1301,7 @@ poal_surv_dat<-list(n_obs=nrow(poaals_flow_c),
                     endo_01=poaals_flow_c$endo_01,
                     size=poaals_flow_c$log_tillers_centered,
                     year_index=poaals_flow_c$year_t-2006,
-                    climate=poaals_flow_c$ppt_tot,
+                    climate=poaals_flow_c$log_ppt_tot_centered, #center climate the way we centred size, there is also a scale fucnction you could use
                     plot=poaals_flow_c$plot)
 
 poal_flow_model_c = stan_model(file="code/earlier_climatedemo.stan")
