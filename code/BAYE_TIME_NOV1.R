@@ -14,6 +14,143 @@ setwd("/Users/akiemgough/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Driv
 gras <- read.csv("data/ltreb_allspp_2007_2025.csv")
 
 
+###AGROSTIS PERENNANS_______________________________________________________________________
+
+##Species filter
+#agrper <- gras %>% filter(species == "AGPE" & year_t1 < 2022) 
+agrper <- gras %>% filter(species == "AGPE") 
+agrper$log_tillers_centered <- log(agrper$size_t) - mean(log(agrper$size_t),na.rm=T)
+
+##AGPE FLOWERING___________________
+
+##prep data, dropping NAs
+agrper %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,year_t,plot) %>% 
+  drop_na() -> agrper_flow
+
+
+agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
+                      y=agrper_flow$flw_count_t>0,
+                      n_yrs = length(unique(agrper_flow$year_t))+1,
+                      n_plots = max(agrper_flow$plot),
+                      n_endo = 2,
+                      endo_01=agrper_flow$endo_01,
+                      size=agrper_flow$log_tillers_centered,
+                      year_index=agrper_flow$year_t-2006,
+                      plot=agrper_flow$plot)
+
+agpe_flow_model = stan_model(file="code/earlier_flowering.stan")
+agpe_flow_sampling<-sampling(agpe_flow_model,
+                             data=agpe_flow_dat,
+                             chains = 3, #following prompt to check when only 1 chain
+                             iter = 5000,
+                             warmup = 1000)
+
+#A BUNCH OF ERRORS SHOWED UP
+#mcmc_trace(agpe_flow_sampling,par=c('endo_effect[5]'))
+#mcmc_dens(agpe_flow_sampling,par=c('beta_size'))
+
+#pulling the posterior draws 
+params_agpe_f<-rstan::extract(agpe_flow_sampling,pars=c('beta_0','endo_effect'))
+dim(params_agpe_f$beta_0)
+
+#take a random subset of posterior draws
+agpe_endoeffect_postf<-params_agpe_f$endo_effect[sample(12000,size=500,replace=F),]
+dim(agpe_endoeffect_postf)
+
+# Convert to long data frame
+long_df_agpe_f <- as.data.frame.table(agpe_endoeffect_postf,
+                                      responseName = "value") %>%
+  rename(draw = iterations, year = Var2) %>%
+  mutate(
+    draw = as.integer(draw),
+    year = as.integer(year)+2006)
+
+summary_df_agpe_f <- long_df_agpe_f %>%
+  group_by(year) %>%
+  summarize(
+    median = median(value),
+    lower = quantile(value, 0.05),
+    upper = quantile(value, 0.95),
+    probgzero = mean(value>0),
+    .groups = "drop")
+
+#plot
+ggplot(summary_df_agpe_f, aes(x = year, y = median)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
+  labs(
+    x = "Year", y = "Endophyte effect",
+    title = "AGPE: Difference of E+ and E- flowering prob with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()
+
+#ggplot(summary_df_agpe_f, aes(x = year, y = probgzero)) +
+# geom_line(linewidth = 1.2) + labs(x = "Year", y = "Pr(E+ > E-)") + theme_minimal()
+
+##AGPE SURVIVAL___________________
+
+agrper %>% 
+  select(surv_t1,endo_01,log_tillers_centered,year_t,plot) %>% 
+  drop_na() -> agrper_surv
+
+agpe_surv_dat<-list(n_obs=nrow(agrper_surv),
+                    y=agrper_surv$surv_t1,
+                    n_yrs = length(unique(agrper_surv$year_t)),
+                    n_plots = max(agrper_surv$plot),
+                    n_endo = 2,
+                    endo_01=agrper_surv$endo_01,
+                    size=agrper_surv$log_tillers_centered,
+                    year_index=agrper_surv$year_t-2006,
+                    plot=agrper_surv$plot)
+
+agpe_surv_model = stan_model(file="code/earlier_flowering.stan")
+agpe_surv_sampling<-sampling(agpe_surv_model,
+                             data=agpe_surv_dat,
+                             chains = 1,
+                             iter = 8000,
+                             warmup = 2000)
+
+#A BUNCH OF ERRORS SHOWED UP
+#mcmc_trace(surv_sampling,pars='tau_plot[111]')
+
+#Something is being done
+params_agpe_s<-rstan::extract(agpe_surv_sampling,pars=c('beta_0','endo_effect'))
+dim(params_agpe_s$beta_0)
+
+#take a random subset of posterior draws
+agpe_endoeffect_posts<-params_agpe_s$endo_effect[sample(12000,size=500,replace=F),]
+dim(agpe_endoeffect_posts)
+
+# Convert to long data frame
+long_df_agpe_s <- as.data.frame.table(agpe_endoeffect_posts,
+                                      responseName = "value") %>%
+  rename(draw = iterations, year = Var2) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006)
+
+summary_df_agpe_s <- long_df_agpe_s %>%
+  group_by(year) %>%
+  summarize(median = median(value),
+            lower = quantile(value, 0.05),
+            upper = quantile(value, 0.95),
+            probgzero = mean(value>0),
+            .groups = "drop")
+
+# plot
+ggplot(summary_df_agpe_s, aes(x = year, y = median)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
+  labs(x = "Year", y = "Endophyte effect",
+       title = "AGPE: Difference of E+ and E- survival with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()
+
+#ggplot(summary_df_agpe_s, aes(x = year, y = probgzero)) +
+#geom_line(linewidth = 1.2) + labs(x = "Year", y = "Pr(E+ > E-)") +
+# theme_minimal()
+
+
+
 ###POA ALSODES_______________________________________________________________________
 
 ##Species filter
@@ -278,7 +415,8 @@ ggplot(summary_df_posy_s, aes(x = year, y = median)) +
 ###AGROSTIS PERENNANS_______________________________________________________________________
 
 ##Species filter
-agrper <- gras %>% filter(species == "AGPE" & year_t1 < 2022) 
+#agrper <- gras %>% filter(species == "AGPE" & year_t1 < 2022) 
+agrper <- gras %>% filter(species == "AGPE") 
 agrper$log_tillers_centered <- log(agrper$size_t) - mean(log(agrper$size_t),na.rm=T)
 
 ##AGPE FLOWERING___________________
@@ -291,7 +429,7 @@ agrper %>%
 
 agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
                       y=agrper_flow$flw_count_t>0,
-                      n_yrs = length(unique(agrper_flow$year_t)),
+                      n_yrs = length(unique(agrper_flow$year_t))+1,
                       n_plots = max(agrper_flow$plot),
                       n_endo = 2,
                       endo_01=agrper_flow$endo_01,
@@ -299,10 +437,13 @@ agpe_flow_dat <- list(n_obs=nrow(agrper_flow),
                       year_index=agrper_flow$year_t-2006,
                       plot=agrper_flow$plot)
 
+agrper_flow %>% 
+  filter(year_t==2022)
+
 agpe_flow_model = stan_model(file="code/earlier_flowering.stan")
 agpe_flow_sampling<-sampling(agpe_flow_model,
                              data=agpe_flow_dat,
-                             chains = 3, #following prompt to check when only 1 chain
+                             chains = 1, #following prompt to check when only 1 chain
                              iter = 5000,
                              warmup = 1000)
 
@@ -837,13 +978,13 @@ gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
 ##ALL FLOWERING___________________
 
 ##prep data, dropping NAs
-gras %>% filter (spec!=8) %>%
+gras %>%
   select(flw_count_t,endo_01,log_tillers_centered,year_t,plot,spec,original) %>% 
   drop_na() -> all_flow
 
 all_flow_dat <- list(n_obs=nrow(all_flow),
                       y=all_flow$flw_count_t>0,
-                      n_yrs = length(unique(all_flow$year_t)),
+                      n_yrs = length(unique(all_flow$year_t))+1,
                       n_plots = max(all_flow$plot),
                       n_endo = 2,
                       n_spp = length(unique(all_flow$spec)),
@@ -1008,13 +1149,13 @@ ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = en
 ##ALL SURVIVAL___________________
 
 ##prep data, dropping NAs
-gras %>% filter (spec!=8) %>%
+gras %>%
   select(surv_t1,endo_01,log_tillers_centered,year_t,plot,original,spec) %>% 
   drop_na() -> all_surv
 
 all_surv_dat <- list(n_obs=nrow(all_surv),
                      y=all_surv$surv_t1,
-                     n_yrs = length(unique(all_surv$year_t)),
+                     n_yrs = length(unique(all_surv$year_t))+1,
                      n_plots = max(all_surv$plot),
                      n_endo = 2,
                      n_spp = length(unique(all_surv$spec)),
@@ -1209,7 +1350,7 @@ grasclim %>% filter (spec!=8) %>%
 
 all_flow_dat <- list(n_obs=nrow(all_flow),
                      y=all_flow$flw_count_t>0,
-                     n_yrs = length(unique(all_flow$year_t)),
+                     n_yrs = length(unique(all_flow$year_t))+1,
                      n_plots = max(all_flow$plot),
                      n_endo = 2,
                      n_spp = length(unique(all_flow$spec)),
@@ -1283,25 +1424,29 @@ grasclim <-read.csv("data/CombinedDataRefined")
 ##Species filter
 poaals_c <- grasclim %>% filter(species == "POAL")
 
+
+
 poaals_c$log_tillers_centered <- log(poaals_c$size_t) - mean(log(poaals_c$size_t),na.rm=T)
 poaals_c$log_ppt_tot_centered <- log(poaals_c$ppt_tot) - mean(log(poaals_c$ppt_tot),na.rm=T)
+
+poaals_c$ppt_tot_scaled <- as.numeric (scale(poaals_c$ppt_tot))
 
 ##POAL FLOWERING CLIMATE EXPLICIT___________________
 
 ##prep data for total precipitation, dropping NAs
 poaals_c %>% 
-  select(flw_count_t,endo_01,log_tillers_centered,log_ppt_tot_centered,plot,year_t) %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,ppt_tot_scaled,plot,year_t) %>% 
   drop_na() -> poaals_flow_c
 
-poal_surv_dat<-list(n_obs=nrow(poaals_flow_c),
+poal_flow_dat_c<-list(n_obs=nrow(poaals_flow_c),
                     y=poaals_flow_c$flw_count_t>0, # should this be flw_count_t1?
-                    n_yrs = length(unique(poaals_flow_c$year_t)),
+                    n_yrs = length(unique(poaals_flow_c$year_t))+1,
                     n_plots = max(poaals_flow_c$plot),
                     n_endo = 2,
                     endo_01=poaals_flow_c$endo_01,
                     size=poaals_flow_c$log_tillers_centered,
                     year_index=poaals_flow_c$year_t-2006,
-                    climate=poaals_flow_c$log_ppt_tot_centered, #center climate the way we centred size, there is also a scale fucnction you could use
+                    climate=poaals_flow_c$ppt_tot_scaled, #center climate the way we centred size, there is also a scale fucnction you could use
                     plot=poaals_flow_c$plot)
 
 poal_flow_model_c = stan_model(file="code/earlier_climatedemo.stan")
@@ -1313,17 +1458,235 @@ poal_flow_sampling_c<-sampling(poal_flow_model_c,
 #mcmc_trace(poal_flow_sampling,par=c('endo_effect[5]'))
 #mcmc_dens(poal_flow_sampling,par=c('beta_size'))
 
-#Something is being done
-params_poal_f_c<-rstan::extract(poal_flow_sampling_c,pars=c('beta_0','endo_effect'))
-dim(params_poal_f_c$beta_0)
+#params_poal_f_c<-rstan::extract(poal_flow_sampling_c,pars=c('beta_0','beta_endo',
+#                                                            'beta_size','beta_clim',
+#                                                            'beta_size_endo','beta_clim_endo'))
+# beta_0 <- params_poal_f_c$beta_0
+# beta_endo <- params_poal_f_c$beta_endo
+# beta_size <- params_poal_f_c$beta_size
+# beta_clim <- params_poal_f_c$beta_clim
+# beta_size_endo <- params_poal_f_c$beta_size_endo
+# beta_clim_endo <- params_poal_f_c$beta_clim_endo
+
+
+##making size x variables for graphs
+(ppt_tot_dummy<-seq(from=min(poaals_c$ppt_tot_scaled,na.rm=T),to=max(poaals_c$ppt_tot_scaled,na.rm=T),by=0.1))
+
+#creating logistic function 
+logistic<-function(x){1/(1+exp(-x))}
+
+#defining a predictor function
+predict_c <- function(fit, size, endo_01, climate){
+  params<-rstan::extract(fit,pars=c('beta_0','beta_endo','beta_size','beta_clim','beta_size_endo','beta_clim_endo'))
+  beta_0 <- params$beta_0
+  beta_endo <- params$beta_endo
+  beta_size <- params$beta_size
+  beta_clim <- params$beta_clim
+  beta_size_endo <- params$beta_size_endo
+  beta_clim_endo <- params$beta_clim_endo
+
+beta_0 + beta_size*size + beta_endo*endo_01+ beta_clim*climate + beta_size_endo*size*endo_01 + beta_clim_endo*endo_01*climate
+}
+
+p_endo0 <- predict_c(poal_flow_sampling_c, 0, 0, 0)
+
+p_endo0 <- sapply(ppt_tot_dummy, function(x) predict_c(poal_flow_sampling_c, 0, 0, x))
+p_endo1 <- sapply(ppt_tot_dummy, function(x) predict_c(poal_flow_sampling_c, 0, 1, x))
+
+flow_endo0_median <- apply(p_endo0, 2, median)
+flow_endo1_median <- apply(p_endo1, 2, median)
+
+plot(x=ppt_tot_dummy, y=flow_endo0_median, col="deeppink1", lty=1, type="l")
+lines(x=ppt_tot_dummy, y=flow_endo1_median, col="cornflowerblue", lty=1, type="l")
+
+# visualize the interaction effect
+beta_clim_endo <- rstan::extract(poal_flow_sampling_c)$beta_clim_endo
+plot(density(beta_clim_endo))
+mean(beta_clim_endo > 0)
+mean(beta_clim_endo < 0)
+
+#trying to make plots, not going very well
+plot(grasclim$ppt_tot_scaled,grasclim$flw_count_t,amount=0.02)
+
+p = logistic(beta_0 + beta_size*size + beta_endo*endo_01+ beta_clim*climate + beta_size_endo*size*endo_01 + beta_clim_endo*endo_01*climate)
+
+lines(x=grasclim$log_ppt_tot_centered, y=logistic(poal_f_c_Eminus_intercepts+poal_f_c_Eplus_intercepts*grasclim$log_ppt_tot_centered), col="deeppink1")
+lines(x=grasclim$log_ppt_tot_centered, y=logistic(poal_f_c_Eminus_slopes+poal_f_c_Eplus_slopes*grasclim$log_ppt_tot_centered), col="cornflowerblue")
+
+#plot
+ggplot(summary_df_poal_f_c, aes(x = year, y = median)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
+  labs(x = "Year", y = "Endophyte effect",
+       title = "POAL: Difference of E+ and E- flowering with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()
+
+?plot
+
+plot(x=beta_clim_endo, y=)
 
 #take a random subset of posterior draws
-poal_endoeffect_postf_c<-params_poal_f_c$endo_effect[sample(12000,size=500,replace=F),]
-dim(poal_endoeffect_postf_c)
+
+poal_clim_postf_c<-params_poal_f_c$beta_clim[sample(4000,size=1000,replace=F)]
+dim(poal_clim_postf_c)
 
 # Convert to long data frame
-long_df_poal_f_c <- as.data.frame.table(poal_endoeffect_postf_c,
+long_df_poal_climf_c <- as.data.frame.table(poal_clim_postf_c,
                                       responseName = "value") %>%
+  
+  rename(draw = iterations, year = Var2) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006)
+
+summary_df_poal_f_c <- long_df_poal_f_c %>%
+  group_by(year) %>%
+  summarize(
+    median = median(value),
+    lower = quantile(value, 0.05),
+    upper = quantile(value, 0.95),
+    probgzero = mean(value>0),
+    .groups = "drop")
+
+#plot
+ggplot(summary_df_poal_f_c, aes(x = year, y = median)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
+  labs(x = "Year", y = "Endophyte effect",
+       title = "POAL: Difference of E+ and E- flowering with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()
+
+
+
+
+###ALL CLIMATE EXPLICIT______________________________________________________________________
+
+#reading in the data file with demographic and climate data
+grasclim <-read.csv("data/CombinedDataRefined")
+
+##removing untrusted data
+grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 
+
+##Making integers for species
+gras$spec <- as.integer (case_when(gras$species == "POSY" ~ 1,
+                                   gras$species == "ELRI" ~ 2,
+                                   gras$species == "ELVI" ~ 3,
+                                   gras$species == "FESU" ~ 4,
+                                   gras$species == "LOAR" ~ 5,
+                                   gras$species == "POAL" ~ 6,
+                                   gras$species == "POAU" ~ 7,
+                                   gras$species == "AGPE" ~ 8))
+
+##centering size and climate variables
+
+grasclim$log_tillers_centered <- log(poaals_c$size_t) - mean(log(poaals_c$size_t),na.rm=T)
+#poaals_c$log_ppt_tot_centered <- log(poaals_c$ppt_tot) - mean(log(poaals_c$ppt_tot),na.rm=T)
+poaals_c$ppt_tot_scaled <- as.numeric (scale(poaals_c$ppt_tot))
+
+##ALL FLOWERING CLIMATE EXPLICIT___________________
+
+##prep data for total precipitation, dropping NAs
+grasclim %>% 
+  select(flw_count_t,endo_01,log_tillers_centered,ppt_tot_scaled,plot,year_t) %>% 
+  drop_na() -> all_flow_c
+
+all_flow_dat_c<-list(n_obs=nrow(poaals_flow_c),
+                      y=poaals_flow_c$flw_count_t>0, # should this be flw_count_t1?
+                      n_yrs = length(unique(poaals_flow_c$year_t))+1,
+                      n_plots = max(poaals_flow_c$plot),
+                      n_endo = 2,
+                      endo_01=poaals_flow_c$endo_01,
+                      size=poaals_flow_c$log_tillers_centered,
+                      year_index=poaals_flow_c$year_t-2006,
+                      climate=poaals_flow_c$ppt_tot_scaled, #center climate the way we centred size, there is also a scale fucnction you could use
+                      plot=poaals_flow_c$plot)
+
+poal_flow_model_c = stan_model(file="code/earlier_climatedemo.stan")
+poal_flow_sampling_c<-sampling(poal_flow_model_c,
+                               data=poal_flow_dat_c,
+                               chains = 3,
+                               iter = 5000,
+                               warmup = 1000)
+#mcmc_trace(poal_flow_sampling,par=c('endo_effect[5]'))
+#mcmc_dens(poal_flow_sampling,par=c('beta_size'))
+
+#params_poal_f_c<-rstan::extract(poal_flow_sampling_c,pars=c('beta_0','beta_endo',
+#                                                            'beta_size','beta_clim',
+#                                                            'beta_size_endo','beta_clim_endo'))
+# beta_0 <- params_poal_f_c$beta_0
+# beta_endo <- params_poal_f_c$beta_endo
+# beta_size <- params_poal_f_c$beta_size
+# beta_clim <- params_poal_f_c$beta_clim
+# beta_size_endo <- params_poal_f_c$beta_size_endo
+# beta_clim_endo <- params_poal_f_c$beta_clim_endo
+
+
+##making size x variables for graphs
+(ppt_tot_dummy<-seq(from=min(poaals_c$ppt_tot_scaled,na.rm=T),to=max(poaals_c$ppt_tot_scaled,na.rm=T),by=0.1))
+
+#creating logistic function 
+logistic<-function(x){1/(1+exp(-x))}
+
+#defining a predictor function
+predict_c <- function(fit, size, endo_01, climate){
+  params<-rstan::extract(fit,pars=c('beta_0','beta_endo','beta_size','beta_clim','beta_size_endo','beta_clim_endo'))
+  beta_0 <- params$beta_0
+  beta_endo <- params$beta_endo
+  beta_size <- params$beta_size
+  beta_clim <- params$beta_clim
+  beta_size_endo <- params$beta_size_endo
+  beta_clim_endo <- params$beta_clim_endo
+  
+  beta_0 + beta_size*size + beta_endo*endo_01+ beta_clim*climate + beta_size_endo*size*endo_01 + beta_clim_endo*endo_01*climate
+}
+
+p_endo0 <- predict_c(poal_flow_sampling_c, 0, 0, 0)
+
+p_endo0 <- sapply(ppt_tot_dummy, function(x) predict_c(poal_flow_sampling_c, 0, 0, x))
+p_endo1 <- sapply(ppt_tot_dummy, function(x) predict_c(poal_flow_sampling_c, 0, 1, x))
+
+flow_endo0_median <- apply(p_endo0, 2, median)
+flow_endo1_median <- apply(p_endo1, 2, median)
+
+plot(x=ppt_tot_dummy, y=flow_endo0_median, col="deeppink1", lty=1, type="l")
+lines(x=ppt_tot_dummy, y=flow_endo1_median, col="cornflowerblue", lty=1, type="l")
+
+# visualize the interaction effect
+beta_clim_endo <- rstan::extract(poal_flow_sampling_c)$beta_clim_endo
+plot(density(beta_clim_endo))
+mean(beta_clim_endo > 0)
+mean(beta_clim_endo < 0)
+
+#trying to make plots, not going very well
+plot(grasclim$ppt_tot_scaled,grasclim$flw_count_t,amount=0.02)
+
+p = logistic(beta_0 + beta_size*size + beta_endo*endo_01+ beta_clim*climate + beta_size_endo*size*endo_01 + beta_clim_endo*endo_01*climate)
+
+lines(x=grasclim$log_ppt_tot_centered, y=logistic(poal_f_c_Eminus_intercepts+poal_f_c_Eplus_intercepts*grasclim$log_ppt_tot_centered), col="deeppink1")
+lines(x=grasclim$log_ppt_tot_centered, y=logistic(poal_f_c_Eminus_slopes+poal_f_c_Eplus_slopes*grasclim$log_ppt_tot_centered), col="cornflowerblue")
+
+#plot
+ggplot(summary_df_poal_f_c, aes(x = year, y = median)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
+  labs(x = "Year", y = "Endophyte effect",
+       title = "POAL: Difference of E+ and E- flowering with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()
+
+?plot
+
+plot(x=beta_clim_endo, y=)
+
+#take a random subset of posterior draws
+
+poal_clim_postf_c<-params_poal_f_c$beta_clim[sample(4000,size=1000,replace=F)]
+dim(poal_clim_postf_c)
+
+# Convert to long data frame
+long_df_poal_climf_c <- as.data.frame.table(poal_clim_postf_c,
+                                            responseName = "value") %>%
+  
   rename(draw = iterations, year = Var2) %>%
   mutate(draw = as.integer(draw), year = as.integer(year)+2006)
 

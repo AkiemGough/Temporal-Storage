@@ -26,7 +26,7 @@ transformed parameters{
   real p[n_obs];
   for(i in 1:n_obs){
   p[i] = beta_0 + beta_size*size[i] + beta_endo*endo_01[i]+ beta_clim*climate[i]
-  + beta_size_endo*size[i]*endo_01[i] + beta_endo_clim*endo_01[i]*climate[i]
+  + beta_size_endo*size[i]*endo_01[i] + beta_clim_endo*endo_01[i]*climate[i]
   + tau_plot[plot[i]] + gamma_year[year_index[i]];
   }
 }
@@ -35,8 +35,8 @@ model {
   sigma_plot ~ exponential(1); //exponetial instead because sds cant be negative
   //to_vector(beta_0[1,]) ~ normal(meanflow[1],sigma_year);
   //to_vector(beta_0[2,]) ~ normal(meanflow[2],sigma_year);
-  gamma_year ~ normal(0,sigma_year)
-  sigma_year ~ exponential(1)
+  gamma_year ~ normal(0,sigma_year);
+  sigma_year ~ exponential(1);
   beta_endo ~ normal(0,1); 
   beta_size ~ normal(1,10); # i dont really know what the 0, 1 and 10 represent
   beta_clim ~ normal(0, 1);

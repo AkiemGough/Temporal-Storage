@@ -17,7 +17,7 @@ get_prism_dailys(
   maxDate = "2025-11-30", 
   resolution = "4km",
   keepZip = FALSE
-) #AKIEM - where above, do we assign the location? Is it gathering data across the whole globe
+) 
 
 
 #AKIEM - I changed the below to have just the 2 Indiana and Texas sites
