@@ -15,46 +15,32 @@ data {
 }
 
 parameters {
-  real beta_0;//general intercept
-  real beta_size;//size
-  real beta_endo;//endophyte presence
-  real beta_clim;//climate variable
-  real beta_spec;//species
+  real beta_0[n_spp,n_endo];//species random effects unique to E+ and E-
+  real beta_size[n_spp];//size
+  real beta_clim[n_spp];//climate variable
   real beta_orig;//original effect
-  real beta_size_endo;//size:endophyte
-  real beta_size_clim;//size:climate
-  real beta_size_spec;//size:species
-  real beta_endo_clim;//endophyte:climate
-  real beta_endo_spec;//endophyte:species
-  real beta_clim_spec;//climate:species
-  real beta_size_endo_clim;//size:endophyte:climate
-  real beta_size_endo_spec;//size:endophyte:species
-  real beta_size_clim_spec;//size:climate:species
-  real beta_endo_clim_spec;//endophyte:climate:species
-  real beta_size_endo_clim_spec;//size:endophyte:climate:species
+  real beta_size_endo[n_spp];//size:endophyte
+  real beta_size_clim[n_spp];//size:climate
+  real beta_endo_clim[n_spp];//endophyte:climate
+  real beta_size_endo_clim[n_spp];//size:endophyte:climate
   real tau_plot[n_plots];//plot random effects
   real gamma_year[n_yrs];//year random effects
   real<lower=0> sigma_plot;//plot variance -- shared across species
   real<lower=0> sigma_year;//year variance -- shared across species
+  real meanflow[n_spp,n_endo];
   array[n_spp] corr_matrix[n_endo] Omega; // correlation matrix for each species
 }
 
 transformed parameters{
   real p[n_obs];
   for(i in 1:n_obs){
-  p[i] = beta_0 + beta_size*size[i] + beta_endo*endo_01[i] + beta_clim*climate[i]
-  + beta_spec*species[i] + beta_orig*original[i] 
-  + beta_size_endo*size[i]*endo_01[i] + beta_size_clim*size[i]*climate[i] 
-  + beta_size_spec*size[i]*species[i] + beta_endo_clim*endo_01[i]*climate[i] 
-  + beta_endo_spec*endo_01[i]*species[i] + beta_clim*spec*climate[i]*species[i]
-  
-  + tau_plot[plot[i]] + gamma_year[year_index[i]];
-  
-  
-  + beta_size[species[i]]*size[i] 
-  + beta_size_endo[species[i]]*size[i]*endo_01[i]
-  + beta_orig*original[i]
-  + tau_plot[plot[i]];
+  p[i] = beta_0[species[i],(endo_01[i]+1)] + beta_size[species[i]]*size[i] 
+  + beta_clim[species[i]]*climate[i] 
+  + beta_size_endo[species[i]]*size[i]*endo_01[i] 
+  + beta_size_clim[species[i]]*size[i]*climate[i]
+  + beta_endo_clim[species[i]]*endo_01[i]*climate[i]
+  + beta_size_endo_clim[species[i]]*size[i]endo_01[i]*climate[i]
+  + beta_orig*original[i] + tau_plot[plot[i]] + gamma_year[year_index[i]];
   }
 }
 model {
