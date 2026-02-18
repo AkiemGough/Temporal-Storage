@@ -1455,6 +1455,23 @@ poal_flow_sampling_c<-sampling(poal_flow_model_c,
                              chains = 3,
                              iter = 5000,
                              warmup = 1000)
+
+saveRDS(poal_flow_sampling_c,"poal_flow_sampling_c.rds")
+poal_surv_sampling_c<-readRDS("poal_flow_sampling_c.rds")
+
+summary(poal_flow_sampling_c)
+
+params_poal_f_c<-rstan::extract(poal_flow_sampling_c,pars=c('beta_0','beta_endo','beta_clim',
+                                                            'beta_size_endo','beta_clim_endo'))
+
+hist(params_poal_f_c$beta_clim_endo)
+abline(v=mean(params_poal_f_c$beta_clim_endo),col="deeppink1",lwd=3)
+?abline
+
+(sum(params_poal_f_c$beta_clim_endo < 0) / length(params_poal_f_c$beta_clim_endo))
+
+#flop
+
 #mcmc_trace(poal_flow_sampling,par=c('endo_effect[5]'))
 #mcmc_dens(poal_flow_sampling,par=c('beta_size'))
 
