@@ -1457,7 +1457,7 @@ poal_flow_sampling_c<-sampling(poal_flow_model_c,
                              warmup = 1000)
 
 saveRDS(poal_flow_sampling_c,"poal_flow_sampling_c.rds")
-poal_surv_sampling_c<-readRDS("poal_flow_sampling_c.rds")
+poal_flow_sampling_c<-readRDS("poal_flow_sampling_c.rds")
 
 summary(poal_flow_sampling_c)
 
@@ -1469,6 +1469,12 @@ abline(v=mean(params_poal_f_c$beta_clim_endo),col="deeppink1",lwd=3)
 ?abline
 
 (sum(params_poal_f_c$beta_clim_endo < 0) / length(params_poal_f_c$beta_clim_endo))
+
+
+hist(params_poal_f_c$beta_clim)
+abline(v=mean(params_poal_f_c$beta_clim),col="deeppink1",lwd=3)
+
+
 
 #flop
 
