@@ -1427,7 +1427,7 @@ poaals_c <- grasclim %>% filter(species == "POAL")
 
 
 poaals_c$log_tillers_centered <- log(poaals_c$size_t) - mean(log(poaals_c$size_t),na.rm=T)
-poaals_c$log_ppt_tot_centered <- log(poaals_c$ppt_tot) - mean(log(poaals_c$ppt_tot),na.rm=T)
+#poaals_c$log_ppt_tot_centered <- log(poaals_c$ppt_tot) - mean(log(poaals_c$ppt_tot),na.rm=T)
 
 poaals_c$ppt_tot_scaled <- as.numeric (scale(poaals_c$ppt_tot))
 
@@ -1466,7 +1466,6 @@ params_poal_f_c<-rstan::extract(poal_flow_sampling_c,pars=c('beta_0','beta_endo'
 
 hist(params_poal_f_c$beta_clim_endo)
 abline(v=mean(params_poal_f_c$beta_clim_endo),col="deeppink1",lwd=3)
-?abline
 
 (sum(params_poal_f_c$beta_clim_endo < 0) / length(params_poal_f_c$beta_clim_endo))
 
@@ -1474,6 +1473,88 @@ abline(v=mean(params_poal_f_c$beta_clim_endo),col="deeppink1",lwd=3)
 hist(params_poal_f_c$beta_clim)
 abline(v=mean(params_poal_f_c$beta_clim),col="deeppink1",lwd=3)
 
+
+#SURV POAL CLIMENDO
+##prep data for total precipitation, dropping NAs
+poaals_c %>% 
+  select(surv_t1,endo_01,log_tillers_centered,ppt_tot_scaled,plot,year_t) %>% 
+  drop_na() -> poaals_surv_c
+
+poal_surv_dat_c<-list(n_obs=nrow(poaals_surv_c),
+                      y=poaals_surv_c$surv_t1, # should this be flw_count_t1?
+                      n_yrs = length(unique(poaals_surv_c$year_t))+1,
+                      n_plots = max(poaals_surv_c$plot),
+                      n_endo = 2,
+                      endo_01=poaals_surv_c$endo_01,
+                      size=poaals_surv_c$log_tillers_centered,
+                      year_index=poaals_surv_c$year_t-2006,
+                      climate=poaals_surv_c$ppt_tot_scaled, #center climate the way we centred size, there is also a scale fucnction you could use
+                      plot=poaals_surv_c$plot)
+
+poal_surv_model_c = stan_model(file="code/earlier_climatedemo.stan")
+poal_surv_sampling_c<-sampling(poal_surv_model_c,
+                               data=poal_surv_dat_c,
+                               chains = 3,
+                               iter = 5000,
+                               warmup = 1000)
+
+saveRDS(poal_surv_sampling_c,"poal_surv_sampling_c.rds")
+poal_surv_sampling_c<-readRDS("poal_surv_sampling_c.rds")
+
+summary(poal_surv_sampling_c)
+
+params_poal_s_c<-rstan::extract(poal_surv_sampling_c,pars=c('beta_0','beta_endo','beta_clim',
+                                                            'beta_size_endo','beta_clim_endo'))
+
+hist(params_poal_s_c$beta_clim_endo)
+abline(v=mean(params_poal_s_c$beta_clim_endo),col="deeppink1",lwd=3)
+
+(sum(params_poal_s_c$beta_clim_endo < 0) / length(params_poal_s_c$beta_clim_endo))
+(sum(params_poal_s_c$beta_clim_endo > 0) / length(params_poal_s_c$beta_clim_endo))
+
+hist(params_poal_s_c$beta_clim)
+abline(v=mean(params_poal_s_c$beta_clim),col="deeppink1",lwd=3)
+
+#SURV POAL CLIMENDO TEMP
+##prep data for mean temp, dropping NAs
+poaals_c %>% 
+  select(surv_t1,endo_01,log_tillers_centered,tmean_mean,plot,year_t) %>% 
+  drop_na() -> poaals_surv_temp
+
+poal_surv_dat_temp<-list(n_obs=nrow(poaals_surv_temp),
+                      y=poaals_surv_temp$surv_t1, # should this be flw_count_t1?
+                      n_yrs = length(unique(poaals_surv_temp$year_t))+1,
+                      n_plots = max(poaals_surv_temp$plot),
+                      n_endo = 2,
+                      endo_01=poaals_surv_temp$endo_01,
+                      size=poaals_surv_temp$log_tillers_centered,
+                      year_index=poaals_surv_temp$year_t-2006,
+                      climate=poaals_surv_temp$tmean_mean, #center climate the way we centred size, there is also a scale fucnction you could use
+                      plot=poaals_surv_temp$plot)
+
+poal_surv_model_temp = stan_model(file="code/earlier_climatedemo.stan")
+poal_surv_sampling_temp<-sampling(poal_surv_model_temp,
+                               data=poal_surv_dat_temp,
+                               chains = 3,
+                               iter = 5000,
+                               warmup = 1000)
+
+saveRDS(poal_surv_sampling_temp,"poal_surv_sampling_temp.rds")
+poal_surv_sampling_temp<-readRDS("poal_surv_sampling_temp.rds")
+
+summary(poal_surv_sampling_temp)
+
+params_poal_s_temp<-rstan::extract(poal_surv_sampling_temp,pars=c('beta_0','beta_endo','beta_clim',
+                                                            'beta_size_endo','beta_clim_endo'))
+
+hist(params_poal_s_temp$beta_clim_endo)
+abline(v=mean(params_poal_s_temp$beta_clim_endo),col="deeppink1",lwd=3)
+
+(sum(params_poal_s_temp$beta_clim_endo < 0) / length(params_poal_s_temp$beta_clim_endo))
+(sum(params_poal_s_temp$beta_clim_endo > 0) / length(params_poal_s_temp$beta_clim_endo))
+
+hist(params_poal_s_temp$beta_clim)
+abline(v=mean(params_poal_s_temp$beta_clim),col="deeppink1",lwd=3)
 
 
 #flop
