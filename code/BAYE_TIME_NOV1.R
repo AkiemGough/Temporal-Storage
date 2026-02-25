@@ -1542,7 +1542,7 @@ poal_surv_sampling_temp<-sampling(poal_surv_model_temp,
 saveRDS(poal_surv_sampling_temp,"poal_surv_sampling_temp.rds")
 poal_surv_sampling_temp<-readRDS("poal_surv_sampling_temp.rds")
 
-summary(poal_surv_sampling_temp)
+#summary(poal_surv_sampling_temp)
 
 params_poal_s_temp<-rstan::extract(poal_surv_sampling_temp,pars=c('beta_0','beta_endo','beta_clim',
                                                             'beta_size_endo','beta_clim_endo'))
