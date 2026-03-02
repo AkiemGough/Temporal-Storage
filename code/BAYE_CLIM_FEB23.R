@@ -4,6 +4,7 @@
 #Important packages
 library(tidyverse)
 library(lme4)
+library(scales)
 library(rstan)
 library(googlesheets4)
 library(bayesplot)
@@ -60,7 +61,7 @@ all_flow_sampling_ppt<-sampling(all_flow_model_ppt,
                                iter = 5000,
                                warmup = 1000)
 
-saveRDS(all_flow_sampling_ppt,"all_flow_sampling_ppt.rds")
+#saveRDS(all_flow_sampling_ppt,"all_flow_sampling_ppt.rds")
 all_flow_sampling_ppt<-readRDS("all_flow_sampling_ppt.rds")
 
 summary(all_flow_sampling_ppt)
@@ -70,7 +71,6 @@ params_all_f_ppt<-rstan::extract(all_flow_sampling_ppt,pars=c('beta_0','beta_cli
 dim(params_all_f_ppt$beta_0)
 dim(params_all_f_ppt$beta_clim)
 dim(params_all_f_ppt$beta_size_clim)
-dim(params_all_f_ppt$endo_effect)
 
 ##PLOTTING ENDO ESTIMATES
 #take a random subset of posterior draws for endo effect
@@ -109,6 +109,12 @@ summary_df_all_beta0f_ppt <- long_df_all_beta0f_ppt %>%
 ##making size x variables for graphs
 (ppt_tot_dummy<-seq(from=min(all_flow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_flow_ppt$ppt_tot_scaled,na.rm=T),by=0.1))
 
+#find the coefficient to use or calculation of coefficients?
+coef(long_df_all_beta0f_ppt)
+coef(summary_df_all_beta0f_ppt)
+
+plot(x=ppt_tot_dummy, y=summary_df_all_beta0f_ppt[])
+
 #plotting endo estimates
 ggplot(summary_df_all_beta0f_ppt, aes(x = ppt_tot_dummy, y = median, colour = endo, fill = endo)) +
   scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
@@ -121,8 +127,7 @@ ggplot(summary_df_all_beta0f_ppt, aes(x = ppt_tot_dummy, y = median, colour = en
   theme_minimal()+
   facet_grid("spec")
 
-#find the coefficient to use or calculation of coefficients?
-plot(x=ppt_tot_dummy, y=summary_df_all_beta0f_ppt[])
+
 
 
 
@@ -133,24 +138,26 @@ plot(x=ppt_tot_dummy, y=summary_df_all_beta0f_ppt[])
 logistic<-function(x){1/(1+exp(-x))}
 
 #defining a predictor function
-predict_c <- function(fit, size, climate){
+predict_c <- function(fit, size, climate, endo, species){
   params<-rstan::extract(fit,pars=c('beta_0','beta_size','beta_clim','beta_size_clim'))
-  beta_0 <- params$beta_0
-  beta_size <- params$beta_size
-  beta_clim <- params$beta_clim
-  beta_size_clim <- params$beta_size_clim
+  beta_0 <- params$beta_0[, species, endo + 1]
+  beta_size <- params$beta_size[, species, endo + 1]
+  beta_clim <- params$beta_clim[, species, endo + 1]
+  beta_size_clim <- params$beta_size_clim[, species, endo + 1]
   
   beta_0 + beta_size*size + beta_clim*climate + beta_size_clim*size*climate
 }
 
 #WE ARE LOST
-p_endo0 <- predict_c(all_flow_sampling_ppt, 0, 0)
+p_endo0 <- predict_c(all_flow_sampling_ppt, 0, 0, 0, 1)
 
-p_endo0 <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, 0, x))
-p_endo1 <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, 1, x))
+p_endo0 <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, x, 0, 1))
+p_endo1 <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, x, 1, 1))
 
 flow_endo0_median <- apply(p_endo0, 2, median)
 flow_endo1_median <- apply(p_endo1, 2, median)
+
+?apply
 
 plot(x=ppt_tot_dummy, y=flow_endo0_median, col="deeppink1", lty=1, type="l")
 lines(x=ppt_tot_dummy, y=flow_endo1_median, col="cornflowerblue", lty=1, type="l")
