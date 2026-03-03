@@ -72,64 +72,6 @@ dim(params_all_f_ppt$beta_0)
 dim(params_all_f_ppt$beta_clim)
 dim(params_all_f_ppt$beta_size_clim)
 
-##PLOTTING ENDO ESTIMATES
-#take a random subset of posterior draws for endo effect
-all_beta0_postf_ppt<-params_all_f_ppt$beta_0[sample(dim(params_all_f_ppt$beta_0)[1],size=1000,replace=F),,]
-dim(all_beta0_postf_ppt)
-
-long_df_all_beta0f_ppt <- as.data.frame.table(all_beta0_postf_ppt,
-                                              responseName = "estimate")
-str(long_df_all_beta0f_ppt)
-
-# Convert to long data frame for endo effect
-long_df_all_beta0f_ppt <- as.data.frame.table(all_beta0_postf_ppt,
-                                          responseName = "estimate") %>%
-  rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
-  mutate(draw = as.integer(draw), species=as.integer(species))
-
-long_df_all_beta0f_ppt$spec <- case_when(long_df_all_beta0f_ppt$species == 8 ~ "AGPE",
-                                     long_df_all_beta0f_ppt$species == 2 ~ "ELRI",
-                                     long_df_all_beta0f_ppt$species == 3 ~ "ELVI",
-                                     long_df_all_beta0f_ppt$species == 4 ~ "FESU",
-                                     long_df_all_beta0f_ppt$species == 5 ~ "LOAR",
-                                     long_df_all_beta0f_ppt$species == 6 ~ "POAL",
-                                     long_df_all_beta0f_ppt$species == 7 ~ "POAU",
-                                     long_df_all_beta0f_ppt$species == 1 ~ "POSY")
-
-
-summary_df_all_beta0f_ppt <- long_df_all_beta0f_ppt %>%
-  group_by(spec,endo) %>% 
-  summarize(
-    median = median(estimate),
-    lower = quantile(estimate, 0.05),
-    upper = quantile(estimate, 0.95),
-    probgzero = mean(estimate>0),
-    .groups = "drop")
-
-##making size x variables for graphs
-(ppt_tot_dummy<-seq(from=min(all_flow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_flow_ppt$ppt_tot_scaled,na.rm=T),by=0.1))
-
-#find the coefficient to use or calculation of coefficients?
-coef(long_df_all_beta0f_ppt)
-coef(summary_df_all_beta0f_ppt)
-
-plot(x=ppt_tot_dummy, y=summary_df_all_beta0f_ppt[])
-
-#plotting endo estimates
-ggplot(summary_df_all_beta0f_ppt, aes(x = ppt_tot_dummy, y = median, colour = endo, fill = endo)) +
-  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
-  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
-  geom_line(linewidth = 0.5) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
-  labs(x = "Year", y = "probability of flowering",
-       title = "Change in probability of E+ and E- flowering with year") +
-  geom_hline(yintercept = 0) +
-  theme_minimal()+
-  facet_grid("spec")
-
-
-
-
 
 ##making size x variables for graphs
 (ppt_tot_dummy<-seq(from=min(all_flow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_flow_ppt$ppt_tot_scaled,na.rm=T),by=0.1))
@@ -162,6 +104,9 @@ flow_endo1_median <- apply(p_endo1, 2, median)
 plot(x=ppt_tot_dummy, y=flow_endo0_median, col="deeppink1", lty=1, type="l")
 lines(x=ppt_tot_dummy, y=flow_endo1_median, col="cornflowerblue", lty=1, type="l")
 
+
+
+
 # visualize the interaction effect
 beta_clim_endo <- rstan::extract(poal_flow_sampling_c)$beta_clim_endo
 plot(density(beta_clim_endo))
@@ -176,4 +121,65 @@ p = logistic(beta_0 + beta_size*size + beta_endo*endo_01+ beta_clim*climate + be
 lines(x=grasclim$log_ppt_tot_centered, y=logistic(poal_f_c_Eminus_intercepts+poal_f_c_Eplus_intercepts*grasclim$log_ppt_tot_centered), col="deeppink1")
 lines(x=grasclim$log_ppt_tot_centered, y=logistic(poal_f_c_Eminus_slopes+poal_f_c_Eplus_slopes*grasclim$log_ppt_tot_centered), col="cornflowerblue")
 
+
+
+
+
+
+
+
+##PLOTTING ENDO ESTIMATES
+#take a random subset of posterior draws for endo effect
+all_beta0_postf_ppt<-params_all_f_ppt$beta_0[sample(dim(params_all_f_ppt$beta_0)[1],size=1000,replace=F),,]
+dim(all_beta0_postf_ppt)
+
+long_df_all_beta0f_ppt <- as.data.frame.table(all_beta0_postf_ppt,
+                                              responseName = "estimate")
+str(long_df_all_beta0f_ppt)
+
+# Convert to long data frame for endo effect
+long_df_all_beta0f_ppt <- as.data.frame.table(all_beta0_postf_ppt,
+                                              responseName = "estimate") %>%
+  rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_beta0f_ppt$spec <- case_when(long_df_all_beta0f_ppt$species == 8 ~ "AGPE",
+                                         long_df_all_beta0f_ppt$species == 2 ~ "ELRI",
+                                         long_df_all_beta0f_ppt$species == 3 ~ "ELVI",
+                                         long_df_all_beta0f_ppt$species == 4 ~ "FESU",
+                                         long_df_all_beta0f_ppt$species == 5 ~ "LOAR",
+                                         long_df_all_beta0f_ppt$species == 6 ~ "POAL",
+                                         long_df_all_beta0f_ppt$species == 7 ~ "POAU",
+                                         long_df_all_beta0f_ppt$species == 1 ~ "POSY")
+
+
+summary_df_all_beta0f_ppt <- long_df_all_beta0f_ppt %>%
+  group_by(spec,endo) %>% 
+  summarize(
+    median = median(estimate),
+    lower = quantile(estimate, 0.05),
+    upper = quantile(estimate, 0.95),
+    probgzero = mean(estimate>0),
+    .groups = "drop")
+
+##making size x variables for graphs
+(ppt_tot_dummy<-seq(from=min(all_flow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_flow_ppt$ppt_tot_scaled,na.rm=T),by=0.1))
+
+#find the coefficient to use or calculation of coefficients?
+coef(long_df_all_beta0f_ppt)
+coef(summary_df_all_beta0f_ppt)
+
+plot(x=ppt_tot_dummy, y=summary_df_all_beta0f_ppt[])
+
+#plotting endo estimates
+ggplot(summary_df_all_beta0f_ppt, aes(x = ppt_tot_dummy, y = median, colour = endo, fill = endo)) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  geom_line(linewidth = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
+  labs(x = "Year", y = "probability of flowering",
+       title = "Change in probability of E+ and E- flowering with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_grid("spec")
 
