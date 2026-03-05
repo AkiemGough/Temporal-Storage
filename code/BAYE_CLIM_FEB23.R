@@ -55,15 +55,14 @@ all_flow_dat_ppt<-list(n_obs=nrow(all_flow_ppt),
                      original=all_flow_ppt$original)
 
 all_flow_model_ppt = stan_model(file="code/climatedemo.stan")
-all_flow_sampling_ppt<-sampling(all_flow_model_ppt,
-                               data=all_flow_dat_ppt,
-                               chains = 3,
-                               iter = 5000,
-                               warmup = 1000)
+#all_flow_sampling_ppt<-sampling(all_flow_model_ppt,
+                          #     data=all_flow_dat_ppt,
+                          #     chains = 3,
+                          #    iter = 5000,
+                          #    warmup = 1000)
 
 #saveRDS(all_flow_sampling_ppt,"all_flow_sampling_ppt.rds")
 all_flow_sampling_ppt<-readRDS("all_flow_sampling_ppt.rds")
-
 summary(all_flow_sampling_ppt)
 
 #extracting parameters
@@ -91,19 +90,34 @@ predict_c <- function(fit, size, climate, endo, species){
 }
 
 #WE ARE LOST
-p_endo0 <- predict_c(all_flow_sampling_ppt, 0, 0, 0, 1)
+#p_endo0 <- predict_c(all_flow_sampling_ppt, 0, 0, 0, 1)
 
-p_endo0 <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, x, 0, 1))
-p_endo1 <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, x, 1, 1))
+p_endo0_posy <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, x, 0, 1))
+p_endo1_posy <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, x, 1, 1))
 
-flow_endo0_median <- apply(p_endo0, 2, median)
-flow_endo1_median <- apply(p_endo1, 2, median)
+flow_endo0_median_posy <- apply(p_endo0, 2, median)
+flow_endo1_median_posy <- apply(p_endo1, 2, median)
 
 ?apply
 
-plot(x=ppt_tot_dummy, y=flow_endo0_median, col="deeppink1", lty=1, type="l")
-lines(x=ppt_tot_dummy, y=flow_endo1_median, col="cornflowerblue", lty=1, type="l")
+plot(x=ppt_tot_dummy, y=flow_endo0_median_posy, col="deeppink1", lty=1, type="l")
+lines(x=ppt_tot_dummy, y=flow_endo1_median_posy, col="cornflowerblue", lty=1, type="l")
 
+
+#plot(x=grasclim$ppt_tot_scaled, y=flow_endo0_median_posy, col="deeppink1", lty=1, type="l")
+#lines(x=grasclim$ppt_tot_scaled, y=flow_endo1_median_posy, col="cornflowerblue", lty=1, type="l")
+
+# visualize the interaction effect
+
+plot(density(beta_ppt_endo))
+mean(beta_ppt_endo > 0)
+mean(beta_ppt_endo < 0)
+
+hist(params_all_f_ppt$beta_clim)
+abline(v=mean(params_all_f_ppt$beta_clim),col="deeppink1",lwd=3)
+
+(sum(params_all_f_ppt$beta_clim < 0) / length(params_all_f_ppt$beta_clim))
+(sum(params_all_f_ppt$beta_clim > 0) / length(params_all_f_ppt$beta_clim))
 
 
 
@@ -123,6 +137,7 @@ lines(x=grasclim$log_ppt_tot_centered, y=logistic(poal_f_c_Eminus_slopes+poal_f_
 
 
 
+#link for making caterpillar plots: https://www.rdocumentation.org/packages/mcmcplots/versions/0.4.3/topics/caterplot
 
 
 
