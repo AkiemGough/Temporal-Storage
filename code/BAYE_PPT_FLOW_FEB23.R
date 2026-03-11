@@ -125,12 +125,12 @@ points(x=all_flow_ppt$ppt_tot_scaled[all_flow_ppt$spec==1],
 
 # visualize the interaction effect
 
-plot(density(beta_ppt_endo))
-mean(beta_ppt_endo > 0)
-mean(beta_ppt_endo < 0)
+#plot(density(params_all_f_ppt$beta_clim))
+#mean(params_all_f_ppt$beta_clim > 0)
+#mean(params_all_f_ppt$beta_clim < 0)
 
-hist(params_all_f_ppt$beta_clim)
-abline(v=mean(params_all_f_ppt$beta_clim),col="deeppink1",lwd=3)
+hist(params_all_f_ppt$beta_clim, main="Distribution of the effect of ppt(species, endo)", cex.main=1)
+abline(v=mean(params_all_f_ppt$beta_clim),col="purple",lwd=3)
 
 (sum(params_all_f_ppt$beta_clim < 0) / length(params_all_f_ppt$beta_clim))
 (sum(params_all_f_ppt$beta_clim > 0) / length(params_all_f_ppt$beta_clim))
@@ -154,7 +154,7 @@ plot(grasclim$ppt_tot_scaled,as.integer(grasclim$flw_count_t>1),amount=0.02)
 
 
 ##PLOTTING ENDO ESTIMATES
-#take a random subset of posterior draws for endo effect
+#take a random subset of posterior draws for beta_0 (endophyte estimates?)
 all_beta0_postf_ppt<-params_all_f_ppt$beta_0[sample(dim(params_all_f_ppt$beta_0)[1],size=1000,replace=F),,]
 dim(all_beta0_postf_ppt)
 
@@ -187,31 +187,15 @@ summary_df_all_beta0f_ppt <- long_df_all_beta0f_ppt %>%
     probgzero = mean(estimate>0),
     .groups = "drop")
 
-summary_df_all_beta0f_ppt <- long_df_all_beta0f_ppt %>%
-  group_by(spec,endo) %>% 
-  summarize(
-    median = median(estimate),
-    lower = quantile(estimate, 0.05),
-    upper = quantile(estimate, 0.95),
-    probgzero = mean(estimate>0),
-    .groups = "drop")
-
-
 ##making size x variables for graphs
 (ppt_tot_dummy<-seq(from=min(all_flow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_flow_ppt$ppt_tot_scaled,na.rm=T),by=0.1))
 
-#find the coefficient to use or calculation of coefficients?
-coef(long_df_all_beta0f_ppt)
-coef(summary_df_all_beta0f_ppt)[1,1]
-
-plot(x=ppt_tot_dummy, y=summary_df_all_beta0f_ppt[])
 
 ggplot(data=all_flow_ppt, aes(x=jitter(ppt_tot_scaled), y=as.integer(flw_count_t>1))) +
-  geom_point() +
-  geom_line(median)
+  geom_point()
 
 plot(x=jitter(all_flow_ppt$ppt_tot_scaled), y=as.integer(all_flow_ppt$flw_count_t>1), col="deeppink1")
-line(summary_df_all_beta0f_ppt$median)[1]
+line(summary_df_all_beta0f_ppt$median)
 
 #plotting endo estimates
 ggplot(summary_df_all_beta0f_ppt, aes(x = ppt_tot_dummy, y = median, colour = endo, fill = endo)) +
@@ -225,3 +209,104 @@ ggplot(summary_df_all_beta0f_ppt, aes(x = ppt_tot_dummy, y = median, colour = en
   theme_minimal()+
   facet_grid("spec")
 
+
+#AS SUGGESTED BY GEMINI
+#take a random subset of posterior draws for the slope, beta_clim, climate effect
+all_betaclim_postf_ppt<-params_all_f_ppt$beta_clim[sample(dim(params_all_f_ppt$beta_clim)[1],size=1000),,]
+dim(all_betaclim_postf_ppt)
+
+long_df_all_betaclimf_ppt <- as.data.frame.table(all_betaclim_postf_ppt,
+                                              responseName = "estimate")
+str(long_df_all_betaclimf_ppt)
+
+# Convert to long data frame for endo effect
+long_df_all_betaclimf_ppt <- as.data.frame.table(all_betaclim_postf_ppt,
+                                              responseName = "slope_val") %>%
+  rename(draw = iterations, species = Var2, endo = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_betaclimf_ppt$spec <- case_when(long_df_all_betaclimf_ppt$species == 8 ~ "AGPE",
+                                         long_df_all_betaclimf_ppt$species == 2 ~ "ELRI",
+                                         long_df_all_betaclimf_ppt$species == 3 ~ "ELVI",
+                                         long_df_all_betaclimf_ppt$species == 4 ~ "FESU",
+                                         long_df_all_betaclimf_ppt$species == 5 ~ "LOAR",
+                                         long_df_all_betaclimf_ppt$species == 6 ~ "POAL",
+                                         long_df_all_betaclimf_ppt$species == 7 ~ "POAU",
+                                         long_df_all_betaclimf_ppt$species == 1 ~ "POSY")
+
+
+summary_df_all_betaclimf_ppt <- long_df_all_betaclimf_ppt %>%
+  group_by(spec,endo) %>% 
+  summarize(
+    median_slope = median(slope_val),
+    lower_slope = quantile(slope_val, 0.05),
+    upper_slope = quantile(slope_val, 0.95),
+    .groups = "drop")
+
+
+
+
+#FROM GEMINI
+#Create a "grid" of all combinations you want to predict
+plot_data <- expand.grid(
+  ppt_tot_scaled = seq(min(all_flow_ppt$ppt_tot_scaled, na.rm=T), 
+                       max(all_flow_ppt$ppt_tot_scaled, na.rm=T), 
+                       length.out = 100),
+  spec = unique(long_df_all_beta0f_ppt$spec),
+  endo = unique(long_df_all_beta0f_ppt$endo)
+)
+
+# 2. You need to apply your model coefficients to this grid.
+# This usually looks something like: Prob = plogis(intercept + slope * ppt)
+# Since you have posterior draws, you'd calculate this for the medians:
+# (Note: Replace 'beta_slope' with your actual slope parameter name)
+
+plot_data <- plot_data %>%
+  left_join(summary_df_all_beta0f_ppt, by = c("spec", "endo")) %>% # Brings in 'median' (intercept)
+  left_join(summary_df_all_betaclimf_ppt, by = c("spec", "endo")) %>% # Brings in 'median_slope'
+  mutate(
+    # plogis(intercept + slope * x)
+    prob_flowering = plogis(median + (median_slope * ppt_tot_scaled)),
+    # Calculate ribbon bounds
+    prob_lower = plogis(lower + (lower_slope * ppt_tot_scaled)),
+    prob_upper = plogis(upper + (upper_slope * ppt_tot_scaled))
+  )
+
+all_flow_ppt$spec <- case_when(
+  all_flow_ppt$spec == 8 ~ "AGPE",
+  all_flow_ppt$spec == 2 ~ "ELRI",
+  all_flow_ppt$spec == 3 ~ "ELVI",
+  all_flow_ppt$spec == 4 ~ "FESU",
+  all_flow_ppt$spec == 5 ~ "LOAR",
+  all_flow_ppt$spec == 6 ~ "POAL",
+  all_flow_ppt$spec == 7 ~ "POAU",
+  all_flow_ppt$spec == 1 ~ "POSY"
+  )
+
+
+ggplot() +
+  # 1. The Ribbon (Uncertainty)
+  geom_ribbon(data = plot_data, 
+              aes(x = ppt_tot_scaled, ymin = prob_lower, ymax = prob_upper, fill = endo), 
+              alpha = 0.2) + 
+  
+  # 2. The Prediction Lines
+  geom_line(data = plot_data, 
+            aes(x = ppt_tot_scaled, y = prob_flowering, color = endo), 
+            linewidth = 1) +
+  
+  # 3. The Raw Points
+  geom_point(data = all_flow_ppt, 
+             aes(x = ppt_tot_scaled, y = as.numeric(flw_count_t > 1)), 
+             alpha = 0.2, color = "purple") + 
+  
+  facet_wrap(~spec) +
+  
+  # Make sure to set scale_fill_manual to match your colors!
+  scale_color_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
+  scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
+  
+  labs(x = "Precipitation (Scaled)", 
+       y = "Probability of Flowering",
+       title = "Flowering Probability with 90% Credible Intervals") +
+  theme_minimal()
