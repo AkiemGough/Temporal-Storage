@@ -66,14 +66,15 @@ all_flow_sampling_ppt<-readRDS("all_flow_sampling_ppt.rds")
 summary(all_flow_sampling_ppt)
 
 #extracting parameters
-params_all_f_ppt<-rstan::extract(all_flow_sampling_ppt,pars=c('beta_0','beta_clim','beta_size_clim','endo_effect'))
+params_all_f_ppt<-rstan::extract(all_flow_sampling_ppt,pars=c('beta_0','beta_clim','beta_size_clim'))
 dim(params_all_f_ppt$beta_0)
 dim(params_all_f_ppt$beta_clim)
 dim(params_all_f_ppt$beta_size_clim)
 
 
 ##making size x variables for graphs
-(ppt_tot_dummy<-seq(from=min(all_flow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_flow_ppt$ppt_tot_scaled,na.rm=T),by=0.1))
+ppt_tot_dummy<-seq(from=min(all_flow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_flow_ppt$ppt_tot_scaled,na.rm=T),by=0.1)
+ppt_tot_dummy_scaled<-as.numeric (scale(ppt_tot_dummy))
 
 #creating logistic function 
 logistic<-function(x){1/(1+exp(-x))}
@@ -92,17 +93,32 @@ predict_c <- function(fit, size, climate, endo, species){
 #WE ARE LOST
 #p_endo0 <- predict_c(all_flow_sampling_ppt, 0, 0, 0, 1)
 
+#predicting flowering probabilities? for posy E+ and E-
 p_endo0_posy <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, x, 0, 1))
 p_endo1_posy <- sapply(ppt_tot_dummy, function(x) predict_c(all_flow_sampling_ppt, 0, x, 1, 1))
 
-flow_endo0_median_posy <- apply(p_endo0, 2, median)
-flow_endo1_median_posy <- apply(p_endo1, 2, median)
+#finding medians across the matrix of posy flowering prob predictions
+flow_endo0_median_posy <- apply(p_endo0_posy, 2, median)
+flow_endo1_median_posy <- apply(p_endo1_posy, 2, median)
 
-?apply
 
-plot(x=ppt_tot_dummy, y=flow_endo0_median_posy, col="deeppink1", lty=1, type="l")
-lines(x=ppt_tot_dummy, y=flow_endo1_median_posy, col="cornflowerblue", lty=1, type="l")
+plot(x=jitter(all_flow_ppt$ppt_tot_scaled[all_flow_ppt$spec==1]),
+     y=as.integer(all_flow_ppt$flw_count_t[all_flow_ppt$spec==1]>1))
+lines(x=ppt_tot_dummy_scaled, y=flow_endo0_median_posy, col="deeppink1", lty=1, type="l")   
+lines(x=ppt_tot_dummy_scaled, y=flow_endo1_median_posy, col="cornflowerblue", lty=1, type="l")
 
+plot(x=jitter(ppt_tot_dummy_scaled),
+     y=as.integer(all_flow_ppt$flw_count_t>1)[all_flow_ppt$spec==1])
+lines(x=ppt_tot_dummy_scaled, y=flow_endo0_median_posy, col="deeppink1", lty=1, type="l")   
+lines(x=ppt_tot_dummy_scaled, y=flow_endo1_median_posy, col="cornflowerblue", lty=1, type="l")
+
+
+as.numeric(all_flow_ppt$flw_count_t[all_flow_ppt$spec==1]>1)
+
+plot(x=log(ppt_tot_dummy_scaled), y=flow_endo0_median_posy, col="deeppink1", lty=1, type="l")
+lines(x=log(ppt_tot_dummy_scaled), y=flow_endo1_median_posy, col="cornflowerblue", lty=1, type="l")
+points(x=all_flow_ppt$ppt_tot_scaled[all_flow_ppt$spec==1],
+       y=as.integer(all_flow_ppt$flw_count_t[all_flow_ppt$spec==1]>1))
 
 #plot(x=grasclim$ppt_tot_scaled, y=flow_endo0_median_posy, col="deeppink1", lty=1, type="l")
 #lines(x=grasclim$ppt_tot_scaled, y=flow_endo1_median_posy, col="cornflowerblue", lty=1, type="l")
@@ -128,13 +144,7 @@ mean(beta_clim_endo > 0)
 mean(beta_clim_endo < 0)
 
 #trying to make plots, not going very well
-plot(grasclim$ppt_tot_scaled,grasclim$flw_count_t,amount=0.02)
-
-p = logistic(beta_0 + beta_size*size + beta_endo*endo_01+ beta_clim*climate + beta_size_endo*size*endo_01 + beta_clim_endo*endo_01*climate)
-
-lines(x=grasclim$log_ppt_tot_centered, y=logistic(poal_f_c_Eminus_intercepts+poal_f_c_Eplus_intercepts*grasclim$log_ppt_tot_centered), col="deeppink1")
-lines(x=grasclim$log_ppt_tot_centered, y=logistic(poal_f_c_Eminus_slopes+poal_f_c_Eplus_slopes*grasclim$log_ppt_tot_centered), col="cornflowerblue")
-
+plot(grasclim$ppt_tot_scaled,as.integer(grasclim$flw_count_t>1),amount=0.02)
 
 
 #link for making caterpillar plots: https://www.rdocumentation.org/packages/mcmcplots/versions/0.4.3/topics/caterplot
@@ -177,14 +187,31 @@ summary_df_all_beta0f_ppt <- long_df_all_beta0f_ppt %>%
     probgzero = mean(estimate>0),
     .groups = "drop")
 
+summary_df_all_beta0f_ppt <- long_df_all_beta0f_ppt %>%
+  group_by(spec,endo) %>% 
+  summarize(
+    median = median(estimate),
+    lower = quantile(estimate, 0.05),
+    upper = quantile(estimate, 0.95),
+    probgzero = mean(estimate>0),
+    .groups = "drop")
+
+
 ##making size x variables for graphs
 (ppt_tot_dummy<-seq(from=min(all_flow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_flow_ppt$ppt_tot_scaled,na.rm=T),by=0.1))
 
 #find the coefficient to use or calculation of coefficients?
 coef(long_df_all_beta0f_ppt)
-coef(summary_df_all_beta0f_ppt)
+coef(summary_df_all_beta0f_ppt)[1,1]
 
 plot(x=ppt_tot_dummy, y=summary_df_all_beta0f_ppt[])
+
+ggplot(data=all_flow_ppt, aes(x=jitter(ppt_tot_scaled), y=as.integer(flw_count_t>1))) +
+  geom_point() +
+  geom_line(median)
+
+plot(x=jitter(all_flow_ppt$ppt_tot_scaled), y=as.integer(all_flow_ppt$flw_count_t>1), col="deeppink1")
+line(summary_df_all_beta0f_ppt$median)[1]
 
 #plotting endo estimates
 ggplot(summary_df_all_beta0f_ppt, aes(x = ppt_tot_dummy, y = median, colour = endo, fill = endo)) +
