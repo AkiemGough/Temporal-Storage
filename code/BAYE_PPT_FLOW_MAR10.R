@@ -71,18 +71,9 @@ dim(params_all_f_ppt$beta_0)
 dim(params_all_f_ppt$beta_clim)
 dim(params_all_f_ppt$beta_size_clim)
 
-
 ##making dummy variables for graphs
 ppt_tot_dummy<-seq(from=min(all_flow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_flow_ppt$ppt_tot_scaled,na.rm=T),by=0.1)
 ppt_tot_dummy_scaled<-as.numeric (scale(ppt_tot_dummy))
-
-
-
-
-
-
-
-
 
 ##PLOTTING ENDO ESTIMATES
 
@@ -219,5 +210,180 @@ ggplot() +
        title = "Flowering Probability with 90% Credible Intervals") +
   theme_minimal()
 
-?labs
-?legend
+
+##ALL SURVIVAL PRECIPITATION___________________
+
+##prep data for total precipitation, dropping NAs
+grasclim %>% 
+  select(surv_t1,endo_01,spec,log_tillers_centered,ppt_tot_scaled,plot,year_t,original) %>% 
+  drop_na() -> all_surv_ppt
+
+all_surv_dat_ppt<-list(n_obs=nrow(all_surv_ppt),
+                       y=all_surv_ppt$surv_t1,
+                       n_yrs = length(unique(all_surv_ppt$year_t))+1,
+                       n_plots = max(all_surv_ppt$plot),
+                       n_endo = 2,
+                       n_spp = length(unique(all_surv_ppt$spec)),
+                       endo_01=all_surv_ppt$endo_01,
+                       size=all_surv_ppt$log_tillers_centered,
+                       year_index=all_surv_ppt$year_t-2006,
+                       climate=all_surv_ppt$ppt_tot_scaled,
+                       plot=all_surv_ppt$plot,
+                       species=all_surv_ppt$spec,
+                       original=all_surv_ppt$original)
+
+all_surv_model_ppt = stan_model(file="code/climatedemo.stan")
+all_surv_sampling_ppt<-sampling(all_surv_model_ppt)
+#     data=all_surv_dat_ppt,
+#     chains = 3,
+#    iter = 5000,
+#    warmup = 1000)
+
+saveRDS(all_surv_sampling_ppt,"all_surv_sampling_ppt.rds")
+all_surv_sampling_ppt<-readRDS("all_surv_sampling_ppt.rds")
+summary(all_surv_sampling_ppt)
+
+#extracting parameters
+params_all_s_ppt<-rstan::extract(all_surv_sampling_ppt,pars=c('beta_0','beta_clim','beta_size_clim'))
+dim(params_all_s_ppt$beta_0)
+dim(params_all_s_ppt$beta_clim)
+dim(params_all_s_ppt$beta_size_clim)
+
+##making dummy variables for graphs
+ppt_tot_dummy_s<-seq(from=min(all_surv_ppt$ppt_tot_scaled,na.rm=T),to=max(all_surv_ppt$ppt_tot_scaled,na.rm=T),by=0.1)
+ppt_tot_dummy_s_scaled<-as.numeric (scale(ppt_tot_dummy_s))
+
+##PLOTTING ENDO ESTIMATES
+
+#take a random subset of posterior draws for beta_0 (endophyte estimates?)
+all_beta0_posts_ppt<-params_all_s_ppt$beta_0[sample(dim(params_all_s_ppt$beta_0)[1],size=1000,replace=F),,]
+dim(all_beta0_posts_ppt)
+
+long_df_all_beta0s_ppt <- as.data.frame.table(all_beta0_posts_ppt,
+                                              responseName = "estimate")
+str(long_df_all_beta0s_ppt)
+
+# Convert to long data frame for endo effect
+long_df_all_beta0s_ppt <- as.data.frame.table(all_beta0_posts_ppt,
+                                              responseName = "estimate") %>%
+  rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_beta0s_ppt$spec <- case_when(long_df_all_beta0s_ppt$species == 8 ~ "AGPE",
+                                         long_df_all_beta0s_ppt$species == 2 ~ "ELRI",
+                                         long_df_all_beta0s_ppt$species == 3 ~ "ELVI",
+                                         long_df_all_beta0s_ppt$species == 4 ~ "FESU",
+                                         long_df_all_beta0s_ppt$species == 5 ~ "LOAR",
+                                         long_df_all_beta0s_ppt$species == 6 ~ "POAL",
+                                         long_df_all_beta0s_ppt$species == 7 ~ "POAU",
+                                         long_df_all_beta0s_ppt$species == 1 ~ "POSY")
+
+
+summary_df_all_beta0s_ppt <- long_df_all_beta0s_ppt %>%
+  group_by(spec,endo) %>% 
+  summarize(
+    median = median(estimate),
+    lower = quantile(estimate, 0.05),
+    upper = quantile(estimate, 0.95),
+    probgzero = mean(estimate>0),
+    .groups = "drop")
+
+
+#AS SUGGESTED BY GEMINI
+#take a random subset of posterior draws for the slope, beta_clim, climate effect
+all_betaclim_posts_ppt<-params_all_s_ppt$beta_clim[sample(dim(params_all_s_ppt$beta_clim)[1],size=1000),,]
+dim(all_betaclim_posts_ppt)
+
+long_df_all_betaclims_ppt <- as.data.frame.table(all_betaclim_posts_ppt,
+                                                 responseName = "estimate")
+str(long_df_all_betaclims_ppt)
+
+# Convert to long data frame for endo effect
+long_df_all_betaclims_ppt <- as.data.frame.table(all_betaclim_posts_ppt,
+                                                 responseName = "slope_val") %>%
+  rename(draw = iterations, species = Var2, endo = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_betaclims_ppt$spec <- case_when(long_df_all_betaclims_ppt$species == 8 ~ "AGPE",
+                                            long_df_all_betaclims_ppt$species == 2 ~ "ELRI",
+                                            long_df_all_betaclims_ppt$species == 3 ~ "ELVI",
+                                            long_df_all_betaclims_ppt$species == 4 ~ "FESU",
+                                            long_df_all_betaclims_ppt$species == 5 ~ "LOAR",
+                                            long_df_all_betaclims_ppt$species == 6 ~ "POAL",
+                                            long_df_all_betaclims_ppt$species == 7 ~ "POAU",
+                                            long_df_all_betaclims_ppt$species == 1 ~ "POSY")
+
+
+summary_df_all_betaclims_ppt <- long_df_all_betaclims_ppt %>%
+  group_by(spec,endo) %>% 
+  summarize(
+    median_slope = median(slope_val),
+    lower_slope = quantile(slope_val, 0.05),
+    upper_slope = quantile(slope_val, 0.95),
+    .groups = "drop")
+
+
+#FROM GEMINI
+#Create a "grid" of all combinations you want to predict
+plot_data <- expand.grid(
+  ppt_tot_scaled = seq(min(all_surv_ppt$ppt_tot_scaled, na.rm=T), 
+                       max(all_surv_ppt$ppt_tot_scaled, na.rm=T), 
+                       length.out = 100),
+  spec = unique(long_df_all_beta0s_ppt$spec),
+  endo = unique(long_df_all_beta0s_ppt$endo)
+)
+
+# 2. You need to apply your model coefficients to this grid.
+# This usually looks something like: Prob = plogis(intercept + slope * ppt)
+# Since you have posterior draws, you'd calculate this for the medians:
+# (Note: Replace 'beta_slope' with your actual slope parameter name)
+
+plot_data <- plot_data %>%
+  left_join(summary_df_all_beta0s_ppt, by = c("spec", "endo")) %>% # Brings in 'median' (intercept)
+  left_join(summary_df_all_betaclims_ppt, by = c("spec", "endo")) %>% # Brings in 'median_slope'
+  mutate(
+    # plogis(intercept + slope * x)
+    prob_survival = plogis(median + (median_slope * ppt_tot_scaled)),
+    # Calculate ribbon bounds
+    prob_lower = plogis(lower + (lower_slope * ppt_tot_scaled)),
+    prob_upper = plogis(upper + (upper_slope * ppt_tot_scaled))
+  )
+
+all_surv_ppt$spec <- case_when(
+  all_surv_ppt$spec == 8 ~ "AGPE",
+  all_surv_ppt$spec == 2 ~ "ELRI",
+  all_surv_ppt$spec == 3 ~ "ELVI",
+  all_surv_ppt$spec == 4 ~ "FESU",
+  all_surv_ppt$spec == 5 ~ "LOAR",
+  all_surv_ppt$spec == 6 ~ "POAL",
+  all_surv_ppt$spec == 7 ~ "POAU",
+  all_surv_ppt$spec == 1 ~ "POSY"
+)
+
+#The actual plot
+ggplot() +
+  # 1. The Ribbon (Uncertainty)
+  geom_ribbon(data = plot_data, 
+              aes(x = ppt_tot_scaled, ymin = prob_lower, ymax = prob_upper, fill = endo), 
+              alpha = 0.2) + 
+  
+  # 2. The Prediction Lines
+  geom_line(data = plot_data, 
+            aes(x = ppt_tot_scaled, y = prob_survival, color = endo), 
+            linewidth = 1) +
+  
+  # 3. The Raw Points
+  geom_point(data = all_surv_ppt, 
+             aes(x = ppt_tot_scaled, y = surv_t1), 
+             alpha = 0.2, color = "purple") + 
+  
+  facet_wrap(~spec) +
+  
+  # Make sure to set scale_fill_manual to match your colors!
+  scale_color_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
+  scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
+  
+  labs(x = "Precipitation (Scaled)", 
+       y = "Probability of Survival",
+       title = "Survival with 90% Credible Intervals") +
+  theme_minimal()
