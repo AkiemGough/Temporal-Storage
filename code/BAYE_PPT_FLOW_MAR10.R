@@ -233,13 +233,13 @@ all_surv_dat_ppt<-list(n_obs=nrow(all_surv_ppt),
                        original=all_surv_ppt$original)
 
 all_surv_model_ppt = stan_model(file="code/climatedemo.stan")
-all_surv_sampling_ppt<-sampling(all_surv_model_ppt)
-#     data=all_surv_dat_ppt,
-#     chains = 3,
-#    iter = 5000,
-#    warmup = 1000)
+#all_surv_sampling_ppt<-sampling(all_surv_model_ppt,
+                                #data=all_surv_dat_ppt,
+                                #chains = 3,
+                                #iter = 5000, 
+                                #warmup = 1000)
 
-saveRDS(all_surv_sampling_ppt,"all_surv_sampling_ppt.rds")
+#saveRDS(all_surv_sampling_ppt,"all_surv_sampling_ppt.rds")
 all_surv_sampling_ppt<-readRDS("all_surv_sampling_ppt.rds")
 summary(all_surv_sampling_ppt)
 
@@ -387,3 +387,34 @@ ggplot() +
        y = "Probability of Survival",
        title = "Survival with 90% Credible Intervals") +
   theme_minimal()
+
+
+#POP GROWTH RATE FROM GEMINI
+library(dplyr)
+
+pop_growth_df <- grasclim %>%
+  # 1. Group by the variables that define a "population"
+  group_by(species, plot, endo_01, year_t) %>%
+  # 2. Count the number of individuals (N) in each group/year
+  summarise(N_t = n(), .groups = "drop_groups") %>%
+  # 3. Arrange by year to ensure the math follows the timeline
+  arrange(species, plot, endo_01, year_t) %>%
+  # 4. Group again to calculate growth within each specific plot
+  group_by(species, plot, endo_01) %>%
+  mutate(
+    N_t_plus_1 = lead(N_t),
+    lambda = N_t_plus_1 / N_t
+  ) %>%
+  filter(!is.na(lambda)) # Remove the last year for each group (no t+1 data)
+
+# Extract just the vector if needed
+lambda_vector <- pop_growth_df$lambda
+
+pop_size_growth <- grasclim %>%
+  group_by(species, plot, endo_01, year_t) %>%
+  summarise(Total_Size_t = sum(size_t, na.rm = TRUE), .groups = "drop") %>%
+  arrange(species, plot, endo_01, year_t) %>%
+  group_by(species, plot, endo_01) %>%
+  mutate(
+    lambda_size = lead(Total_Size_t) / Total_Size_t
+  )
