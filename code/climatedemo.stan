@@ -49,7 +49,6 @@ model {
     for (j in 1:n_endo) {
       beta_0[i,j] ~ normal(0,1); 
       beta_size[i,j] ~ normal(0,1);
-      beta_size[i,j] ~ normal(0,1);
       beta_clim[i,j] ~ normal(0,1);
       beta_size_clim[i,j] ~ normal(0,1);
     }
