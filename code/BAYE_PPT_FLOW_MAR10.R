@@ -392,8 +392,8 @@ pop_growth_df <- grasclim %>%
   group_by(species, plot, endo_01) %>%
   mutate(
     N_t_plus_1 = lead(N_t),
-    lambda = N_t_plus_1 / N_t
-  ) %>%
+    lambda = N_t_plus_1 / N_t,
+    r = log(lambda)) %>%
   filter(!is.na(lambda)) # Remove the last year for each group (no t+1 data)
 
 # Extract just the vector if needed
@@ -458,7 +458,7 @@ all_grow_sampling_ppt <- sampling(all_grow_model_ppt,
                                   include = TRUE)
 
 
-#saveRDS(all_grow_sampling_ppt,"all_grow_sampling_ppt.rds")
+saveRDS(all_grow_sampling_ppt,"all_grow_sampling_ppt.rds")
 all_grow_sampling_ppt<-readRDS("all_grow_sampling_ppt.rds")
 #summary(all_grow_sampling_ppt)
 
