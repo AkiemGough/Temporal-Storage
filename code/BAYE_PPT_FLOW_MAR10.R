@@ -62,7 +62,7 @@ all_flow_model_ppt = stan_model(file="code/climatedemo.stan")
 
 #saveRDS(all_flow_sampling_ppt,"all_flow_sampling_ppt.rds")
 all_flow_sampling_ppt<-readRDS("all_flow_sampling_ppt.rds")
-summary(all_flow_sampling_ppt)
+#summary(all_flow_sampling_ppt)
 
 #extracting parameters
 params_all_f_ppt<-rstan::extract(all_flow_sampling_ppt,pars=c('beta_0','beta_clim','beta_size_clim'))
@@ -235,7 +235,7 @@ all_surv_model_ppt = stan_model(file="code/climatedemo.stan")
 
 #saveRDS(all_surv_sampling_ppt,"all_surv_sampling_ppt.rds")
 all_surv_sampling_ppt<-readRDS("all_surv_sampling_ppt.rds")
-summary(all_surv_sampling_ppt)
+#summary(all_surv_sampling_ppt)
 
 #extracting parameters
 params_all_s_ppt<-rstan::extract(all_surv_sampling_ppt,pars=c('beta_0','beta_clim','beta_size_clim'))
@@ -394,55 +394,30 @@ pop_growth_df <- grasclim %>%
     N_t_plus_1 = lead(N_t),
     lambda = N_t_plus_1 / N_t,
     r = log(lambda)) %>%
-  filter(!is.na(lambda)) # Remove the last year for each group (no t+1 data)
+  filter(!is.na(r)) # Remove the last year for each group (no t+1 data)
 
-# Extract just the vector if needed
-lambda_vector <- pop_growth_df$lambda
-
-pop_size_growth <- grasclim %>%
-  group_by(species, plot, endo_01, year_t, ppt_tot, tmean_mean, spec, ppt_tot_scaled, original) %>%
-  summarise(Total_Size_t = sum(size_t, na.rm = TRUE), .groups = "drop") %>%
-  arrange(species, plot, endo_01, year_t) %>%
-  group_by(species, plot, endo_01) %>%
-  mutate(
-    lambda_size = lead(Total_Size_t) / Total_Size_t
-  )
-
-str(pop_size_growth)
 
 ##ALL GROWTH PRECIPITATION___________________
 
 ##prep data for total precipitation, dropping NAs
-pop_size_growth %>% 
-  select(lambda_size,endo_01,spec,ppt_tot_scaled,plot,year_t,original) %>% 
+pop_growth_df %>% 
+  select(r,endo_01,spec,ppt_tot_scaled,plot,year_t,original) %>% 
   drop_na() -> all_grow_ppt
 
 #FROM Gemini
-# 1. Force everything to clean 1-to-N integers
-all_grow_ppt_clean <- all_grow_ppt %>%
-  mutate(year_t = as.integer(as.factor(year_t)),
-         plot = as.integer(as.factor(plot)),
-         spec = as.integer(as.factor(spec)),
-         original = as.integer(as.factor(original)) - 1,
-         endo_01 = as.integer(as.factor(endo_01)) - 1) %>%
-  # Keep only finite, non-NA values
-  filter(is.finite(lambda_size)) %>%
-  # Ensure lambda is strictly positive for Gamma
-  filter(lambda_size > 0)
-
 # 2. Build the list
-all_grow_dat_ppt <- list(n_obs = nrow(all_grow_ppt_clean),
-                         y = all_grow_ppt_clean$lambda_size + 1e-7, #if there is a single 0 in lambda_size, the sampler will crash instantly, so add a tiny constant.
-                         n_yrs = max(all_grow_ppt_clean$year_t),
-                         n_plots = max(all_grow_ppt_clean$plot),
+all_grow_dat_ppt <- list(n_obs = nrow(all_grow_ppt),
+                         y = all_grow_ppt$r,
+                         n_yrs = length(unique(all_grow_ppt$year_t))+1,
+                         n_plots = max(all_grow_ppt$plot),
                          n_endo = 2,
-                         n_spp = max(all_grow_ppt_clean$spec),
-                         endo_01 = all_grow_ppt_clean$endo_01,
-                         year_index = all_grow_ppt_clean$year_t,
-                         climate = all_grow_ppt_clean$ppt_tot_scaled,
-                         plot = all_grow_ppt_clean$plot,
-                         species = all_grow_ppt_clean$spec,
-                         original = all_grow_ppt_clean$original)
+                         n_spp = max(all_grow_ppt$spec),
+                         endo_01 = all_grow_ppt$endo_01,
+                         year_index = all_grow_ppt$year_t-2006,
+                         climate = all_grow_ppt$ppt_tot_scaled,
+                         plot = all_grow_ppt$plot,
+                         species = all_grow_ppt$spec,
+                         original = all_grow_ppt$original)
 
 all_grow_model_ppt = stan_model(file="code/climatedemogrowth.stan")
 # 3. Sampling with 'init = 0' and 'verbose = TRUE'
@@ -452,13 +427,10 @@ all_grow_sampling_ppt <- sampling(all_grow_model_ppt,
                                   chains = 3, 
                                   iter = 2000, # Increased slightly for better coverage
                                   warmup  = 1000,
-                                  init = 0, # CRITICAL: This prevents the 'exp(large number)' crash
-                                  # This ensures Stan saves all parameters for all 8 species
-                                  pars = c("beta_0", "beta_clim", "beta_orig", "tau_plot", "gamma_year", "shape"),
                                   include = TRUE)
 
 
-saveRDS(all_grow_sampling_ppt,"all_grow_sampling_ppt.rds")
+#saveRDS(all_grow_sampling_ppt,"all_grow_sampling_ppt.rds")
 all_grow_sampling_ppt<-readRDS("all_grow_sampling_ppt.rds")
 #summary(all_grow_sampling_ppt)
 
@@ -468,35 +440,34 @@ dim(params_all_g_ppt$beta_0)
 dim(params_all_g_ppt$beta_clim)
 
 
+
+##KENJI's WAY PLEASE REVISIT
+##making size x variables for graphs
+ppt_tot_dummy_g<-seq(from=min(all_grow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_grow_ppt$ppt_tot_scaled,na.rm=T),by=0.1)
+ppt_tot_dummy_scaled_g<-as.numeric (scale(ppt_tot_dummy))
+
+#creating logistic function 
+logistic<-function(x){1/(1+exp(-x))}
+
+#defining a predictor function
+predict_c_g <- function(fit, climate, endo, species){
+  params<-rstan::extract(fit,pars=c('beta_0','beta_clim'))
+  beta_0 <- params$beta_0[, species, endo + 1]
+  beta_clim <- params$beta_clim[, species, endo + 1]
+  
+  beta_0 + beta_clim*climate
+}
+##KENJI'S WAY ENDS HERE
+
+
 ##PLOTTING ENDO ESTIMATES
 #take a random subset of posterior draws for beta_0 (endophyte estimates?)
 all_beta0_postg_ppt<-params_all_g_ppt$beta_0[sample(dim(params_all_g_ppt$beta_0)[1],size=1000,replace=F),,]
 dim(all_beta0_postg_ppt)
 
-
-library(tidybayes)
-
-# This automatically finds the dimensions and names them
-beta0_samples_pptg <- all_grow_sampling_ppt %>%
-  gather_draws(beta_0[species, endo]) %>%
-  mutate(species_name = levels(all_grow_ppt$spec)[species]) # Maps index back to name
-
-head(beta0_samples_pptg)
-str(beta0_samples_pptg)
-
-names(all_grow_sampling_ppt)[grep("beta_0", names(all_grow_sampling_ppt))]
-
-long_df_all_beta0g_ppt <- as.data.frame.table(beta0_samples_pptg,
+long_df_all_beta0g_ppt <- as.data.frame.table(all_beta0_postg_ppt,
                                               responseName = "estimate")
-
-summary_beta0_samples_pptg <- beta0_samples_pptg %>%
-  group_by(species,endo) %>% 
-  summarize(
-    median = median(.value),
-    lower = quantile(.value, 0.05),
-    upper = quantile(.value, 0.95),
-    probgzero = mean(.value>0),
-    .groups = "drop")
+str(long_df_all_beta0g_ppt)
 
 # Convert to long data frame for endo effect
 long_df_all_beta0g_ppt <- as.data.frame.table(all_beta0_postg_ppt,
@@ -522,7 +493,6 @@ summary_df_all_beta0g_ppt <- long_df_all_beta0g_ppt %>%
     upper = quantile(estimate, 0.95),
     probgzero = mean(estimate>0),
     .groups = "drop")
-
 
 #AS SUGGESTED BY GEMINI
 #take a random subset of posterior draws for the slope, beta_clim, climate effect
@@ -560,7 +530,7 @@ summary_df_all_betaclimg_ppt <- long_df_all_betaclimg_ppt %>%
 
 #FROM GEMINI
 #Create a "grid" of all combinations you want to predict
-plot_data_g <- expand.grid(
+plot_data_pptg <- expand.grid(
   ppt_tot_scaled = seq(min(all_grow_ppt$ppt_tot_scaled, na.rm=T), 
                        max(all_grow_ppt$ppt_tot_scaled, na.rm=T), 
                        length.out = 100),
@@ -573,15 +543,16 @@ plot_data_g <- expand.grid(
 # Since you have posterior draws, you'd calculate this for the medians:
 # (Note: Replace 'beta_slope' with your actual slope parameter name)
 
-plot_data_g <- plot_data_g %>%
-  left_join(summary_df_all_beta0g_ppt, by = c("spec", "endo")) %>% # Brings in 'median' (intercept)
-  left_join(summary_df_all_betaclimg_ppt, by = c("spec", "endo")) %>% # Brings in 'median_slope'
+plot_data_pptg <- plot_data_pptg %>%
+  left_join(summary_df_all_beta0g_ppt, by = c("spec", "endo")) %>% 
+  left_join(summary_df_all_betaclimg_ppt, by = c("spec", "endo")) %>% 
   mutate(
-    # plogis(intercept + slope * x)
-    growth_rate = plogis(median + (median_slope * ppt_tot_scaled)),
-    # Calculate ribbon bounds
-    prob_lower = plogis(lower + (lower_slope * ppt_tot_scaled)),
-    prob_upper = plogis(upper + (upper_slope * ppt_tot_scaled))
+    # the linear formula
+    predicted_growth = median + (median_slope * ppt_tot_scaled),
+    
+    # Calculate ribbon bounds using the linear formula
+    growth_lower = lower + (lower_slope * ppt_tot_scaled),
+    growth_upper = upper + (upper_slope * ppt_tot_scaled)
   )
 
 all_grow_ppt$spec <- case_when(
@@ -598,18 +569,18 @@ all_grow_ppt$spec <- case_when(
 #The actual plot
 ggplot() +
   # 1. The Ribbon (Uncertainty)
-  geom_ribbon(data = plot_data, 
-              aes(x = ppt_tot_scaled, ymin = prob_lower, ymax = prob_upper, fill = endo), 
+  geom_ribbon(data = plot_data_pptg, 
+              aes(x = ppt_tot_scaled, ymin = growth_lower, ymax = growth_upper, fill = endo), 
               alpha = 0.2) + 
   
   # 2. The Prediction Lines
-  geom_line(data = plot_data, 
-            aes(x = ppt_tot_scaled, y = growth_rate, color = endo), 
+  geom_line(data = plot_data_pptg, 
+            aes(x = ppt_tot_scaled, y = predicted_growth, color = endo), 
             linewidth = 1) +
   
   # 3. The Raw Points
   geom_point(data = all_grow_ppt, 
-             aes(x = ppt_tot_scaled, y = lambda_size), 
+             aes(x = ppt_tot_scaled, y = as.numeric(r)), 
              alpha = 0.2, color = "purple") + 
   
   facet_wrap(~spec) +
@@ -619,12 +590,17 @@ ggplot() +
   scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
   
   labs(x = "Precipitation (Scaled)", 
-       y = "population growth",
+       y = "Population Growth",
        title = "Population Growth Rate with 90% Credible Intervals") +
   theme_minimal()
 
 
 
+
+
+
+
+library(tidybayes)
 
 
 hist(all_grow_ppt$lambda_size$lambda_size)
@@ -635,4 +611,3 @@ any(all_grow_ppt$lambda_size<0)
 #The data is gamma distributed? given that it is continuous, non-negative 
 #with small values clustered
 
-#I need to figure out how many are 0s 
