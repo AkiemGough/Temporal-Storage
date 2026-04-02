@@ -7,7 +7,6 @@ data {
   int<lower=0> n_endo;
   int<lower=0> n_spp;
   int<lower=0,upper=1> endo_01[n_obs];
-  real climate[n_obs]; 
   int<lower=1> year_index[n_obs];
   int<lower=1> plot[n_obs];
   int<lower=1> species[n_obs];
@@ -15,7 +14,6 @@ data {
 
 parameters {
   real beta_0[n_spp,n_endo];//species random effects unique to E+ and E-
-  real beta_clim[n_spp,n_endo];//climate variable
   real tau_plot[n_plots];//plot random effects
   real gamma_year[n_yrs];//year random effects
   real<lower=0> sigma_plot;//plot variance -- shared across species
@@ -27,7 +25,6 @@ transformed parameters{
   real mu[n_obs];
   for(i in 1:n_obs){
   mu[i] = beta_0[species[i],(endo_01[i]+1)] 
-  + beta_clim[species[i],(endo_01[i]+1)]*climate[i] 
   + tau_plot[plot[i]] 
   + gamma_year[year_index[i]];
   }
@@ -41,8 +38,7 @@ model {
   sigma ~ exponential(1);
   for (i in 1:n_spp) {
     for (j in 1:n_endo) {
-      beta_0[i,j] ~ normal(0,1); 
-      beta_clim[i,j] ~ normal(0,1);
+      beta_0[i,j] ~ normal(0,1);
     }
   }
   y ~ normal(mu, sigma);

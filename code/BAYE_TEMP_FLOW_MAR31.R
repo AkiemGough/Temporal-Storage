@@ -16,7 +16,6 @@ grasclim <-read.csv("data/CombinedDataRefined")
 
 ##removing untrusted data
 grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 
-grasclim <- grasclim[!(grasclim$species=="POAU"),]
 
 ##Making integers for species
 grasclim$spec <- as.integer (case_when(grasclim$species == "POSY" ~ 1,
@@ -25,11 +24,13 @@ grasclim$spec <- as.integer (case_when(grasclim$species == "POSY" ~ 1,
                                        grasclim$species == "FESU" ~ 4,
                                        grasclim$species == "LOAR" ~ 5,
                                        grasclim$species == "POAL" ~ 6,
-                                       grasclim$species == "AGPE" ~ 7))
+                                       grasclim$species == "POAU" ~ 7,
+                                       grasclim$species == "AGPE" ~ 8))
 
 ##centering size and climate variables
 
 grasclim$log_tillers_centered <- log(grasclim$size_t) - mean(log(grasclim$size_t),na.rm=T)
+grasclim$ppt_tot_scaled <- as.numeric (scale(grasclim$ppt_tot))
 
 ##ALL FLOWERING PRECIPITATION___________________
 
@@ -53,15 +54,15 @@ all_flow_dat_temp<-list(n_obs=nrow(all_flow_temp),
                        original=all_flow_temp$original)
 
 all_flow_model_temp = stan_model(file="code/climatedemo.stan")
-#all_flow_sampling_temp<-sampling(all_flow_model_temp,
-#     data=all_flow_dat_temp,
-#     chains = 3,
-#    iter = 5000,
-#    warmup = 1000)
+all_flow_sampling_temp<-sampling(all_flow_model_temp,
+     data=all_flow_dat_temp,
+     chains = 3,
+     iter = 5000,
+     warmup = 1000)
 
 #saveRDS(all_flow_sampling_temp,"all_flow_sampling_temp.rds")
 all_flow_sampling_temp<-readRDS("all_flow_sampling_temp.rds")
-summary(all_flow_sampling_temp)
+#summary(all_flow_sampling_temp)
 
 #extracting parameters
 params_all_f_temp<-rstan::extract(all_flow_sampling_temp,pars=c('beta_0','beta_clim','beta_size_clim'))
@@ -84,12 +85,13 @@ long_df_all_beta0f_temp <- as.data.frame.table(all_beta0_postf_temp,
   rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
-long_df_all_beta0f_temp$spec <- case_when(long_df_all_beta0f_temp$species == 7 ~ "AGPE",
+long_df_all_beta0f_temp$spec <- case_when(long_df_all_beta0f_temp$species == 8 ~ "AGPE",
                                          long_df_all_beta0f_temp$species == 2 ~ "ELRI",
                                          long_df_all_beta0f_temp$species == 3 ~ "ELVI",
                                          long_df_all_beta0f_temp$species == 4 ~ "FESU",
                                          long_df_all_beta0f_temp$species == 5 ~ "LOAR",
                                          long_df_all_beta0f_temp$species == 6 ~ "POAL",
+                                         long_df_all_beta0f_temp$species == 7 ~ "POAU",
                                          long_df_all_beta0f_temp$species == 1 ~ "POSY")
 
 
@@ -118,12 +120,13 @@ long_df_all_betaclimf_temp <- as.data.frame.table(all_betaclim_postf_temp,
   rename(draw = iterations, species = Var2, endo = Var3) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
-long_df_all_betaclimf_temp$spec <- case_when(long_df_all_betaclimf_temp$species == 7 ~ "AGPE",
+long_df_all_betaclimf_temp$spec <- case_when(long_df_all_betaclimf_temp$species == 8 ~ "AGPE",
                                             long_df_all_betaclimf_temp$species == 2 ~ "ELRI",
                                             long_df_all_betaclimf_temp$species == 3 ~ "ELVI",
                                             long_df_all_betaclimf_temp$species == 4 ~ "FESU",
                                             long_df_all_betaclimf_temp$species == 5 ~ "LOAR",
                                             long_df_all_betaclimf_temp$species == 6 ~ "POAL",
+                                            long_df_all_betaclimf_temp$species == 7 ~ "POAU",
                                             long_df_all_betaclimf_temp$species == 1 ~ "POSY")
 
 
@@ -163,12 +166,13 @@ plot_data_tempf <- plot_data_tempf %>%
   )
 
 all_flow_temp$spec <- case_when(
-  all_flow_temp$spec == 7 ~ "AGPE",
+  all_flow_temp$spec == 8 ~ "AGPE",
   all_flow_temp$spec == 2 ~ "ELRI",
   all_flow_temp$spec == 3 ~ "ELVI",
   all_flow_temp$spec == 4 ~ "FESU",
   all_flow_temp$spec == 5 ~ "LOAR",
   all_flow_temp$spec == 6 ~ "POAL",
+  all_flow_temp$spec == 7 ~ "POAU",
   all_flow_temp$spec == 1 ~ "POSY"
 )
 
@@ -223,15 +227,15 @@ all_surv_dat_temp<-list(n_obs=nrow(all_surv_temp),
                        original=all_surv_temp$original)
 
 all_surv_model_temp = stan_model(file="code/climatedemo.stan")
-#all_surv_sampling_temp<-sampling(all_surv_model_temp,
-                                #data=all_surv_dat_temp,
-                                #chains = 3,
-                                #iter = 5000, 
-                                #warmup = 1000)
+all_surv_sampling_temp<-sampling(all_surv_model_temp,
+                                data=all_surv_dat_temp,
+                                chains = 3,
+                                iter = 5000, 
+                                warmup = 1000)
 
 #saveRDS(all_surv_sampling_temp,"all_surv_sampling_temp.rds")
 all_surv_sampling_temp<-readRDS("all_surv_sampling_temp.rds")
-summary(all_surv_sampling_temp)
+#summary(all_surv_sampling_temp)
 
 #extracting parameters
 params_all_s_temp<-rstan::extract(all_surv_sampling_temp,pars=c('beta_0','beta_clim','beta_size_clim'))
@@ -254,12 +258,13 @@ long_df_all_beta0s_temp <- as.data.frame.table(all_beta0_posts_temp,
   rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
-long_df_all_beta0s_temp$spec <- case_when(long_df_all_beta0s_temp$species == 7 ~ "AGPE",
+long_df_all_beta0s_temp$spec <- case_when(long_df_all_beta0s_temp$species == 8 ~ "AGPE",
                                          long_df_all_beta0s_temp$species == 2 ~ "ELRI",
                                          long_df_all_beta0s_temp$species == 3 ~ "ELVI",
                                          long_df_all_beta0s_temp$species == 4 ~ "FESU",
                                          long_df_all_beta0s_temp$species == 5 ~ "LOAR",
                                          long_df_all_beta0s_temp$species == 6 ~ "POAL",
+                                         long_df_all_beta0s_temp$species == 7 ~ "POAU",
                                          long_df_all_beta0s_temp$species == 1 ~ "POSY")
 
 
@@ -288,12 +293,13 @@ long_df_all_betaclims_temp <- as.data.frame.table(all_betaclim_posts_temp,
   rename(draw = iterations, species = Var2, endo = Var3) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
-long_df_all_betaclims_temp$spec <- case_when(long_df_all_betaclims_temp$species == 7 ~ "AGPE",
+long_df_all_betaclims_temp$spec <- case_when(long_df_all_betaclims_temp$species == 8 ~ "AGPE",
                                             long_df_all_betaclims_temp$species == 2 ~ "ELRI",
                                             long_df_all_betaclims_temp$species == 3 ~ "ELVI",
                                             long_df_all_betaclims_temp$species == 4 ~ "FESU",
                                             long_df_all_betaclims_temp$species == 5 ~ "LOAR",
                                             long_df_all_betaclims_temp$species == 6 ~ "POAL",
+                                            long_df_all_betaclims_temp$species == 7 ~ "POAU",
                                             long_df_all_betaclims_temp$species == 1 ~ "POSY")
 
 
@@ -333,12 +339,13 @@ plot_data_temps <- plot_data_temps %>%
   )
 
 all_surv_temp$spec <- case_when(
-  all_surv_temp$spec == 7 ~ "AGPE",
+  all_surv_temp$spec == 8 ~ "AGPE",
   all_surv_temp$spec == 2 ~ "ELRI",
   all_surv_temp$spec == 3 ~ "ELVI",
   all_surv_temp$spec == 4 ~ "FESU",
   all_surv_temp$spec == 5 ~ "LOAR",
   all_surv_temp$spec == 6 ~ "POAL",
+  all_surv_temp$spec == 7 ~ "POAU",
   all_surv_temp$spec == 1 ~ "POSY"
 )
 
@@ -377,7 +384,7 @@ library(dplyr)
 
 pop_growth_df <- grasclim %>%
   # 1. Group by the variables that define a "population"
-  group_by(species, plot, endo_01, year_t, temp_tot, tmean_mean, spec, tmean_mean, original) %>%
+  group_by(species, plot, endo_01, year_t, ppt_tot, tmean_mean, spec, ppt_tot_scaled) %>%
   # 2. Count the number of individuals (N) in each group/year
   summarise(N_t = n(), .groups = "drop") %>%
   # 3. Arrange by year to ensure the math follows the timeline
@@ -395,7 +402,7 @@ pop_growth_df <- grasclim %>%
 
 ##prep data for total precipitation, dropping NAs
 pop_growth_df %>% 
-  select(r,endo_01,spec,tmean_mean,plot,year_t,original) %>% 
+  select(r,endo_01,spec,tmean_mean,plot,year_t) %>% 
   drop_na() -> all_grow_temp
 
 #FROM Gemini
@@ -410,19 +417,15 @@ all_grow_dat_temp <- list(n_obs = nrow(all_grow_temp),
                          year_index = all_grow_temp$year_t-2006,
                          climate = all_grow_temp$tmean_mean,
                          plot = all_grow_temp$plot,
-                         species = all_grow_temp$spec,
-                         original = all_grow_temp$original)
+                         species = all_grow_temp$spec)
 
 all_grow_model_temp = stan_model(file="code/climatedemogrowth.stan")
-# 3. Sampling with 'init = 0' and 'verbose = TRUE'
-
 all_grow_sampling_temp <- sampling(all_grow_model_temp,
                                   data = all_grow_dat_temp,
                                   chains = 3, 
-                                  iter = 2000, # Increased slightly for better coverage
+                                  iter = 5000, 
                                   warmup  = 1000,
                                   include = TRUE)
-
 
 #saveRDS(all_grow_sampling_temp,"all_grow_sampling_temp.rds")
 all_grow_sampling_temp<-readRDS("all_grow_sampling_temp.rds")
@@ -432,26 +435,6 @@ all_grow_sampling_temp<-readRDS("all_grow_sampling_temp.rds")
 params_all_g_temp<-rstan::extract(all_grow_sampling_temp,pars=c('beta_0','beta_clim'))
 dim(params_all_g_temp$beta_0)
 dim(params_all_g_temp$beta_clim)
-
-
-
-##KENJI's WAY PLEASE REVISIT
-##making size x variables for graphs
-temp_tot_dummy_g<-seq(from=min(all_grow_temp$tmean_mean,na.rm=T),to=max(all_grow_temp$tmean_mean,na.rm=T),by=0.1)
-temp_tot_dummy_scaled_g<-as.numeric (scale(temp_tot_dummy))
-
-#creating logistic function 
-logistic<-function(x){1/(1+exp(-x))}
-
-#defining a predictor function
-predict_c_g <- function(fit, climate, endo, species){
-  params<-rstan::extract(fit,pars=c('beta_0','beta_clim'))
-  beta_0 <- params$beta_0[, species, endo + 1]
-  beta_clim <- params$beta_clim[, species, endo + 1]
-  
-  beta_0 + beta_clim*climate
-}
-##KENJI'S WAY ENDS HERE
 
 
 ##PLOTTING ENDO ESTIMATES
@@ -469,12 +452,13 @@ long_df_all_beta0g_temp <- as.data.frame.table(all_beta0_postg_temp,
   rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
-long_df_all_beta0g_temp$spec <- case_when(long_df_all_beta0g_temp$species == 7 ~ "AGPE",
+long_df_all_beta0g_temp$spec <- case_when(long_df_all_beta0g_temp$species == 8 ~ "AGPE",
                                          long_df_all_beta0g_temp$species == 2 ~ "ELRI",
                                          long_df_all_beta0g_temp$species == 3 ~ "ELVI",
                                          long_df_all_beta0g_temp$species == 4 ~ "FESU",
                                          long_df_all_beta0g_temp$species == 5 ~ "LOAR",
                                          long_df_all_beta0g_temp$species == 6 ~ "POAL",
+                                         long_df_all_beta0g_temp$species == 7 ~ "POAU",
                                          long_df_all_beta0g_temp$species == 1 ~ "POSY")
 
 
@@ -502,12 +486,13 @@ long_df_all_betaclimg_temp <- as.data.frame.table(all_betaclim_postg_temp,
   rename(draw = iterations, species = Var2, endo = Var3) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
-long_df_all_betaclimg_temp$spec <- case_when(long_df_all_betaclimg_temp$species == 7 ~ "AGPE",
+long_df_all_betaclimg_temp$spec <- case_when(long_df_all_betaclimg_temp$species == 8 ~ "AGPE",
                                             long_df_all_betaclimg_temp$species == 2 ~ "ELRI",
                                             long_df_all_betaclimg_temp$species == 3 ~ "ELVI",
                                             long_df_all_betaclimg_temp$species == 4 ~ "FESU",
                                             long_df_all_betaclimg_temp$species == 5 ~ "LOAR",
                                             long_df_all_betaclimg_temp$species == 6 ~ "POAL",
+                                            long_df_all_betaclimg_temp$species == 7 ~ "POAU",
                                             long_df_all_betaclimg_temp$species == 1 ~ "POSY")
 
 
@@ -548,12 +533,13 @@ plot_data_tempg <- plot_data_tempg %>%
   )
 
 all_grow_temp$spec <- case_when(
-  all_grow_temp$spec == 7 ~ "AGPE",
+  all_grow_temp$spec == 8 ~ "AGPE",
   all_grow_temp$spec == 2 ~ "ELRI",
   all_grow_temp$spec == 3 ~ "ELVI",
   all_grow_temp$spec == 4 ~ "FESU",
   all_grow_temp$spec == 5 ~ "LOAR",
   all_grow_temp$spec == 6 ~ "POAL",
+  all_grow_temp$spec == 7 ~ "POAu",
   all_grow_temp$spec == 1 ~ "POSY"
 )
 

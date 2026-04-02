@@ -383,7 +383,7 @@ library(dplyr)
 
 pop_growth_df <- grasclim %>%
   # 1. Group by the variables that define a "population"
-  group_by(species, plot, endo_01, year_t, ppt_tot, tmean_mean, spec, ppt_tot_scaled, original) %>%
+  group_by(species, plot, endo_01, year_t, ppt_tot, tmean_mean, spec, ppt_tot_scaled) %>%
   # 2. Count the number of individuals (N) in each group/year
   summarise(N_t = n(), .groups = "drop") %>%
   # 3. Arrange by year to ensure the math follows the timeline
@@ -401,7 +401,7 @@ pop_growth_df <- grasclim %>%
 
 ##prep data for total precipitation, dropping NAs
 pop_growth_df %>% 
-  select(r,endo_01,spec,ppt_tot_scaled,plot,year_t,original) %>% 
+  select(r,endo_01,spec,ppt_tot_scaled,plot,year_t) %>% 
   drop_na() -> all_grow_ppt
 
 #FROM Gemini
@@ -416,8 +416,7 @@ all_grow_dat_ppt <- list(n_obs = nrow(all_grow_ppt),
                          year_index = all_grow_ppt$year_t-2006,
                          climate = all_grow_ppt$ppt_tot_scaled,
                          plot = all_grow_ppt$plot,
-                         species = all_grow_ppt$spec,
-                         original = all_grow_ppt$original)
+                         species = all_grow_ppt$spec)
 
 all_grow_model_ppt = stan_model(file="code/climatedemogrowth.stan")
 # 3. Sampling with 'init = 0' and 'verbose = TRUE'
@@ -425,7 +424,7 @@ all_grow_model_ppt = stan_model(file="code/climatedemogrowth.stan")
 all_grow_sampling_ppt <- sampling(all_grow_model_ppt,
                                   data = all_grow_dat_ppt,
                                   chains = 3, 
-                                  iter = 2000, # Increased slightly for better coverage
+                                  iter = 5000, 
                                   warmup  = 1000,
                                   include = TRUE)
 
@@ -596,9 +595,198 @@ ggplot() +
 
 
 
+##ALL GROWTH (IMPLICIT) ___________________
+
+##prep data, dropping NAs
+pop_growth_df %>%
+  select(r,endo_01,year_t,plot,spec) %>% 
+  drop_na() -> all_grow
+
+all_grow_dat <- list(n_obs=nrow(all_grow),
+                     y=all_grow$r,
+                     n_yrs = length(unique(all_grow$year_t))+1,
+                     n_plots = max(all_grow$plot),
+                     n_endo = 2,
+                     n_spp = length(unique(all_grow$spec)),
+                     endo_01=all_grow$endo_01,
+                     year_index=all_grow$year_t-2006,
+                     plot=all_grow$plot,
+                     species=all_grow$spec)
+
+all_grow_model = stan_model(file = "code/demogrowth.stan")
+all_grow_sampling<-sampling(all_grow_model,
+                            data = all_grow_dat,
+                            chains = 3,thin = 5,
+                            iter = 5000,
+                            warmup = 1000,
+                            save_warmup=F)
+
+#saveRDS(all_grow_sampling,"all_grow_sampling.rds")
+all_grow_sampling<-readRDS("all_grow_sampling.rds")
 
 
+mcmc_trace(all_grow_sampling,par=c('endo_effect[1,5]'))
+mcmc_trace(all_grow_sampling,par=c('Omega[1,1,2]'))
+mcmc_dens(all_grow_sampling,par=c('Omega[1,1,2]'))
+mcmc_dens(all_grow_sampling,par=c('Omega[2,1,2]'))
+mcmc_dens(all_grow_sampling,par=c('Omega[2,1,2]'))
 
+#mcmc_trace(grow_sampling,pars='tau_plot[111]')
+
+#extracting parameters
+params_all_g<-rstan::extract(all_grow_sampling,pars=c('beta_0','endo_effect'))
+dim(params_all_g$beta_0)
+dim(params_all_g$endo_effect)
+
+##PLOTTING ENDO EFFECT (DIFFERENCE)
+#take a random subset of posterior draws for endo effect
+all_endoeffect_postg<-params_all_g$endo_effect[sample(dim(params_all_g$endo_effect)[1],size=1000,replace=F),]
+dim(all_endoeffect_postg)
+
+long_df_all_g <- as.data.frame.table(all_endoeffect_postg,
+                                     responseName = "value")
+
+str(long_df_all_g)
+
+# Convert to long data frame for endo effect
+long_df_all_s <- as.data.frame.table(all_endoeffect_posts,
+                                     responseName = "value") %>%
+  rename(draw = iterations, species = Var2, endo_effect = value) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
+long_df_all_g$spec <- case_when(long_df_all_g$species == 8 ~ "AGPE",
+                                long_df_all_g$species == 2 ~ "ELRI",
+                                long_df_all_g$species == 3 ~ "ELVI",
+                                long_df_all_g$species == 4 ~ "FESU",
+                                long_df_all_g$species == 5 ~ "LOAR",
+                                long_df_all_g$species == 6 ~ "POAL",
+                                long_df_all_g$species == 7 ~ "POAU",
+                                long_df_all_g$species == 1 ~ "POSY")
+
+summary_df_all_s <- long_df_all_s %>%
+  group_by(year,spec) %>% 
+  summarize(
+    median = median(endo_effect),
+    lower = quantile(endo_effect, 0.05),
+    upper = quantile(endo_effect, 0.95),
+    probgzero = mean(endo_effect>0),
+    .groups = "drop")
+
+#plotting endo effect
+ggplot(summary_df_all_s, aes(x = year, y = median)) +
+  geom_line(linewidth = 0.5, col = "mediumpurple3") +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
+  labs(x = "Year", y = "Endophyte effect",
+       title = "Difference of E+ and E- growth across years") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_grid("spec")
+
+##PLOTTING CORRELATION COEFFICENTS
+#take a random subset of posterior draws for correlation coefficients
+all_corr_posts<-params_all_s$Omega[sample(dim(params_all_s$Omega)[1],size=1000,replace=F),,1,2]
+dim(all_corr_posts)
+
+## Convert to long data frame for correlation coefficients
+long_df_all_corrs <- as.data.frame.table(all_corr_posts,
+                                         responseName = "value") %>%
+  rename(draw = Var1, species = Var2, corr = value) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_corrs$spec <- case_when(long_df_all_corrs$species == 8 ~ "AGPE",
+                                    long_df_all_corrs$species == 2 ~ "ELRI",
+                                    long_df_all_corrs$species == 3 ~ "ELVI",
+                                    long_df_all_corrs$species == 4 ~ "FESU",
+                                    long_df_all_corrs$species == 5 ~ "LOAR",
+                                    long_df_all_corrs$species == 6 ~ "POAL",
+                                    long_df_all_corrs$species == 7 ~ "POAU",
+                                    long_df_all_corrs$species == 1 ~ "POSY")
+
+#plotting correlation coefficients
+summary_df_all_corrs <- long_df_all_corrs %>%
+  group_by(spec) %>% #should i group by species as well
+  summarize(
+    mean = mean(corr),
+    median = median(corr),
+    lower = quantile(corr, 0.05),
+    upper = quantile(corr, 0.95),
+    probgzero = mean(corr>0),
+    .groups = "drop")
+
+ggplot(long_df_all_corrs)+
+  geom_histogram(aes (x=corr), fill="mediumpurple",binwidth = 0.02)+
+  facet_grid("spec")+xlim(-0.5,1) +
+  geom_vline(data = summary_df_all_corrs,
+             aes(xintercept = mean),
+             colour = "mediumpurple4",
+             size=0.75,
+             linetype = "dashed")
+
+#annotate with means manually on google slides
+long_df_all_corrs %>% group_by(spec) %>% summarize(mean = mean(corr, na.rm = TRUE))
+
+
+##PLOTTING ENDO ESTIMATES
+#take a random subset of posterior draws for endo effect
+all_beta0_postg<-params_all_g$beta_0[sample(dim(params_all_g$beta_0)[1],size=1000,replace=F),,]
+dim(all_beta0_postg)
+
+# Convert to long data frame for endo effect
+long_df_all_beta0s <- as.data.frame.table(all_beta0_posts,
+                                          responseName = "estimate") %>%
+  rename(draw = iterations, species = Var2, endo = Var3, year = Var4, estimate = estimate) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
+long_df_all_beta0s$spec <- case_when(long_df_all_beta0s$species == 8 ~ "AGPE",
+                                     long_df_all_beta0s$species == 2 ~ "ELRI",
+                                     long_df_all_beta0s$species == 3 ~ "ELVI",
+                                     long_df_all_beta0s$species == 4 ~ "FESU",
+                                     long_df_all_beta0s$species == 5 ~ "LOAR",
+                                     long_df_all_beta0s$species == 6 ~ "POAL",
+                                     long_df_all_beta0s$species == 7 ~ "POAU",
+                                     long_df_all_beta0s$species == 1 ~ "POSY")
+
+
+summary_df_all_beta0s <- long_df_all_beta0s %>%
+  group_by(year,spec,endo) %>% 
+  summarize(
+    median = median(estimate),
+    lower = quantile(estimate, 0.05),
+    upper = quantile(estimate, 0.95),
+    probgzero = mean(estimate>0),
+    .groups = "drop")
+
+#plotting endo effect
+ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = endo)) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  geom_line(linewidth = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
+  labs(x = "Year", y = "log (growth)",
+       title = "Growth rate of E+ and E- plants") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_grid("spec")
+
+
+##ONE FOR ALL CLIMATE EXPLICIT
+
+grasclim <-read.csv("data/CombinedDataRefined")
+##removing row with size_t = 0, it only applies to one ID in one year
+#gras %>% filter (species=="POAU", id=="79 1164 4") %>% View
+
+grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 
+
+##Making integers for species
+grasclim$spec <- as.integer (case_when(grasclim$species == "AGPE" ~ 8,
+                                       grasclim$species == "ELRI" ~ 2,
+                                       grasclim$species == "ELVI" ~ 3,
+                                       grasclim$species == "FESU" ~ 4,
+                                       grasclim$species == "LOAR" ~ 5,
+                                       grasclim$species == "POAL" ~ 6,
+                                       grasclim$species == "POAU" ~ 7,
+                                       grasclim$species == "POSY" ~ 1))
+
+##centering size
+gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
 
 library(tidybayes)
 
