@@ -28,61 +28,218 @@ weather$CensusYearJun <- ifelse(weather$monthina >= 6, (weather$yearina + 1), we
 weather$CensusYearJul <- ifelse(weather$monthina >= 7, (weather$yearina + 1), weather$yearina)
 weather$CensusYearSep <- ifelse(weather$monthina >= 9, (weather$yearina + 1), weather$yearina)
 
+#creating three month census blocks
+weather$Census_three_month_May <- (case_when(weather$monthina == 5 ~ "firstthreeback",
+                                             weather$monthina == 4 ~ "firstthreeback",
+                                             weather$monthina == 3 ~ "firstthreeback",
+                                             weather$monthina == 2 ~ "secondthreeback",
+                                             weather$monthina == 1 ~ "secondthreeback",
+                                             weather$monthina == 12 ~ "secondthreeback",
+                                             weather$monthina == 11 ~ "thirdthreeback",
+                                             weather$monthina == 10 ~ "thirdthreeback",
+                                             weather$monthina == 9 ~ "thirdthreeback",
+                                             weather$monthina == 8 ~ "fourththreeback",
+                                             weather$monthina == 7 ~ "fourththreeback",
+                                             weather$monthina == 6 ~ "fourththreeback"))
+
+weather$Census_three_month_Jun <- (case_when(weather$monthina == 6 ~ "firstthreeback",
+                                             weather$monthina == 5 ~ "firstthreeback",
+                                             weather$monthina == 4 ~ "firstthreeback",
+                                             weather$monthina == 3 ~ "secondthreeback",
+                                             weather$monthina == 2 ~ "secondthreeback",
+                                             weather$monthina == 1 ~ "secondthreeback",
+                                             weather$monthina == 12 ~ "thirdthreeback",
+                                             weather$monthina == 11 ~ "thirdthreeback",
+                                             weather$monthina == 10 ~ "thirdthreeback",
+                                             weather$monthina == 9 ~ "fourththreeback",
+                                             weather$monthina == 8 ~ "fourththreeback",
+                                             weather$monthina == 7 ~ "fourththreeback"))
+
+weather$Census_three_month_Jul <- (case_when(weather$monthina == 7 ~ "firstthreeback",
+                                             weather$monthina == 6 ~ "firstthreeback",
+                                             weather$monthina == 5 ~ "firstthreeback",
+                                             weather$monthina == 4 ~ "secondthreeback",
+                                             weather$monthina == 3 ~ "secondthreeback",
+                                             weather$monthina == 2 ~ "secondthreeback",
+                                             weather$monthina == 1 ~ "thirdthreeback",
+                                             weather$monthina == 12 ~ "thirdthreeback",
+                                             weather$monthina == 11 ~ "thirdthreeback",
+                                             weather$monthina == 10 ~ "fourththreeback",
+                                             weather$monthina == 9 ~ "fourththreeback",
+                                             weather$monthina == 8 ~ "fourththreeback"))
+
+weather$Census_three_month_Sep <- (case_when(weather$monthina == 9 ~ "firstthreeback",
+                                             weather$monthina == 8 ~ "firstthreeback",
+                                             weather$monthina == 7 ~ "firstthreeback",
+                                             weather$monthina == 6 ~ "secondthreeback",
+                                             weather$monthina == 5 ~ "secondthreeback",
+                                             weather$monthina == 4 ~ "secondthreeback",
+                                             weather$monthina == 3 ~ "thirdthreeback",
+                                             weather$monthina == 2 ~ "thirdthreeback",
+                                             weather$monthina == 1 ~ "thirdthreeback",
+                                             weather$monthina == 12 ~ "fourththreeback",
+                                             weather$monthina == 11 ~ "fourththreeback",
+                                             weather$monthina == 10 ~ "fourththreeback"))
+
+#creating three month census blocks
+weather$Census_six_month_May <- (case_when(weather$monthina == 5 ~ "firstsixback",
+                                           weather$monthina == 4 ~ "firstsixback",
+                                           weather$monthina == 3 ~ "firstsixback",
+                                           weather$monthina == 2 ~ "firstsixback",
+                                           weather$monthina == 1 ~ "firstsixback",
+                                           weather$monthina == 12 ~ "firstsixback",
+                                           weather$monthina == 11 ~ "secondsixback",
+                                           weather$monthina == 10 ~ "secondsixback",
+                                           weather$monthina == 9 ~ "secondsixback",
+                                           weather$monthina == 8 ~ "secondsixback",
+                                           weather$monthina == 7 ~ "secondsixback",
+                                           weather$monthina == 6 ~ "secondsixback"))
+
+weather$Census_six_month_Jun <- (case_when(weather$monthina == 6 ~ "firstsixback",
+                                           weather$monthina == 5 ~ "firstsixback",
+                                           weather$monthina == 4 ~ "firstsixback",
+                                           weather$monthina == 3 ~ "firstsixback",
+                                           weather$monthina == 2 ~ "firstsixback",
+                                           weather$monthina == 1 ~ "firstsixback",
+                                           weather$monthina == 12 ~ "secondsixback",
+                                           weather$monthina == 11 ~ "secondsixback",
+                                           weather$monthina == 10 ~ "secondsixback",
+                                           weather$monthina == 9 ~ "secondsixback",
+                                           weather$monthina == 8 ~ "secondsixback",
+                                           weather$monthina == 7 ~ "secondsixback"))
+
+weather$Census_six_month_Jul <- (case_when(weather$monthina == 7 ~ "firstsixback",
+                                           weather$monthina == 6 ~ "firstsixback",
+                                           weather$monthina == 5 ~ "firstsixback",
+                                           weather$monthina == 4 ~ "firstsixback",
+                                           weather$monthina == 3 ~ "firstsixback",
+                                           weather$monthina == 2 ~ "firstsixback",
+                                           weather$monthina == 1 ~ "secondsixback",
+                                           weather$monthina == 12 ~ "secondsixback",
+                                           weather$monthina == 11 ~ "secondsixback",
+                                           weather$monthina == 10 ~ "secondsixback",
+                                           weather$monthina == 9 ~ "secondsixback",
+                                           weather$monthina == 8 ~ "secondsixback"))
+
+weather$Census_six_month_Sep <- (case_when(weather$monthina == 9 ~ "firstsixback",
+                                           weather$monthina == 8 ~ "firstsixback",
+                                           weather$monthina == 7 ~ "firstsixback",
+                                           weather$monthina == 6 ~ "firstsixback",
+                                           weather$monthina == 5 ~ "firstsixback",
+                                           weather$monthina == 4 ~ "firstsixback",
+                                           weather$monthina == 3 ~ "secondsixback",
+                                           weather$monthina == 2 ~ "secondsixback",
+                                           weather$monthina == 1 ~ "secondsixback",
+                                           weather$monthina == 12 ~ "secondsixback",
+                                           weather$monthina == 11 ~ "secondsixback",
+                                           weather$monthina == 10 ~ "secondsixback"))
+
+#generating summary stats for each census month
+
+#generating summary stats for each month
+weather <- weather %>%
+  group_by(
+    monthina) %>%
+  mutate(monthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         monthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
+
+#generating summary stats for each three month block
+weather <- weather %>%
+  group_by(
+    Census_three_month_May) %>%
+  mutate(May_trimonthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         May_trimonthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
+
+weather <- weather %>%
+  group_by(
+    Census_three_month_Jun) %>%
+  mutate(Jun_trimonthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         Jun_trimonthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
+
+weather <- weather %>%
+  group_by(
+    Census_three_month_Jul) %>%
+  mutate(Jul_trimonthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         Jul_trimonthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
+
+weather <- weather %>%
+  group_by(
+    Census_three_month_Sep) %>%
+  mutate(Sep_trimonthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         Sep_trimonthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
+
+#generating summary stats for each six month block
+weather <- weather %>%
+  group_by(
+    Census_six_month_May) %>%
+  mutate(May_hexamonthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         May_hexamonthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
+
+weather <- weather %>%
+  group_by(
+    Census_six_month_Jun) %>%
+  mutate(Jun_hexamonthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         Jun_hexamonthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
+
+weather <- weather %>%
+  group_by(
+    Census_six_month_Jul) %>%
+  mutate(Jul_hexamonthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         Jul_hexamonthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
+
+weather <- weather %>%
+  group_by(
+    Census_six_month_Sep) %>%
+  mutate(Sep_hexamonthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
+         Sep_hexamonthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
+
 #generating summary stats for each census year
-weatherMay <- weather %>%
+weather <- weather %>%
   group_by(
     CensusYearMay) %>%
   mutate(CensusYearMay_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
-         CensusYearMay_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
-         CensusYearMay_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE),
-         CensusYearMay_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
+         CensusYearMay_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
 
-weatherJun <- weather %>%
+weather <- weather %>%
   group_by(
     CensusYearJun) %>%
   mutate(CensusYearJun_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
-         CensusYearJun_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
-         CensusYearJun_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE),
-         CensusYearJun_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
+         CensusYearJun_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
 
-weatherJul <- weather %>%
+weather <- weather %>%
   group_by(
     CensusYearJul) %>%
   mutate(CensusYearJul_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
-         CensusYearJul_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
-         CensusYearJul_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE),
-         CensusYearJul_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
+         CensusYearJul_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
 
-weatherSep <- weather %>%
+weather <- weather %>%
   group_by(
     CensusYearSep) %>%
   mutate(CensusYearSep_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
-         CensusYearSep_ppt_sd  = sd(`ppt (inches)`, na.rm = TRUE),
-         CensusYearSep_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE),
-         CensusYearSep_tmean_sd  = sd(`tmean (degrees F)`, na.rm = TRUE))
+         CensusYearSep_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
 
 #making data frames with only necessary data for each census year
-weatherMay <- weatherMay %>% 
+weatherMay <- weather %>% 
   select(-`tmax (degrees F)`,-`tdmean (degrees F)`,-`vpdmin (hPa)`,-`vpdmax (hPa)`,-`tmin (degrees F)`,
-    -Date, -monthina, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
+    -Date, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
     -CensusYearJun, -CensusYearJul, -CensusYearSep) %>% 
   distinct() 
 
-weatherJun <- weatherJun %>% 
+weatherJun <- weather %>% 
   select(-`tmax (degrees F)`,-`tdmean (degrees F)`,-`vpdmin (hPa)`,-`vpdmax (hPa)`,-`tmin (degrees F)`,
-         -Date, -monthina, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
+         -Date, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
          -CensusYearMay, -CensusYearJul, -CensusYearSep) %>% 
   distinct() 
 
-weatherJul <- weatherJul %>% 
+weatherJul <- weather %>% 
   select(-`tmax (degrees F)`,-`tdmean (degrees F)`,-`vpdmin (hPa)`,-`vpdmax (hPa)`,-`tmin (degrees F)`,
-         -Date, -monthina, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
+         -Date, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
          -CensusYearMay, -CensusYearJun, -CensusYearSep) %>% 
   distinct() 
 
-weatherSep <- weatherSep %>% 
+weatherSep <- weather %>% 
   select(-`tmax (degrees F)`,-`tdmean (degrees F)`,-`vpdmin (hPa)`,-`vpdmax (hPa)`,-`tmin (degrees F)`,
-         -Date, -monthina, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
+         -Date, -yearina, -`ppt (inches)`,-`tmean (degrees F)`,
          -CensusYearJun, -CensusYearJul, -CensusYearMay) %>% 
   distinct() 
 
@@ -111,15 +268,6 @@ CombinedData$ppt_tot <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedD
                                               gras$species == "POAU" ~ CombinedData$CensusYearMay_ppt_tot, #fake (I don't know the census date)
                                               gras$species == "POSY" ~ CombinedData$CensusYearMay_ppt_tot))
 
-CombinedData$ppt_sd <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedData$CensusYearSep_ppt_sd,
-                                              gras$species == "ELRI" ~ CombinedData$CensusYearJul_ppt_sd,
-                                              gras$species == "ELVI" ~ CombinedData$CensusYearJul_ppt_sd,
-                                              gras$species == "FESU" ~ CombinedData$CensusYearJun_ppt_sd,
-                                              gras$species == "LOAR" ~ CombinedData$CensusYearJul_ppt_sd, 
-                                              gras$species == "POAL" ~ CombinedData$CensusYearMay_ppt_sd,
-                                              gras$species == "POAU" ~ CombinedData$CensusYearMay_ppt_sd, #fake (I don't know the census date)
-                                              gras$species == "POSY" ~ CombinedData$CensusYearMay_ppt_sd))
-
 CombinedData$tmean_mean <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedData$CensusYearSep_tmean_mean,
                                               gras$species == "ELRI" ~ CombinedData$CensusYearJul_tmean_mean,
                                               gras$species == "ELVI" ~ CombinedData$CensusYearJul_tmean_mean,
@@ -128,15 +276,6 @@ CombinedData$tmean_mean <- as.numeric (case_when(gras$species == "AGPE" ~ Combin
                                               gras$species == "POAL" ~ CombinedData$CensusYearMay_tmean_mean,
                                               gras$species == "POAU" ~ CombinedData$CensusYearMay_tmean_mean, #fake (I don't know the census date)
                                               gras$species == "POSY" ~ CombinedData$CensusYearMay_tmean_mean))
-
-CombinedData$tmean_sd <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedData$CensusYearSep_tmean_sd,
-                                             gras$species == "ELRI" ~ CombinedData$CensusYearJul_tmean_sd,
-                                             gras$species == "ELVI" ~ CombinedData$CensusYearJul_tmean_sd,
-                                             gras$species == "FESU" ~ CombinedData$CensusYearJun_tmean_sd,
-                                             gras$species == "LOAR" ~ CombinedData$CensusYearJul_tmean_sd, 
-                                             gras$species == "POAL" ~ CombinedData$CensusYearMay_tmean_sd,
-                                             gras$species == "POAU" ~ CombinedData$CensusYearMay_tmean_sd, #fake (I don't know the census date)
-                                             gras$species == "POSY" ~ CombinedData$CensusYearMay_tmean_sd))
 
 
 str(CombinedData)
