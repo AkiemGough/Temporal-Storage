@@ -154,14 +154,23 @@ weather_six_month_sep <- weather %>%
 
 
 #making data frames with only necessary data for each 3 years back from May
-weatherMar_May <- weather_three_month_may %>% filter(Census_three_month_May == "firstthreeback")
-weatherDec_Feb <- weather_three_month_may %>% filter(Census_three_month_May == "secondthreeback") 
-weatherSep_Nov <- weather_three_month_may %>% filter(Census_three_month_May == "thirdthreeback")
-weatherJun_Aug <- weather_three_month_may %>% filter(Census_three_month_May == "fourththreeback") 
+weatherMar_May <- weather_three_month_may %>% filter(Census_three_month_May == "firstthreeback") %>%
+  rename(firstthreeback_vpdmax = May_trimonthly_vpdmax, firstthreeback_vpdmin = May_trimonthly_vpdmin)
+
+weatherDec_Feb <- weather_three_month_may %>% filter(Census_three_month_May == "secondthreeback") %>%
+  rename(secondthreeback_vpdmax = May_trimonthly_vpdmax, secondthreeback_vpdmin = May_trimonthly_vpdmin)
+
+weatherSep_Nov <- weather_three_month_may %>% filter(Census_three_month_May == "thirdthreeback")%>%
+  rename(thirdthreeback_vpdmax = May_trimonthly_vpdmax, thirdthreeback_vpdmin = May_trimonthly_vpdmin)
+
+weatherJun_Aug <- weather_three_month_may %>% filter(Census_three_month_May == "fourththreeback") %>%
+  rename(fourththreeback_vpdmax = May_trimonthly_vpdmax, fourththreeback_vpdmin = May_trimonthly_vpdmin)
 
 #making data frames with only necessary data for each 6 years back from May
-weatherDec_May <- weather_six_month_may %>% filter(Census_six_month_May == "firstsixback") 
-weatherJun_Nov <- weather_six_month_may %>% filter(Census_six_month_May == "secondsixback") 
+weatherDec_May <- weather_six_month_may %>% filter(Census_six_month_May == "firstsixback") %>%
+  rename(firstsixback_vpdmax = May_hexamonthly_vpdmax, firstsixback_vpdmin = May_hexamonthly_vpdmin)
+weatherJun_Nov <- weather_six_month_may %>% filter(Census_six_month_May == "secondsixback") %>%
+  rename(secondsixback_vpdmax = May_hexamonthly_vpdmax, secondsixback_vpdmin = May_hexamonthly_vpdmin)
 
 #making data frames with only necessary data for each 3 years back from Jul
 weatherMay_Jul <- weather_three_month_jul %>% filter(Census_three_month_Jul == "firstthreeback")
@@ -198,8 +207,13 @@ CombinedDec_Feb <- left_join(x=grasMayCensus, y=weatherDec_Feb, by=c("year_t" = 
 CombinedSep_Nov <- left_join(x=grasMayCensus, y=weatherSep_Nov, by=c("year_t" = "CensusYearMay"))
 CombinedJun_Aug <- left_join(x=grasMayCensus, y=weatherJun_Aug, by=c("year_t" = "CensusYearMay"))
 
-CombinedDec_May <- left_join(x=grasMayCensus, y=weatherMar_May, by=c("year_t" = "CensusYearMay"))
+CombinedDec_May <- left_join(x=grasMayCensus, y=weatherDec_May, by=c("year_t" = "CensusYearMay"))
 CombinedJun_Nov <- left_join(x=grasMayCensus, y=weatherJun_Nov, by=c("year_t" = "CensusYearMay"))
+
+CombinedMayThree <- bind_rows(CombinedMar_May,CombinedDec_Feb,CombinedSep_Nov,CombinedJun_Aug,
+                          .id="year_t")
+CombinedMaySix <- bind_rows(CombinedDec_May,CombinedJun_Nov,
+                          .id="year_t")
 
 #for Jul census
 CombinedMay_Jul <- left_join(x=grasJulCensus, y=weatherMay_Jul, by=c("year_t" = "CensusYearJul"))
@@ -210,6 +224,11 @@ CombinedAug_Oct <- left_join(x=grasJulCensus, y=weatherAug_Oct, by=c("year_t" = 
 CombinedFeb_Jul <- left_join(x=grasJulCensus, y=weatherFeb_Jul, by=c("year_t" = "CensusYearJul"))
 CombinedAug_Jan <- left_join(x=grasJulCensus, y=weatherAug_Jan, by=c("year_t" = "CensusYearJul"))
 
+CombinedJulThree <- bind_rows(CombinedMay_Jul,CombinedFeb_Apr,CombinedNov_Feb,CombinedAug_Oct,
+                          .id="year_t")
+CombinedJulSix <- bind_rows(CombinedFeb_Jul,CombinedAug_Jan,
+                          .id="year_t")
+
 #for Sep census
 CombinedJul_Sep <- left_join(x=grasSepCensus, y=weatherJul_Sep, by=c("year_t" = "CensusYearSep"))
 CombinedApr_Jun <- left_join(x=grasSepCensus, y=weatherApr_Jun, by=c("year_t" = "CensusYearSep"))
@@ -219,14 +238,12 @@ CombinedOct_Dec <- left_join(x=grasSepCensus, y=weatherOct_Dec, by=c("year_t" = 
 CombinedApr_Sep <- left_join(x=grasSepCensus, y=weatherApr_Sep, by=c("year_t" = "CensusYearSep"))
 CombinedOct_Mar <- left_join(x=grasSepCensus, y=weatherOct_Mar, by=c("year_t" = "CensusYearSep"))
 
-CombinedData <- bind_rows(CombinedMar_May,CombinedDec_Feb,CombinedSep_Nov,,CombinedJun_Aug,
-          CombinedDec_May,CombinedJun_Nov,
-          CombinedMa_Jul,CombinedFeb_Apr,CombinedNov_Feb,CombinedAug_Oct,
-          CombinedFeb_Jul,CombinedAug_Jan,
-          CombinedJul_Sep,CombinedApr_Jun,CombinedJan_Mar,CombinedOct_Dec,
-          CombinedApr_Sep,CombinedOct_Mar, .id="year_t")
+CombinedSepThree <- bind_rows(CombinedJul_Sep,CombinedApr_Jun,CombinedJan_Mar,CombinedOct_Dec,
+                          .id="year_t")
+CombinedSepSix <- bind_rows(CombinedApr_Sep,CombinedOct_Mar, 
+                          .id="year_t")
 
-?bind_rows
+
 
 CombinedData$tmean_mean <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedData$CensusYearSep_tmean_mean,
                                               gras$species == "ELRI" ~ CombinedData$CensusYearJul_tmean_mean,
