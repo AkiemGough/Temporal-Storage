@@ -156,13 +156,10 @@ weather_six_month_sep <- weather %>%
 #making data frames with only necessary data for each 3 years back from May
 weatherMar_May <- weather_three_month_may %>% filter(Census_three_month_May == "firstthreeback") %>%
   rename(firstthreeback_vpdmax = May_trimonthly_vpdmax, firstthreeback_vpdmin = May_trimonthly_vpdmin)
-
 weatherDec_Feb <- weather_three_month_may %>% filter(Census_three_month_May == "secondthreeback") %>%
   rename(secondthreeback_vpdmax = May_trimonthly_vpdmax, secondthreeback_vpdmin = May_trimonthly_vpdmin)
-
 weatherSep_Nov <- weather_three_month_may %>% filter(Census_three_month_May == "thirdthreeback")%>%
   rename(thirdthreeback_vpdmax = May_trimonthly_vpdmax, thirdthreeback_vpdmin = May_trimonthly_vpdmin)
-
 weatherJun_Aug <- weather_three_month_may %>% filter(Census_three_month_May == "fourththreeback") %>%
   rename(fourththreeback_vpdmax = May_trimonthly_vpdmax, fourththreeback_vpdmin = May_trimonthly_vpdmin)
 
@@ -173,24 +170,37 @@ weatherJun_Nov <- weather_six_month_may %>% filter(Census_six_month_May == "seco
   rename(secondsixback_vpdmax = May_hexamonthly_vpdmax, secondsixback_vpdmin = May_hexamonthly_vpdmin)
 
 #making data frames with only necessary data for each 3 years back from Jul
-weatherMay_Jul <- weather_three_month_jul %>% filter(Census_three_month_Jul == "firstthreeback")
-weatherFeb_Apr <- weather_three_month_jul %>% filter(Census_three_month_Jul == "secondthreeback")
-weatherNov_Feb <- weather_three_month_jul %>% filter(Census_three_month_Jul == "thirdthreeback") 
-weatherAug_Oct <- weather_three_month_jul %>% filter(Census_three_month_Jul == "fourththreeback") 
+weatherMay_Jul <- weather_three_month_jul %>% filter(Census_three_month_Jul == "firstthreeback") %>%
+  rename(firsththreeback_vpdmax = Jul_trimonthly_vpdmax, firsththreeback_vpdmin = Jul_trimonthly_vpdmin)
+weatherFeb_Apr <- weather_three_month_jul %>% filter(Census_three_month_Jul == "secondthreeback") %>%
+  rename(secondhthreeback_vpdmax = Jul_trimonthly_vpdmax, secondhthreeback_vpdmin = Jul_trimonthly_vpdmin)
+weatherNov_Feb <- weather_three_month_jul %>% filter(Census_three_month_Jul == "thirdthreeback") %>%
+  rename(thirdhthreeback_vpdmax = Jul_trimonthly_vpdmax, thirdhthreeback_vpdmin = Jul_trimonthly_vpdmin)
+weatherAug_Oct <- weather_three_month_jul %>% filter(Census_three_month_Jul == "fourththreeback") %>%
+  rename(fourththreeback_vpdmax = Jul_trimonthly_vpdmax, fourththreeback_vpdmin = Jul_trimonthly_vpdmin)
 
 #making data frames with only necessary data for each 6 years back from Jul
-weatherFeb_Jul <- weather_six_month_jul %>% filter(Census_six_month_Jul == "firstsixback") 
-weatherAug_Jan <- weather_six_month_jul %>% filter(Census_six_month_Jul == "secondsixback")
+weatherFeb_Jul <- weather_six_month_jul %>% filter(Census_six_month_Jul == "firstsixback") %>%
+  rename(firstsixback_vpdmax = Jul_hexamonthly_vpdmax, firstsixback_vpdmin = Jul_hexamonthly_vpdmin)
+weatherAug_Jan <- weather_six_month_jul %>% filter(Census_six_month_Jul == "secondsixback") %>%
+  rename(secondsixback_vpdmax = Jul_hexamonthly_vpdmax, secondsixback_vpdmin = Jul_hexamonthly_vpdmin)
 
 #making data frames with only necessary data for each 3 years back from Sep
-weatherJul_Sep <- weather_three_month_sep %>% filter(Census_three_month_Sep == "firstthreeback") 
-weatherApr_Jun <- weather_three_month_sep %>% filter(Census_three_month_Sep == "secondthreeback") 
-weatherJan_Mar <- weather_three_month_sep %>% filter(Census_three_month_Sep == "thirdthreeback") 
-weatherOct_Dec <- weather_three_month_sep %>% filter(Census_three_month_Sep == "fourththreeback")
+weatherJul_Sep <- weather_three_month_sep %>% filter(Census_three_month_Sep == "firstthreeback") %>%
+  rename(firstthreeback_vpdmax = Sep_trimonthly_vpdmax, firsththreeback_vpdmin = Sep_trimonthly_vpdmin)
+weatherApr_Jun <- weather_three_month_sep %>% filter(Census_three_month_Sep == "secondthreeback") %>%
+  rename(secondhthreeback_vpdmax = Sep_trimonthly_vpdmax, secondthreeback_vpdmin = Sep_trimonthly_vpdmin)
+weatherJan_Mar <- weather_three_month_sep %>% filter(Census_three_month_Sep == "thirdthreeback") %>%
+  rename(thirdthreeback_vpdmax = Sep_trimonthly_vpdmax, thirdthreeback_vpdmin = Sep_trimonthly_vpdmin)
+weatherOct_Dec <- weather_three_month_sep %>% filter(Census_three_month_Sep == "fourththreeback") %>%
+  rename(fourththreeback_vpdmax = Sep_trimonthly_vpdmax, fourththreeback_vpdmin = Sep_trimonthly_vpdmin)
 
 #making data frames with only necessary data for each 6 years back from Sep
-weatherApr_Sep <- weather_six_month_sep %>% filter(Census_six_month_Sep == "firstsixback") 
-weatherOct_Mar <- weather_six_month_sep %>% filter(Census_six_month_Sep == "secondsixback") 
+weatherApr_Sep <- weather_six_month_sep %>% filter(Census_six_month_Sep == "firstsixback") %>%
+  rename(firstsixback_vpdmax = Sep_hexamonthly_vpdmax, secondsixback_vpdmin = Sep_hexamonthly_vpdmin)
+weatherOct_Mar <- weather_six_month_sep %>% filter(Census_six_month_Sep == "secondsixback") %>%
+  rename(secondsixback_vpdmax = Sep_hexamonthly_vpdmax, secondsixback_vpdmin = Sep_hexamonthly_vpdmin)
+
 
 #Combining demographic data with the weather data
 gras <- read.csv("data/ltreb_allspp_2007_2025.csv")
@@ -244,15 +254,6 @@ CombinedSepSix <- bind_rows(CombinedApr_Sep,CombinedOct_Mar,
                           .id="year_t")
 
 
-
-CombinedData$tmean_mean <- as.numeric (case_when(gras$species == "AGPE" ~ CombinedData$CensusYearSep_tmean_mean,
-                                              gras$species == "ELRI" ~ CombinedData$CensusYearJul_tmean_mean,
-                                              gras$species == "ELVI" ~ CombinedData$CensusYearJul_tmean_mean,
-                                              gras$species == "FESU" ~ CombinedData$CensusYearJun_tmean_mean,
-                                              gras$species == "LOAR" ~ CombinedData$CensusYearJul_tmean_mean, 
-                                              gras$species == "POAL" ~ CombinedData$CensusYearMay_tmean_mean,
-                                              gras$species == "POAU" ~ CombinedData$CensusYearMay_tmean_mean, 
-                                              gras$species == "POSY" ~ CombinedData$CensusYearMay_tmean_mean))
 
 
 str(CombinedData)
