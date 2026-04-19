@@ -107,163 +107,138 @@ weather$Census_six_month_Sep <- (case_when(weather$monthina == 9 ~ "firstsixback
                                            weather$monthina == 11 ~ "secondsixback",
                                            weather$monthina == 10 ~ "secondsixback"))
 
-#generating summary stats for each month
-weather <- weather %>%
-  group_by(
-    monthina) %>%
-  mutate(monthly_ppt_tot = sum(`ppt (inches)`, na.rm = TRUE),
-         monthly_tmean_mean = mean(`tmean (degrees F)`, na.rm = TRUE))
-
 #generating summary stats for each three month block
 weather_three_month_may <- weather %>%
   group_by(CensusYearMay,
     Census_three_month_May) %>%
-  summarize(May_trimonthly_vpdmax = sum(`vpdmax (hPa)`, na.rm = TRUE),
-         May_trimonthly_vpdmin = mean(`vpdmin (hPa)`, na.rm = TRUE)) 
+  summarize(May_trimonthly_vpdmean = mean(((`vpdmax (hPa)`+`vpdmin (hPa)`)/2),
+                                          na.rm = TRUE)) 
 
 weather_three_month_jul <- weather %>%
   group_by(CensusYearJul,
     Census_three_month_Jul) %>%
-  summarize(Jul_trimonthly_vpdmax = sum(`vpdmax (hPa)`, na.rm = TRUE),
-         Jul_trimonthly_vpdmin = mean(`vpdmin (hPa)`, na.rm = TRUE)) 
+  summarize(Jul_trimonthly_vpdmean = mean(((`vpdmax (hPa)`+`vpdmin (hPa)`)/2),
+                                          na.rm = TRUE)) 
 
 weather_three_month_sep <- weather %>%
   group_by(CensusYearSep,
     Census_three_month_Sep) %>%
-  summarize(Sep_trimonthly_vpdmax = sum(`vpdmax (hPa)`, na.rm = TRUE),
-         Sep_trimonthly_vpdmin = mean(`vpdmin (hPa)`, na.rm = TRUE)) 
+  summarize(Sep_trimonthly_vpdmean = mean(((`vpdmax (hPa)`+`vpdmin (hPa)`)/2),
+                                          na.rm = TRUE)) 
 
 #generating summary stats for each six month block
 weather_six_month_may <- weather %>%
   group_by(CensusYearMay,
     Census_six_month_May) %>%
-  summarize(May_hexamonthly_vpdmax = sum(`vpdmax (hPa)`, na.rm = TRUE),
-         May_hexamonthly_vpdmin = mean(`vpdmin (hPa)`, na.rm = TRUE)) 
+  summarize(May_hexamonthly_vpdmean = mean(((`vpdmax (hPa)`+`vpdmin (hPa)`)/2),
+                                           na.rm = TRUE)) 
 
 weather_six_month_jul <- weather %>%
   group_by(CensusYearJul,
     Census_six_month_Jul) %>%
-  summarize(Jul_hexamonthly_vpdmax = sum(`vpdmax (hPa)`, na.rm = TRUE),
-         Jul_hexamonthly_vpdmin = mean(`vpdmin (hPa)`, na.rm = TRUE))
+  summarize(Jul_hexamonthly_vpdmean = mean(((`vpdmax (hPa)`+`vpdmin (hPa)`)/2),
+                                           na.rm = TRUE)) 
 
 weather_six_month_sep <- weather %>%
   group_by(CensusYearSep,
     Census_six_month_Sep) %>%
-  summarize(Sep_hexamonthly_vpdmax = sum(`vpdmax (hPa)`, na.rm = TRUE),
-         Sep_hexamonthly_vpdmin = mean(`vpdmin (hPa)`, na.rm = TRUE))
+  summarize(Sep_hexamonthly_vpdmean = mean(((`vpdmax (hPa)`+`vpdmin (hPa)`)/2),
+                                           na.rm = TRUE)) 
 
 
 #making data frames with only necessary data for each 3 years back from May
 weatherMar_May <- weather_three_month_may %>% filter(Census_three_month_May == "firstthreeback") %>%
-  rename(firstthreeback_vpdmax = May_trimonthly_vpdmax,
-         firstthreeback_vpdmin = May_trimonthly_vpdmin,
+  rename(firstthreeback_vpdmean = May_trimonthly_vpdmean,
          censusmonth = Census_three_month_May) %>%
   mutate(censusmonth = "May")
 
 weatherDec_Feb <- weather_three_month_may %>% filter(Census_three_month_May == "secondthreeback") %>%
-  rename(secondthreeback_vpdmax = May_trimonthly_vpdmax,
-         secondthreeback_vpdmin = May_trimonthly_vpdmin,
+  rename(secondthreeback_vpdmean = May_trimonthly_vpdmean,
          censusmonth = Census_three_month_May) %>%
   mutate(censusmonth = "May")
 
 weatherSep_Nov <- weather_three_month_may %>% filter(Census_three_month_May == "thirdthreeback")%>%
-  rename(thirdthreeback_vpdmax = May_trimonthly_vpdmax,
-         thirdthreeback_vpdmin = May_trimonthly_vpdmin,
+  rename(thirdthreeback_vpdmean = May_trimonthly_vpdmean,
          censusmonth = Census_three_month_May) %>%
   mutate(censusmonth = "May")
 
 weatherJun_Aug <- weather_three_month_may %>% filter(Census_three_month_May == "fourththreeback") %>%
-  rename(fourththreeback_vpdmax = May_trimonthly_vpdmax,
-         fourththreeback_vpdmin = May_trimonthly_vpdmin,
+  rename(fourththreeback_vpdmean = May_trimonthly_vpdmean,
          censusmonth = Census_three_month_May) %>%
   mutate(censusmonth = "May")
 
 #making data frames with only necessary data for each 6 years back from May
 weatherDec_May <- weather_six_month_may %>% filter(Census_six_month_May == "firstsixback") %>%
-  rename(firstsixback_vpdmax = May_hexamonthly_vpdmax,
-         firstsixback_vpdmin = May_hexamonthly_vpdmin,
+  rename(firstsixback_vpdmean = May_hexamonthly_vpdmean,
          censusmonth = Census_six_month_May) %>%
   mutate(censusmonth = "May")
 
 weatherJun_Nov <- weather_six_month_may %>% filter(Census_six_month_May == "secondsixback") %>%
-  rename(secondsixback_vpdmax = May_hexamonthly_vpdmax,
-         secondsixback_vpdmin = May_hexamonthly_vpdmin,
+  rename(secondsixback_vpdmean = May_hexamonthly_vpdmean,
          censusmonth = Census_six_month_May) %>%
   mutate(censusmonth = "May")
 
 #making data frames with only necessary data for each 3 years back from Jul
 weatherMay_Jul <- weather_three_month_jul %>% filter(Census_three_month_Jul == "firstthreeback") %>%
-  rename(firstthreeback_vpdmax = Jul_trimonthly_vpdmax,
-         firstthreeback_vpdmin = Jul_trimonthly_vpdmin,
+  rename(firstthreeback_vpdmean = Jul_trimonthly_vpdmean,
          censusmonth = Census_three_month_Jul) %>%
   mutate(censusmonth = "Jul")
 
 weatherFeb_Apr <- weather_three_month_jul %>% filter(Census_three_month_Jul == "secondthreeback") %>%
-  rename(secondthreeback_vpdmax = Jul_trimonthly_vpdmax,
-         secondthreeback_vpdmin = Jul_trimonthly_vpdmin,
+  rename(secondthreeback_vpdmean = Jul_trimonthly_vpdmean,
          censusmonth = Census_three_month_Jul) %>%
   mutate(censusmonth = "Jul")
 
 weatherNov_Feb <- weather_three_month_jul %>% filter(Census_three_month_Jul == "thirdthreeback") %>%
-  rename(thirdthreeback_vpdmax = Jul_trimonthly_vpdmax,
-         thirdthreeback_vpdmin = Jul_trimonthly_vpdmin,
+  rename(thirdthreeback_vpdmean = Jul_trimonthly_vpdmean,
          censusmonth = Census_three_month_Jul) %>%
   mutate(censusmonth = "Jul")
 
 weatherAug_Oct <- weather_three_month_jul %>% filter(Census_three_month_Jul == "fourththreeback") %>%
-  rename(fourththreeback_vpdmax = Jul_trimonthly_vpdmax,
-         fourththreeback_vpdmin = Jul_trimonthly_vpdmin,
+  rename(fourththreeback_vpdmean = Jul_trimonthly_vpdmean,
          censusmonth = Census_three_month_Jul) %>%
   mutate(censusmonth = "Jul")
 
 #making data frames with only necessary data for each 6 years back from Jul
 weatherFeb_Jul <- weather_six_month_jul %>% filter(Census_six_month_Jul == "firstsixback") %>%
-  rename(firstsixback_vpdmax = Jul_hexamonthly_vpdmax, 
-         firstsixback_vpdmin = Jul_hexamonthly_vpdmin,
+  rename(firstsixback_vpdmean = Jul_hexamonthly_vpdmean,
          censusmonth = Census_six_month_Jul) %>%
   mutate(censusmonth = "Jul")
 
 weatherAug_Jan <- weather_six_month_jul %>% filter(Census_six_month_Jul == "secondsixback") %>%
-  rename(secondsixback_vpdmax = Jul_hexamonthly_vpdmax,
-         secondsixback_vpdmin = Jul_hexamonthly_vpdmin,
+  rename(secondsixback_vpdmean = Jul_hexamonthly_vpdmean,
          censusmonth = Census_six_month_Jul) %>%
   mutate(censusmonth = "Jul")
 
 #making data frames with only necessary data for each 3 years back from Sep
 weatherJul_Sep <- weather_three_month_sep %>% filter(Census_three_month_Sep == "firstthreeback") %>%
-  rename(firstthreeback_vpdmax = Sep_trimonthly_vpdmax,
-         firstthreeback_vpdmin = Sep_trimonthly_vpdmin,
+  rename(firstthreeback_vpdmean = Sep_trimonthly_vpdmean,
          censusmonth = Census_three_month_Sep) %>%
   mutate(censusmonth = "Sep")
 
 weatherApr_Jun <- weather_three_month_sep %>% filter(Census_three_month_Sep == "secondthreeback") %>%
-  rename(secondthreeback_vpdmax = Sep_trimonthly_vpdmax,
-         secondthreeback_vpdmin = Sep_trimonthly_vpdmin,
+  rename(secondthreeback_vpdmean = Sep_trimonthly_vpdmean,
          censusmonth = Census_three_month_Sep) %>%
   mutate(censusmonth = "Sep")
 
 weatherJan_Mar <- weather_three_month_sep %>% filter(Census_three_month_Sep == "thirdthreeback") %>%
-  rename(thirdthreeback_vpdmax = Sep_trimonthly_vpdmax,
-         thirdthreeback_vpdmin = Sep_trimonthly_vpdmin,
+  rename(thirdthreeback_vpdmean = Sep_trimonthly_vpdmean,
          censusmonth = Census_three_month_Sep) %>%
   mutate(censusmonth = "Sep")
 
 weatherOct_Dec <- weather_three_month_sep %>% filter(Census_three_month_Sep == "fourththreeback") %>%
-  rename(fourththreeback_vpdmax = Sep_trimonthly_vpdmax,
-         fourththreeback_vpdmin = Sep_trimonthly_vpdmin,
+  rename(fourththreeback_vpdmean = Sep_trimonthly_vpdmean,
          censusmonth = Census_three_month_Sep) %>%
   mutate(censusmonth = "Sep")
 
 #making data frames with only necessary data for each 6 years back from Sep
 weatherApr_Sep <- weather_six_month_sep %>% filter(Census_six_month_Sep == "firstsixback") %>%
-  rename(firstsixback_vpdmax = Sep_hexamonthly_vpdmax,
-         firstsixback_vpdmin = Sep_hexamonthly_vpdmin,
+  rename(firstsixback_vpdmean = Sep_hexamonthly_vpdmean,
          censusmonth = Census_six_month_Sep) %>%
   mutate(censusmonth = "Sep")
 
 weatherOct_Mar <- weather_six_month_sep %>% filter(Census_six_month_Sep == "secondsixback") %>%
-  rename(secondsixback_vpdmax = Sep_hexamonthly_vpdmax,
-         secondsixback_vpdmin = Sep_hexamonthly_vpdmin,
+  rename(secondsixback_vpdmean = Sep_hexamonthly_vpdmean,
          censusmonth = Census_six_month_Sep) %>%
   mutate(censusmonth = "Sep")
 
