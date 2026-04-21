@@ -23,9 +23,49 @@ weather$monthina <- as.numeric (format(weather$Date, "%m"))
 weather$yearina <- as.numeric (format(weather$Date, "%Y")) + 2000
 
 #creating census years for each data collection period     
-weather$CensusYearMay <- ifelse(weather$monthina >= 5, (weather$yearina + 1), weather$yearina)
-weather$CensusYearJul <- ifelse(weather$monthina >= 7, (weather$yearina + 1), weather$yearina)
-weather$CensusYearSep <- ifelse(weather$monthina >= 9, (weather$yearina + 1), weather$yearina)
+weather$CensusYearMay <- ifelse(weather$monthina > 5, (weather$yearina + 1), weather$yearina)
+weather$CensusYearJul <- ifelse(weather$monthina > 7, (weather$yearina + 1), weather$yearina)
+weather$CensusYearSep <- ifelse(weather$monthina > 9, (weather$yearina + 1), weather$yearina)
+
+#creating one month census blocks
+weather$Census_one_month_May <- (case_when(weather$monthina == 5 ~ "firstoneback",
+                                             weather$monthina == 4 ~ "secondoneback",
+                                             weather$monthina == 3 ~ "thirdoneback",
+                                             weather$monthina == 2 ~ "fourthoneback",
+                                             weather$monthina == 1 ~ "fifthoneback",
+                                             weather$monthina == 12 ~ "sixthoneback",
+                                             weather$monthina == 11 ~ "seventhoneback",
+                                             weather$monthina == 10 ~ "eighthoneback",
+                                             weather$monthina == 9 ~ "ninthoneback",
+                                             weather$monthina == 8 ~ "tenthoneback",
+                                             weather$monthina == 7 ~ "eleventhoneback",
+                                             weather$monthina == 6 ~ "twelvthoneback"))
+
+weather$Census_one_month_Jul <- (case_when(weather$monthina == 7 ~ "firstoneback",
+                                           weather$monthina == 6 ~ "secondoneback",
+                                           weather$monthina == 5 ~ "thirdoneback",
+                                           weather$monthina == 4 ~ "fourthoneback",
+                                           weather$monthina == 3 ~ "fifthoneback",
+                                           weather$monthina == 2 ~ "sixthoneback",
+                                           weather$monthina == 1 ~ "seventhoneback",
+                                           weather$monthina == 12 ~ "eighthoneback",
+                                           weather$monthina == 11 ~ "ninthoneback",
+                                           weather$monthina == 10 ~ "tenthoneback",
+                                           weather$monthina == 9 ~ "eleventhoneback",
+                                           weather$monthina == 8 ~ "twelvthoneback"))
+
+weather$Census_one_month_Sep <- (case_when(weather$monthina == 9 ~ "firstoneback",
+                                           weather$monthina == 8 ~ "secondoneback",
+                                           weather$monthina == 7 ~ "thirdoneback",
+                                           weather$monthina == 6 ~ "fourthoneback",
+                                           weather$monthina == 5 ~ "fifthoneback",
+                                           weather$monthina == 4 ~ "sixthoneback",
+                                           weather$monthina == 3 ~ "seventhoneback",
+                                           weather$monthina == 2 ~ "eighthoneback",
+                                           weather$monthina == 1 ~ "ninthoneback",
+                                           weather$monthina == 12 ~ "tenthoneback",
+                                           weather$monthina == 11 ~ "eleventhoneback",
+                                           weather$monthina == 10 ~ "twelvthoneback"))
 
 #creating three month census blocks
 weather$Census_three_month_May <- (case_when(weather$monthina == 5 ~ "firstthreeback",
@@ -107,6 +147,25 @@ weather$Census_six_month_Sep <- (case_when(weather$monthina == 9 ~ "firstsixback
                                            weather$monthina == 11 ~ "secondsixback",
                                            weather$monthina == 10 ~ "secondsixback"))
 
+#generating summary stats for each one month block
+weather_one_month_may <- weather %>%
+  group_by(CensusYearMay,
+           Census_one_month_May) %>%
+  summarize(May_monthly_vpdmean = mean(((`vpdmax (hPa)`+`vpdmin (hPa)`)/2),
+                                          na.rm = TRUE)) 
+
+weather_one_month_jul <- weather %>%
+  group_by(CensusYearJul,
+           Census_one_month_Jul) %>%
+  summarize(Jul_monthly_vpdmean = mean(((`vpdmax (hPa)`+`vpdmin (hPa)`)/2),
+                                          na.rm = TRUE)) 
+
+weather_one_month_sep <- weather %>%
+  group_by(CensusYearSep,
+           Census_one_month_Sep) %>%
+  summarize(Sep_monthly_vpdmean = mean(((`vpdmax (hPa)`+`vpdmin (hPa)`)/2),
+                                          na.rm = TRUE)) 
+
 #generating summary stats for each three month block
 weather_three_month_may <- weather %>%
   group_by(CensusYearMay,
@@ -146,7 +205,68 @@ weather_six_month_sep <- weather %>%
                                            na.rm = TRUE)) 
 
 
-#making data frames with only necessary data for each 3 years back from May
+#making data frames with only necessary data for each one month back from May
+weatherMayMay <- weather_one_month_may %>% filter(Census_one_month_May == "firstoneback") %>%
+  rename(firstoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayApr <- weather_one_month_may %>% filter(Census_one_month_May == "secondoneback") %>%
+  rename(secondoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayMar <- weather_one_month_may %>% filter(Census_one_month_May == "thirdoneback")%>%
+  rename(thirdoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayFeb <- weather_one_month_may %>% filter(Census_one_month_May == "fourthoneback") %>%
+  rename(fourthoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayJan <- weather_one_month_may %>% filter(Census_one_month_May == "fifthoneback") %>%
+  rename(fifthoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayDec <- weather_one_month_may %>% filter(Census_one_month_May == "sixthoneback") %>%
+  rename(sixthoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayNov <- weather_one_month_may %>% filter(Census_one_month_May == "seventhoneback") %>%
+  rename(seventhoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayOct <- weather_one_month_may %>% filter(Census_one_month_May == "eighthoneback") %>%
+  rename(eighthoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMaySep <- weather_one_month_may %>% filter(Census_one_month_May == "ninthoneback") %>%
+  rename(ninthoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayAug <- weather_one_month_may %>% filter(Census_one_month_May == "tenthoneback") %>%
+  rename(tenthoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayJul <- weather_one_month_may %>% filter(Census_one_month_May == "eleventhoneback") %>%
+  rename(eleventhoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+weatherMayJun <- weather_one_month_may %>% filter(Census_one_month_May == "twelvthoneback") %>%
+  rename(twelvthoneback_vpdmean = May_monthly_vpdmean,
+         censusmonth = Census_one_month_May) %>%
+  mutate(censusmonth = "May")
+
+#making data frames with only necessary data for each 3 months back from May
 weatherMar_May <- weather_three_month_may %>% filter(Census_three_month_May == "firstthreeback") %>%
   rename(firstthreeback_vpdmean = May_trimonthly_vpdmean,
          censusmonth = Census_three_month_May) %>%
@@ -167,7 +287,7 @@ weatherJun_Aug <- weather_three_month_may %>% filter(Census_three_month_May == "
          censusmonth = Census_three_month_May) %>%
   mutate(censusmonth = "May")
 
-#making data frames with only necessary data for each 6 years back from May
+#making data frames with only necessary data for each 6 months back from May
 weatherDec_May <- weather_six_month_may %>% filter(Census_six_month_May == "firstsixback") %>%
   rename(firstsixback_vpdmean = May_hexamonthly_vpdmean,
          censusmonth = Census_six_month_May) %>%
@@ -178,7 +298,68 @@ weatherJun_Nov <- weather_six_month_may %>% filter(Census_six_month_May == "seco
          censusmonth = Census_six_month_May) %>%
   mutate(censusmonth = "May")
 
-#making data frames with only necessary data for each 3 years back from Jul
+#making data frames with only necessary data for each one month back from Jul
+weatherJulJul <- weather_one_month_jul %>% filter(Census_one_month_Jul == "firstoneback") %>%
+  rename(firstoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulJun <- weather_one_month_jul %>% filter(Census_one_month_Jul == "secondoneback") %>%
+  rename(secondoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulMay <- weather_one_month_jul %>% filter(Census_one_month_Jul == "thirdoneback")%>%
+  rename(thirdoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulApr <- weather_one_month_jul %>% filter(Census_one_month_Jul == "fourthoneback") %>%
+  rename(fourthoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulMar <- weather_one_month_jul %>% filter(Census_one_month_Jul == "fifthoneback") %>%
+  rename(fifthoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulFeb <- weather_one_month_jul %>% filter(Census_one_month_Jul == "sixthoneback") %>%
+  rename(sixthoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulJan <- weather_one_month_jul %>% filter(Census_one_month_Jul == "seventhoneback") %>%
+  rename(seventhoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulDec <- weather_one_month_jul %>% filter(Census_one_month_Jul == "eighthoneback") %>%
+  rename(eighthoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulNov <- weather_one_month_jul %>% filter(Census_one_month_Jul == "ninthoneback") %>%
+  rename(ninthoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulOct <- weather_one_month_jul %>% filter(Census_one_month_Jul == "tenthoneback") %>%
+  rename(tenthoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulSep <- weather_one_month_jul %>% filter(Census_one_month_Jul == "eleventhoneback") %>%
+  rename(eleventhoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+weatherJulAug <- weather_one_month_jul %>% filter(Census_one_month_Jul == "twelvthoneback") %>%
+  rename(twelvthoneback_vpdmean = Jul_monthly_vpdmean,
+         censusmonth = Census_one_month_Jul) %>%
+  mutate(censusmonth = "Jul")
+
+#making data frames with only necessary data for each 3 months back from Jul
 weatherMay_Jul <- weather_three_month_jul %>% filter(Census_three_month_Jul == "firstthreeback") %>%
   rename(firstthreeback_vpdmean = Jul_trimonthly_vpdmean,
          censusmonth = Census_three_month_Jul) %>%
@@ -199,7 +380,7 @@ weatherAug_Oct <- weather_three_month_jul %>% filter(Census_three_month_Jul == "
          censusmonth = Census_three_month_Jul) %>%
   mutate(censusmonth = "Jul")
 
-#making data frames with only necessary data for each 6 years back from Jul
+#making data frames with only necessary data for each 6 months back from Jul
 weatherFeb_Jul <- weather_six_month_jul %>% filter(Census_six_month_Jul == "firstsixback") %>%
   rename(firstsixback_vpdmean = Jul_hexamonthly_vpdmean,
          censusmonth = Census_six_month_Jul) %>%
@@ -210,7 +391,68 @@ weatherAug_Jan <- weather_six_month_jul %>% filter(Census_six_month_Jul == "seco
          censusmonth = Census_six_month_Jul) %>%
   mutate(censusmonth = "Jul")
 
-#making data frames with only necessary data for each 3 years back from Sep
+#making data frames with only necessary data for each one month back from Sep
+weatherSepSep <- weather_one_month_sep %>% filter(Census_one_month_Sep == "firstoneback") %>%
+  rename(firstoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepAug <- weather_one_month_sep %>% filter(Census_one_month_Sep == "secondoneback") %>%
+  rename(secondoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepJul <- weather_one_month_sep %>% filter(Census_one_month_Sep == "thirdoneback")%>%
+  rename(thirdoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepJun <- weather_one_month_sep %>% filter(Census_one_month_Sep == "fourthoneback") %>%
+  rename(fourthoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepMay <- weather_one_month_sep %>% filter(Census_one_month_Sep == "fifthoneback") %>%
+  rename(fifthoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepApr <- weather_one_month_sep %>% filter(Census_one_month_Sep == "sixthoneback") %>%
+  rename(sixthoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepMar <- weather_one_month_sep %>% filter(Census_one_month_Sep == "seventhoneback") %>%
+  rename(seventhoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepFeb <- weather_one_month_sep %>% filter(Census_one_month_Sep == "eighthoneback") %>%
+  rename(eighthoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepJan <- weather_one_month_sep %>% filter(Census_one_month_Sep == "ninthoneback") %>%
+  rename(ninthoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepDec <- weather_one_month_sep %>% filter(Census_one_month_Sep == "tenthoneback") %>%
+  rename(tenthoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepNov <- weather_one_month_sep %>% filter(Census_one_month_Sep == "eleventhoneback") %>%
+  rename(eleventhoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+weatherSepOct <- weather_one_month_sep %>% filter(Census_one_month_Sep == "twelvthoneback") %>%
+  rename(twelvthoneback_vpdmean = Sep_monthly_vpdmean,
+         censusmonth = Census_one_month_Sep) %>%
+  mutate(censusmonth = "Sep")
+
+#making data frames with only necessary data for each 3 months back from Sep
 weatherJul_Sep <- weather_three_month_sep %>% filter(Census_three_month_Sep == "firstthreeback") %>%
   rename(firstthreeback_vpdmean = Sep_trimonthly_vpdmean,
          censusmonth = Census_three_month_Sep) %>%
@@ -231,7 +473,7 @@ weatherOct_Dec <- weather_three_month_sep %>% filter(Census_three_month_Sep == "
          censusmonth = Census_three_month_Sep) %>%
   mutate(censusmonth = "Sep")
 
-#making data frames with only necessary data for each 6 years back from Sep
+#making data frames with only necessary data for each 6 months back from Sep
 weatherApr_Sep <- weather_six_month_sep %>% filter(Census_six_month_Sep == "firstsixback") %>%
   rename(firstsixback_vpdmean = Sep_hexamonthly_vpdmean,
          censusmonth = Census_six_month_Sep) %>%
@@ -252,6 +494,20 @@ grasSepCensus <- gras %>% filter(species == "AGPE")
 
 #Combining corresponding weather and demographic data frames
 #for May census
+
+CombinedMayMay <- left_join(x=grasMayCensus, y=weatherMayMay, by=c("year_t" = "CensusYearMay"))
+CombinedMayApr <- left_join(x=grasMayCensus, y=weatherMayApr, by=c("year_t" = "CensusYearMay"))
+CombinedMayMar <- left_join(x=grasMayCensus, y=weatherMayMar, by=c("year_t" = "CensusYearMay"))
+CombinedMayFeb <- left_join(x=grasMayCensus, y=weatherMayFeb, by=c("year_t" = "CensusYearMay"))
+CombinedMayJan <- left_join(x=grasMayCensus, y=weatherMayJan, by=c("year_t" = "CensusYearMay"))
+CombinedMayDec <- left_join(x=grasMayCensus, y=weatherMayDec, by=c("year_t" = "CensusYearMay"))
+CombinedMayNov <- left_join(x=grasMayCensus, y=weatherMayNov, by=c("year_t" = "CensusYearMay"))
+CombinedMayOct <- left_join(x=grasMayCensus, y=weatherMayOct, by=c("year_t" = "CensusYearMay"))
+CombinedMaySep <- left_join(x=grasMayCensus, y=weatherMaySep, by=c("year_t" = "CensusYearMay"))
+CombinedMayAug <- left_join(x=grasMayCensus, y=weatherMayAug, by=c("year_t" = "CensusYearMay"))
+CombinedMayJul <- left_join(x=grasMayCensus, y=weatherMayJul, by=c("year_t" = "CensusYearMay"))
+CombinedMayJun <- left_join(x=grasMayCensus, y=weatherMayJun, by=c("year_t" = "CensusYearMay"))
+
 CombinedMar_May <- left_join(x=grasMayCensus, y=weatherMar_May, by=c("year_t" = "CensusYearMay"))
 CombinedDec_Feb <- left_join(x=grasMayCensus, y=weatherDec_Feb, by=c("year_t" = "CensusYearMay"))
 CombinedSep_Nov <- left_join(x=grasMayCensus, y=weatherSep_Nov, by=c("year_t" = "CensusYearMay"))
@@ -261,6 +517,20 @@ CombinedDec_May <- left_join(x=grasMayCensus, y=weatherDec_May, by=c("year_t" = 
 CombinedJun_Nov <- left_join(x=grasMayCensus, y=weatherJun_Nov, by=c("year_t" = "CensusYearMay"))
 
 #for Jul census
+
+CombinedJulJul <- left_join(x=grasJulCensus, y=weatherJulJul, by=c("year_t" = "CensusYearJul"))
+CombinedJulJun <- left_join(x=grasJulCensus, y=weatherJulJun, by=c("year_t" = "CensusYearJul"))
+CombinedJulMay <- left_join(x=grasJulCensus, y=weatherJulMay, by=c("year_t" = "CensusYearJul"))
+CombinedJulApr <- left_join(x=grasJulCensus, y=weatherJulApr, by=c("year_t" = "CensusYearJul"))
+CombinedJulMar <- left_join(x=grasJulCensus, y=weatherJulMar, by=c("year_t" = "CensusYearJul"))
+CombinedJulFeb <- left_join(x=grasJulCensus, y=weatherJulFeb, by=c("year_t" = "CensusYearJul"))
+CombinedJulJan <- left_join(x=grasJulCensus, y=weatherJulJan, by=c("year_t" = "CensusYearJul"))
+CombinedJulDec <- left_join(x=grasJulCensus, y=weatherJulDec, by=c("year_t" = "CensusYearJul"))
+CombinedJulNov <- left_join(x=grasJulCensus, y=weatherJulNov, by=c("year_t" = "CensusYearJul"))
+CombinedJulOct <- left_join(x=grasJulCensus, y=weatherJulOct, by=c("year_t" = "CensusYearJul"))
+CombinedJulSep <- left_join(x=grasJulCensus, y=weatherJulSep, by=c("year_t" = "CensusYearJul"))
+CombinedJulAug <- left_join(x=grasJulCensus, y=weatherJulAug, by=c("year_t" = "CensusYearJul"))
+
 CombinedMay_Jul <- left_join(x=grasJulCensus, y=weatherMay_Jul, by=c("year_t" = "CensusYearJul"))
 CombinedFeb_Apr <- left_join(x=grasJulCensus, y=weatherFeb_Apr, by=c("year_t" = "CensusYearJul"))
 CombinedNov_Feb <- left_join(x=grasJulCensus, y=weatherNov_Feb, by=c("year_t" = "CensusYearJul"))
@@ -270,6 +540,20 @@ CombinedFeb_Jul <- left_join(x=grasJulCensus, y=weatherFeb_Jul, by=c("year_t" = 
 CombinedAug_Jan <- left_join(x=grasJulCensus, y=weatherAug_Jan, by=c("year_t" = "CensusYearJul"))
 
 #for Sep census
+
+CombinedSepSep <- left_join(x=grasSepCensus, y=weatherSepSep, by=c("year_t" = "CensusYearSep"))
+CombinedSepAug <- left_join(x=grasSepCensus, y=weatherSepAug, by=c("year_t" = "CensusYearSep"))
+CombinedSepJul <- left_join(x=grasSepCensus, y=weatherSepJul, by=c("year_t" = "CensusYearSep"))
+CombinedSepJun <- left_join(x=grasSepCensus, y=weatherSepJun, by=c("year_t" = "CensusYearSep"))
+CombinedSepMay <- left_join(x=grasSepCensus, y=weatherSepMay, by=c("year_t" = "CensusYearSep"))
+CombinedSepApr <- left_join(x=grasSepCensus, y=weatherSepApr, by=c("year_t" = "CensusYearSep"))
+CombinedSepMar <- left_join(x=grasSepCensus, y=weatherSepMar, by=c("year_t" = "CensusYearSep"))
+CombinedSepFeb <- left_join(x=grasSepCensus, y=weatherSepFeb, by=c("year_t" = "CensusYearSep"))
+CombinedSepJan <- left_join(x=grasSepCensus, y=weatherSepJan, by=c("year_t" = "CensusYearSep"))
+CombinedSepDec <- left_join(x=grasSepCensus, y=weatherSepDec, by=c("year_t" = "CensusYearSep"))
+CombinedSepNov <- left_join(x=grasSepCensus, y=weatherSepNov, by=c("year_t" = "CensusYearSep"))
+CombinedSepOct <- left_join(x=grasSepCensus, y=weatherSepOct, by=c("year_t" = "CensusYearSep"))
+
 CombinedJul_Sep <- left_join(x=grasSepCensus, y=weatherJul_Sep, by=c("year_t" = "CensusYearSep"))
 CombinedApr_Jun <- left_join(x=grasSepCensus, y=weatherApr_Jun, by=c("year_t" = "CensusYearSep"))
 CombinedJan_Mar <- left_join(x=grasSepCensus, y=weatherJan_Mar, by=c("year_t" = "CensusYearSep"))
@@ -279,13 +563,24 @@ CombinedApr_Sep <- left_join(x=grasSepCensus, y=weatherApr_Sep, by=c("year_t" = 
 CombinedOct_Mar <- left_join(x=grasSepCensus, y=weatherOct_Mar, by=c("year_t" = "CensusYearSep"))
 
 
-CombinedDataSegments <- bind_rows(CombinedMar_May,CombinedDec_Feb,CombinedSep_Nov,CombinedJun_Aug,
-                              CombinedDec_May,CombinedJun_Nov,
-                              CombinedMay_Jul,CombinedFeb_Apr,CombinedNov_Feb,CombinedAug_Oct,
-                              CombinedFeb_Jul,CombinedAug_Jan,
-                              CombinedJul_Sep,CombinedApr_Jun,CombinedJan_Mar,CombinedOct_Dec,
-                              CombinedApr_Sep,CombinedOct_Mar, 
+CombinedDataSegments <- bind_rows(CombinedMayMay,CombinedMayApr,CombinedMayMar,CombinedMayFeb,
+                                  CombinedMayJan,CombinedMayDec,CombinedMayNov,CombinedMayOct,
+                                  CombinedMaySep,CombinedMayAug,CombinedMayJul,CombinedMayJun,
+                                  CombinedMar_May,CombinedDec_Feb,CombinedSep_Nov,CombinedJun_Aug,
+                                  CombinedDec_May,CombinedJun_Nov,
+                                  CombinedJulJul,CombinedJulJun,CombinedJulMay,CombinedJulApr,
+                                  CombinedJulMar,CombinedJulFeb,CombinedJulJan,CombinedJulDec,
+                                  CombinedJulNov,CombinedJulOct,CombinedJulSep,CombinedJulAug,
+                                  CombinedMay_Jul,CombinedFeb_Apr,CombinedNov_Feb,CombinedAug_Oct,
+                                  CombinedFeb_Jul,CombinedAug_Jan,
+                                  CombinedSepSep,CombinedSepAug,CombinedSepJul,CombinedSepJun,
+                                  CombinedSepMay,CombinedSepApr,CombinedSepMar,CombinedSepFeb,
+                                  CombinedSepJan,CombinedSepDec,CombinedSepNov,CombinedSepOct,
+                                  CombinedJul_Sep,CombinedApr_Jun,CombinedJan_Mar,CombinedOct_Dec,
+                                  CombinedApr_Sep,CombinedOct_Mar, 
                               .id="year_t")
+
+#After this year_t turns to 1-9?? instead of 2007-2025
 
 
 write.csv(CombinedDataSegments, "data/CombinedDataSegments")
