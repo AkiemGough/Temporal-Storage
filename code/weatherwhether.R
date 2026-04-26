@@ -493,94 +493,82 @@ grasJulCensus <- gras %>% filter(species == c("ELVI","ELRI","LOAR"))
 grasSepCensus <- gras %>% filter(species == "AGPE")
 
 #Combining corresponding weather and demographic data frames
-#for May census
 
-CombinedMayMay <- left_join(x=grasMayCensus, y=weatherMayMay, by=c("year_t" = "CensusYearMay"))
-CombinedMayApr <- left_join(x=grasMayCensus, y=weatherMayApr, by=c("year_t" = "CensusYearMay"))
-CombinedMayMar <- left_join(x=grasMayCensus, y=weatherMayMar, by=c("year_t" = "CensusYearMay"))
-CombinedMayFeb <- left_join(x=grasMayCensus, y=weatherMayFeb, by=c("year_t" = "CensusYearMay"))
-CombinedMayJan <- left_join(x=grasMayCensus, y=weatherMayJan, by=c("year_t" = "CensusYearMay"))
-CombinedMayDec <- left_join(x=grasMayCensus, y=weatherMayDec, by=c("year_t" = "CensusYearMay"))
-CombinedMayNov <- left_join(x=grasMayCensus, y=weatherMayNov, by=c("year_t" = "CensusYearMay"))
-CombinedMayOct <- left_join(x=grasMayCensus, y=weatherMayOct, by=c("year_t" = "CensusYearMay"))
-CombinedMaySep <- left_join(x=grasMayCensus, y=weatherMaySep, by=c("year_t" = "CensusYearMay"))
-CombinedMayAug <- left_join(x=grasMayCensus, y=weatherMayAug, by=c("year_t" = "CensusYearMay"))
-CombinedMayJul <- left_join(x=grasMayCensus, y=weatherMayJul, by=c("year_t" = "CensusYearMay"))
-CombinedMayJun <- left_join(x=grasMayCensus, y=weatherMayJun, by=c("year_t" = "CensusYearMay"))
+#recombining weather data for May census
+weatherAllMay <- left_join(x=weatherMayMay, y=weatherMayApr, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMayMar, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMayFeb, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMayJan, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMayDec, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMayNov, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMayOct, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMaySep, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMayAug, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMayJul, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMayJun, by= c("censusmonth","CensusYearMay"))
 
-CombinedMar_May <- left_join(x=grasMayCensus, y=weatherMar_May, by=c("year_t" = "CensusYearMay"))
-CombinedDec_Feb <- left_join(x=grasMayCensus, y=weatherDec_Feb, by=c("year_t" = "CensusYearMay"))
-CombinedSep_Nov <- left_join(x=grasMayCensus, y=weatherSep_Nov, by=c("year_t" = "CensusYearMay"))
-CombinedJun_Aug <- left_join(x=grasMayCensus, y=weatherJun_Aug, by=c("year_t" = "CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherMar_May, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherDec_Feb, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherSep_Nov, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherJun_Aug, by= c("censusmonth","CensusYearMay"))
 
-CombinedDec_May <- left_join(x=grasMayCensus, y=weatherDec_May, by=c("year_t" = "CensusYearMay"))
-CombinedJun_Nov <- left_join(x=grasMayCensus, y=weatherJun_Nov, by=c("year_t" = "CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherDec_May, by= c("censusmonth","CensusYearMay"))
+weatherAllMay <- left_join(x=weatherAllMay, y=weatherJun_Nov, by= c("censusmonth","CensusYearMay"))
 
-#for Jul census
+#combing weather and demographic data for species censused in May
+CombinedMay <- left_join(x=grasMayCensus, y=weatherAllMay, by=c("year_t" = "CensusYearMay"))
 
-CombinedJulJul <- left_join(x=grasJulCensus, y=weatherJulJul, by=c("year_t" = "CensusYearJul"))
-CombinedJulJun <- left_join(x=grasJulCensus, y=weatherJulJun, by=c("year_t" = "CensusYearJul"))
-CombinedJulMay <- left_join(x=grasJulCensus, y=weatherJulMay, by=c("year_t" = "CensusYearJul"))
-CombinedJulApr <- left_join(x=grasJulCensus, y=weatherJulApr, by=c("year_t" = "CensusYearJul"))
-CombinedJulMar <- left_join(x=grasJulCensus, y=weatherJulMar, by=c("year_t" = "CensusYearJul"))
-CombinedJulFeb <- left_join(x=grasJulCensus, y=weatherJulFeb, by=c("year_t" = "CensusYearJul"))
-CombinedJulJan <- left_join(x=grasJulCensus, y=weatherJulJan, by=c("year_t" = "CensusYearJul"))
-CombinedJulDec <- left_join(x=grasJulCensus, y=weatherJulDec, by=c("year_t" = "CensusYearJul"))
-CombinedJulNov <- left_join(x=grasJulCensus, y=weatherJulNov, by=c("year_t" = "CensusYearJul"))
-CombinedJulOct <- left_join(x=grasJulCensus, y=weatherJulOct, by=c("year_t" = "CensusYearJul"))
-CombinedJulSep <- left_join(x=grasJulCensus, y=weatherJulSep, by=c("year_t" = "CensusYearJul"))
-CombinedJulAug <- left_join(x=grasJulCensus, y=weatherJulAug, by=c("year_t" = "CensusYearJul"))
+#recombining weather data for Jul census
 
-CombinedMay_Jul <- left_join(x=grasJulCensus, y=weatherMay_Jul, by=c("year_t" = "CensusYearJul"))
-CombinedFeb_Apr <- left_join(x=grasJulCensus, y=weatherFeb_Apr, by=c("year_t" = "CensusYearJul"))
-CombinedNov_Feb <- left_join(x=grasJulCensus, y=weatherNov_Feb, by=c("year_t" = "CensusYearJul"))
-CombinedAug_Oct <- left_join(x=grasJulCensus, y=weatherAug_Oct, by=c("year_t" = "CensusYearJul"))
+weatherAllJul <- left_join(x=weatherJulJul, y=weatherJulJun, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulMay, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulApr, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulMar, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulFeb, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulJan, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulDec, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulNov, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulOct, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulSep, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherJulAug, by=c("censusmonth","CensusYearJul"))
 
-CombinedFeb_Jul <- left_join(x=grasJulCensus, y=weatherFeb_Jul, by=c("year_t" = "CensusYearJul"))
-CombinedAug_Jan <- left_join(x=grasJulCensus, y=weatherAug_Jan, by=c("year_t" = "CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherMay_Jul, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherFeb_Apr, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherNov_Feb, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherAug_Oct, by=c("censusmonth","CensusYearJul"))
 
-#for Sep census
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherFeb_Jul, by=c("censusmonth","CensusYearJul"))
+weatherAllJul <- left_join(x=weatherAllJul, y=weatherAug_Jan, by=c("censusmonth","CensusYearJul"))
 
-CombinedSepSep <- left_join(x=grasSepCensus, y=weatherSepSep, by=c("year_t" = "CensusYearSep"))
-CombinedSepAug <- left_join(x=grasSepCensus, y=weatherSepAug, by=c("year_t" = "CensusYearSep"))
-CombinedSepJul <- left_join(x=grasSepCensus, y=weatherSepJul, by=c("year_t" = "CensusYearSep"))
-CombinedSepJun <- left_join(x=grasSepCensus, y=weatherSepJun, by=c("year_t" = "CensusYearSep"))
-CombinedSepMay <- left_join(x=grasSepCensus, y=weatherSepMay, by=c("year_t" = "CensusYearSep"))
-CombinedSepApr <- left_join(x=grasSepCensus, y=weatherSepApr, by=c("year_t" = "CensusYearSep"))
-CombinedSepMar <- left_join(x=grasSepCensus, y=weatherSepMar, by=c("year_t" = "CensusYearSep"))
-CombinedSepFeb <- left_join(x=grasSepCensus, y=weatherSepFeb, by=c("year_t" = "CensusYearSep"))
-CombinedSepJan <- left_join(x=grasSepCensus, y=weatherSepJan, by=c("year_t" = "CensusYearSep"))
-CombinedSepDec <- left_join(x=grasSepCensus, y=weatherSepDec, by=c("year_t" = "CensusYearSep"))
-CombinedSepNov <- left_join(x=grasSepCensus, y=weatherSepNov, by=c("year_t" = "CensusYearSep"))
-CombinedSepOct <- left_join(x=grasSepCensus, y=weatherSepOct, by=c("year_t" = "CensusYearSep"))
+#combing weather and demographic data for species censused in Jul
+CombinedJul <- left_join(x=grasJulCensus, y=weatherAllJul, by=c("year_t" = "CensusYearJul"))
 
-CombinedJul_Sep <- left_join(x=grasSepCensus, y=weatherJul_Sep, by=c("year_t" = "CensusYearSep"))
-CombinedApr_Jun <- left_join(x=grasSepCensus, y=weatherApr_Jun, by=c("year_t" = "CensusYearSep"))
-CombinedJan_Mar <- left_join(x=grasSepCensus, y=weatherJan_Mar, by=c("year_t" = "CensusYearSep"))
-CombinedOct_Dec <- left_join(x=grasSepCensus, y=weatherOct_Dec, by=c("year_t" = "CensusYearSep"))
+#recombining weather data for Sep census
+weatherAllSep <- left_join(x=weatherSepSep, y=weatherSepAug, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepJul, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepJun, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepMay, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepApr, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepMar, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepFeb, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepJan, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepDec, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepNov, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherSepOct, by=c("censusmonth","CensusYearSep"))
 
-CombinedApr_Sep <- left_join(x=grasSepCensus, y=weatherApr_Sep, by=c("year_t" = "CensusYearSep"))
-CombinedOct_Mar <- left_join(x=grasSepCensus, y=weatherOct_Mar, by=c("year_t" = "CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherJul_Sep, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherApr_Jun, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherJan_Mar, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherOct_Dec, by=c("censusmonth","CensusYearSep"))
 
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherApr_Sep, by=c("censusmonth","CensusYearSep"))
+weatherAllSep <- left_join(x=weatherAllSep, y=weatherOct_Mar, by=c("censusmonth","CensusYearSep"))
 
-CombinedDataSegments <- bind_rows(CombinedMayMay,CombinedMayApr,CombinedMayMar,CombinedMayFeb,
-                                  CombinedMayJan,CombinedMayDec,CombinedMayNov,CombinedMayOct,
-                                  CombinedMaySep,CombinedMayAug,CombinedMayJul,CombinedMayJun,
-                                  CombinedMar_May,CombinedDec_Feb,CombinedSep_Nov,CombinedJun_Aug,
-                                  CombinedDec_May,CombinedJun_Nov,
-                                  CombinedJulJul,CombinedJulJun,CombinedJulMay,CombinedJulApr,
-                                  CombinedJulMar,CombinedJulFeb,CombinedJulJan,CombinedJulDec,
-                                  CombinedJulNov,CombinedJulOct,CombinedJulSep,CombinedJulAug,
-                                  CombinedMay_Jul,CombinedFeb_Apr,CombinedNov_Feb,CombinedAug_Oct,
-                                  CombinedFeb_Jul,CombinedAug_Jan,
-                                  CombinedSepSep,CombinedSepAug,CombinedSepJul,CombinedSepJun,
-                                  CombinedSepMay,CombinedSepApr,CombinedSepMar,CombinedSepFeb,
-                                  CombinedSepJan,CombinedSepDec,CombinedSepNov,CombinedSepOct,
-                                  CombinedJul_Sep,CombinedApr_Jun,CombinedJan_Mar,CombinedOct_Dec,
-                                  CombinedApr_Sep,CombinedOct_Mar, 
-                              .id="year_t")
+#combing weather and demographic data for species censused in Sep
+CombinedSep <- left_join(x=grasSepCensus, y=weatherAllSep, by=c("year_t" = "CensusYearSep"))
 
-#After this year_t turns to 1-9?? instead of 2007-2025
+#Combining all species and censusmonths of data
+CombinedDataSegments <- bind_rows(CombinedMay, CombinedJul, CombinedSep)
 
 
 write.csv(CombinedDataSegments, "data/CombinedDataSegments")

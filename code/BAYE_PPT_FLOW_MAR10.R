@@ -12,7 +12,7 @@ options(mc.cores = parallel::detectCores())
 ###ALL CLIMATE EXPLICIT______________________________________________________________________
 
 #reading in the data file with demographic and climate data
-grasclim <-read.csv("data/CombinedDataRefined")
+grasclim <-read.csv("data/CombinedDataSegments")
 
 ##removing untrusted data
 grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 
@@ -227,13 +227,13 @@ all_surv_dat_ppt<-list(n_obs=nrow(all_surv_ppt),
                        original=all_surv_ppt$original)
 
 all_surv_model_ppt = stan_model(file="code/climatedemo.stan")
-#all_surv_sampling_ppt<-sampling(all_surv_model_ppt,
-                                #data=all_surv_dat_ppt,
-                                #chains = 3,
-                                #iter = 5000, 
-                                #warmup = 1000)
+all_surv_sampling_ppt<-sampling(all_surv_model_ppt,
+                                data=all_surv_dat_ppt,
+                                chains = 3,
+                                iter = 5000, 
+                                warmup = 1000)
 
-#saveRDS(all_surv_sampling_ppt,"all_surv_sampling_ppt.rds")
+saveRDS(all_surv_sampling_ppt,"all_surv_sampling_ppt.rds")
 all_surv_sampling_ppt<-readRDS("all_surv_sampling_ppt.rds")
 #summary(all_surv_sampling_ppt)
 
@@ -442,20 +442,20 @@ dim(params_all_g_ppt$beta_clim)
 
 ##KENJI's WAY PLEASE REVISIT
 ##making size x variables for graphs
-ppt_tot_dummy_g<-seq(from=min(all_grow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_grow_ppt$ppt_tot_scaled,na.rm=T),by=0.1)
-ppt_tot_dummy_scaled_g<-as.numeric (scale(ppt_tot_dummy))
+#ppt_tot_dummy_g<-seq(from=min(all_grow_ppt$ppt_tot_scaled,na.rm=T),to=max(all_grow_ppt$ppt_tot_scaled,na.rm=T),by=0.1)
+#ppt_tot_dummy_scaled_g<-as.numeric (scale(ppt_tot_dummy))
 
 #creating logistic function 
-logistic<-function(x){1/(1+exp(-x))}
+#logistic<-function(x){1/(1+exp(-x))}
 
 #defining a predictor function
-predict_c_g <- function(fit, climate, endo, species){
-  params<-rstan::extract(fit,pars=c('beta_0','beta_clim'))
-  beta_0 <- params$beta_0[, species, endo + 1]
-  beta_clim <- params$beta_clim[, species, endo + 1]
+#predict_c_g <- function(fit, climate, endo, species){
+  #params<-rstan::extract(fit,pars=c('beta_0','beta_clim'))
+  #beta_0 <- params$beta_0[, species, endo + 1]
+  #beta_clim <- params$beta_clim[, species, endo + 1]
   
-  beta_0 + beta_clim*climate
-}
+  #beta_0 + beta_clim*climate
+#}
 ##KENJI'S WAY ENDS HERE
 
 
@@ -596,6 +596,31 @@ ggplot() +
 
 
 ##ALL GROWTH (IMPLICIT) ___________________
+
+
+#POP GROWTH RATE FROM GEMINI
+library(dplyr)
+
+pop_growth_df <- grasclim %>%
+  # 1. Group by the variables that define a "population"
+  group_by(species, plot, endo_01, year_t, spec,
+           firstoneback_vpdmean, secondoneback_vpdmean, thirdoneback_vpdmean, fourthoneback_vpdmean,
+           fifthoneback_vpdmean, sixthoneback_vpdmean, seventhoneback_vpdmean, eighthoneback_vpdmean,
+           ninthoneback_vpdmean, tenthoneback_vpdmean, elevnthoneback_vpdmean, twelvthoneback_vpdmean) %>%
+  # 2. Count the number of individuals (N) in each group/year
+  summarise(N_t = n(), .groups = "drop") %>%
+  # 3. Arrange by year to ensure the math follows the timeline
+  arrange(species, plot, endo_01, year_t) %>%
+  # 4. Group again to calculate growth within each specific plot
+  group_by(species, plot, endo_01) %>%
+  mutate(
+    N_t_plus_1 = lead(N_t),
+    lambda = N_t_plus_1 / N_t,
+    r = log(lambda)) %>%
+  filter(!is.na(r)) # Remove the last year for each group (no t+1 data)
+
+
+
 
 ##prep data, dropping NAs
 pop_growth_df %>%
@@ -765,37 +790,4 @@ ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = en
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
-
-
-##ONE FOR ALL CLIMATE EXPLICIT
-
-grasclim <-read.csv("data/CombinedDataRefined")
-##removing row with size_t = 0, it only applies to one ID in one year
-#gras %>% filter (species=="POAU", id=="79 1164 4") %>% View
-
-grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 
-
-##Making integers for species
-grasclim$spec <- as.integer (case_when(grasclim$species == "AGPE" ~ 8,
-                                       grasclim$species == "ELRI" ~ 2,
-                                       grasclim$species == "ELVI" ~ 3,
-                                       grasclim$species == "FESU" ~ 4,
-                                       grasclim$species == "LOAR" ~ 5,
-                                       grasclim$species == "POAL" ~ 6,
-                                       grasclim$species == "POAU" ~ 7,
-                                       grasclim$species == "POSY" ~ 1))
-
-##centering size
-gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
-
-library(tidybayes)
-
-
-hist(all_grow_ppt$lambda_size$lambda_size)
-plot(density(all_grow_ppt$lambda_size))
-#seems not normally distributed, most values are around 0
-
-any(all_grow_ppt$lambda_size<0)
-#The data is gamma distributed? given that it is continuous, non-negative 
-#with small values clustered
 
