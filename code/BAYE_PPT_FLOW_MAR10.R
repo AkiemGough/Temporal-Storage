@@ -12,7 +12,7 @@ options(mc.cores = parallel::detectCores())
 ###ALL CLIMATE EXPLICIT______________________________________________________________________
 
 #reading in the data file with demographic and climate data
-grasclim <-read.csv("data/CombinedDataSegments")
+grasclim <-read.csv("data/CombinedDataRefined")
 
 ##removing untrusted data
 grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 
@@ -427,7 +427,6 @@ all_grow_sampling_ppt <- sampling(all_grow_model_ppt,
                                   iter = 5000, 
                                   warmup  = 1000,
                                   include = TRUE)
-
 
 #saveRDS(all_grow_sampling_ppt,"all_grow_sampling_ppt.rds")
 all_grow_sampling_ppt<-readRDS("all_grow_sampling_ppt.rds")

@@ -12,7 +12,7 @@ options(mc.cores = parallel::detectCores())
 ###ALL CLIMATE EXPLICIT______________________________________________________________________
 
 #reading in the data file with demographic and climate data
-grasclim <-read.csv("data/CombinedDataRefined")
+grasclim <-read.csv("data/CombinedDataSegments")
 
 ##removing untrusted data
 grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 

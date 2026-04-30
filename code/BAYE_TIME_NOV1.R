@@ -1319,6 +1319,104 @@ ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = en
   facet_grid("spec")
 
 
+#POP GROWTH RATE FROM GEMINI
+library(dplyr)
+
+pop_growth_df_imp <- gras %>%
+  # 1. Group by the variables that define a "population"
+  group_by(species, plot, endo_01, year_t, spec) %>%
+  # 2. Count the number of individuals (N) in each group/year
+  summarise(N_t = n(), .groups = "drop") %>%
+  # 3. Arrange by year to ensure the math follows the timeline
+  arrange(species, plot, endo_01, year_t) %>%
+  # 4. Group again to calculate growth within each specific plot
+  group_by(species, plot, endo_01) %>%
+  mutate(
+    N_t_plus_1 = lead(N_t),
+    lambda = N_t_plus_1 / N_t,
+    r = log(lambda)) %>%
+  filter(!is.na(r)) # Remove the last year for each group (no t+1 data)
+
+##prep data, dropping NAs
+pop_growth_df_imp %>%
+  select(r,endo_01,spec,plot,year_t) %>% 
+  drop_na() -> all_grow
+
+all_grow_dat <- list(n_obs=nrow(all_grow),
+                     y=all_grow$r,
+                     n_yrs = length(unique(all_grow$year_t))+1,
+                     n_plots = max(all_grow$plot),
+                     n_endo = 2,
+                     n_spp = max(all_grow$spec),
+                     endo_01=all_grow$endo_01,
+                     year_index=all_grow$year_t-2006,
+                     plot=all_grow$plot,
+                     species=all_grow$spec)
+
+all_grow_model = stan_model(file="code/demogrowthh.stan")
+all_grow_sampling <- sampling(all_grow_model,
+                                   data = all_grow_dat,
+                                   chains = 3, 
+                                   iter = 5000, 
+                                   warmup  = 1000,
+                                   include = TRUE)
+
+#saveRDS(all_grow_sampling,"all_grow_sampling.rds")
+all_grow_sampling<-readRDS("all_grow_sampling.rds")
+
+#extracting parameters
+params_all_g<-rstan::extract(all_grow_sampling,pars=c('beta_0','endo_effect','Omega'))
+dim(params_all_g$beta_0)
+dim(params_all_g$endo_effect)
+dim(params_all_g$Omega)
+
+##PLOTTING ENDO ESTIMATES
+#take a random subset of posterior draws for beta_0 (endophyte estimates?)
+all_beta0_postg<-params_all_g$beta_0[sample(dim(params_all_g$beta_0)[1],size=1000,replace=F),,,]
+dim(all_beta0_postg)
+
+long_df_all_beta0g <- as.data.frame.table(all_beta0_postg,
+                                               responseName = "estimate")
+str(long_df_all_beta0g)
+
+# Convert to long data frame for endo effect
+long_df_all_beta0g <- as.data.frame.table(all_beta0_postg,
+                                               responseName = "estimate") %>%
+  rename(draw = iterations, species = Var2, endo = Var3, year = Var4, estimate = estimate) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_beta0g$spec <- case_when(long_df_all_beta0g$species == 8 ~ "AGPE",
+                                          long_df_all_beta0g$species == 2 ~ "ELRI",
+                                          long_df_all_beta0g$species == 3 ~ "ELVI",
+                                          long_df_all_beta0g$species == 4 ~ "FESU",
+                                          long_df_all_beta0g$species == 5 ~ "LOAR",
+                                          long_df_all_beta0g$species == 6 ~ "POAL",
+                                          long_df_all_beta0g$species == 7 ~ "POAU",
+                                          long_df_all_beta0g$species == 1 ~ "POSY")
+
+
+summary_df_all_beta0g <- long_df_all_beta0g %>%
+  group_by(year,spec,endo) %>% 
+  summarize(
+    median = median(estimate),
+    lower = quantile(estimate, 0.05),
+    upper = quantile(estimate, 0.95),
+    probgzero = mean(estimate>0),
+    .groups = "drop")
+
+#plotting endo estimates
+ggplot(summary_df_all_beta0g, aes(x = year, y = median, colour = endo, fill = endo)) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  geom_line(linewidth = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
+  labs(x = "Year", y = "growth (r)",
+       title = "Growth rate of E+ and E- grow with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_grid("spec")
+
+
 ##ONE FOR ALL CLIMATE EXPLICIT
 
 grasclim <-read.csv("data/CombinedDataRefined")

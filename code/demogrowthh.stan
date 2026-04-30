@@ -14,18 +14,20 @@ data {
 parameters {
   real beta_0[n_spp,n_endo,n_yrs];//year random effects, unique to E+ and E-
   real tau_plot[n_plots];//plot random effects
-  real meanflow[n_spp,n_endo];
+  real meangrow[n_spp,n_endo];//??? necessary for later
   vector<lower=0>[n_endo] sigma_year[n_spp];// separate SD for each endo level within species
   real<lower=0> sigma_plot;//plot variance -- shared across species
+  real<lower=0> sigma; //residual variance
   array[n_spp] corr_matrix[n_endo] Omega; // correlation matrix for each species
 }
 transformed parameters{
-  real p[n_obs];
+  real mu[n_obs];
   for(i in 1:n_obs){
-  p[i] = beta_0[species[i],(endo_01[i]+1),year_index[i]] 
+  mu[i] = beta_0[species[i],(endo_01[i]+1),year_index[i]] 
   + tau_plot[plot[i]];
   }
 }
+
 model {
     // Priors for Omega and sigma_year
   for (i in 1:n_spp) {
@@ -43,7 +45,7 @@ model {
       //need to make a stand-in vector (b) because multi_normal cannot handle arrays
       vector[n_endo] b;
       for (k in 1:n_endo){b[k] = beta_0[i,k,t];}
-      b ~ multi_normal(to_vector(meanflow[i,]), Sigma_i);
+      b ~ multi_normal(to_vector(meangrow[i,]), Sigma_i);
     }
   }
   //plot effects
@@ -52,7 +54,7 @@ model {
   //other coefficients
   for (i in 1:n_spp) {
     for (j in 1:n_endo) {
-      meanflow[i,j] ~ normal(0, 5);
+      meangrow[i,j] ~ normal(0, 5);
     }
 }
   y ~ normal(mu, sigma);
