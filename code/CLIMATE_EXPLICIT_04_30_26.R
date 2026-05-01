@@ -1039,14 +1039,6 @@ ggplot() +
 
 
 
-
-
-
-
-
-
-#1050
-
 ##MODEL FT: PROBAILITY OF FLOWERING AS RESPONSE TO VPDMAX___________________
 
 ##prep data for total precipitation, dropping NAs
@@ -1202,7 +1194,7 @@ ggplot() +
   scale_color_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
   scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
   
-  labs(x = "vpdxerature", 
+  labs(x = "VPDmax", 
        y = "Probability of Flowering",
        title = "Flowering Probability with 90% Credible Intervals") +
   theme_minimal()
@@ -1364,7 +1356,7 @@ ggplot() +
   scale_color_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
   scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
   
-  labs(x = "Precipitation (Scaled)", 
+  labs(x = "VPDmax", 
        y = "Probability of Survival",
        title = "Survival with 90% Credible Intervals") +
   theme_minimal()
@@ -1525,7 +1517,7 @@ ggplot() +
   scale_color_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
   scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
   
-  labs(x = "Precipitation (Scaled)", 
+  labs(x = "VPDmax", 
        y = "Population Growth",
        title = "Population Growth Rate with 90% Credible Intervals") +
   theme_minimal()
