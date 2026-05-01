@@ -411,7 +411,7 @@ pop_growth_df_imp %>%
 
 all_grow_dat <- list(n_obs=nrow(all_grow),
                      y=all_grow$r,
-                     n_yrs = length(unique(all_grow$year_t))+1,
+                     n_yrs = length(unique(all_grow$year_t)),
                      n_plots = max(all_grow$plot),
                      n_endo = 2,
                      n_spp = max(all_grow$spec),
@@ -425,11 +425,16 @@ all_grow_sampling <- sampling(all_grow_model,
                               data = all_grow_dat,
                               chains = 3, 
                               iter = 5000, 
-                              warmup  = 1000,
-                              include = TRUE)
+                              #warmup  = 1000,
+                              include = TRUE,
+                              pars=c('beta_0','endo_effect','Omega','y_rep'))
 
 #saveRDS(all_grow_sampling,"all_grow_sampling.rds")
 #all_grow_sampling<-readRDS("all_grow_sampling.rds")
+
+##posterior predictive check
+y_rep<-extract(all_grow_sampling,pars="y_rep")
+ppc_dens_overlay(all_grow_dat$y,y_rep$y_rep[1:500,])
 
 #extracting parameters
 params_all_g<-rstan::extract(all_grow_sampling,pars=c('beta_0','endo_effect','Omega'))
