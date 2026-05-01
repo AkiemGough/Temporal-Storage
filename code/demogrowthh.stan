@@ -32,7 +32,7 @@ model {
     // Priors for Omega and sigma_year
   for (i in 1:n_spp) {
     Omega[i] ~ lkj_corr(2);            
-    sigma_year[i] ~ exponential(1);    
+    sigma_year[i] ~ normal(0,1);    
   }
   
   // Hierarchical prior on beta_0
@@ -50,11 +50,11 @@ model {
   }
   //plot effects
   tau_plot ~ normal(0,sigma_plot);
-  sigma_plot ~ exponential(1);
+  sigma_plot ~ normal(0,1);
   //other coefficients
   for (i in 1:n_spp) {
     for (j in 1:n_endo) {
-      meangrow[i,j] ~ normal(0, 5);
+      meangrow[i,j] ~ normal(0,1);
     }
 }
   y ~ normal(mu, sigma);
@@ -66,6 +66,11 @@ generated quantities {
     for (j in 1:n_yrs) {
     endo_effect[i,j] = beta_0[i,2,j] - beta_0[i,1,j];
     }
+  }
+  
+  real y_rep[n_obs];
+  for(i in 1:n_obs){
+    y_rep[i] = normal_rng(mu[i], sigma);
   }
 }
 
