@@ -70,7 +70,7 @@ all_flow_sampling<-sampling(all_flow_model,
                             save_warmup=F)
 
 #saveRDS(all_flow_sampling,"all_flow_sampling.rds")
-#all_flow_sampling<-readRDS("all_flow_sampling.rds")
+all_flow_sampling<-readRDS("all_flow_sampling.rds")
 
 mcmc_trace(all_flow_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_flow_sampling,par=c('Omega[1,1,2]'))
@@ -113,7 +113,7 @@ summary_df_all_beta0f <- long_df_all_beta0f %>%
     probgzero = mean(estimate>0),
     .groups = "drop")
 
-#plotting endo estimates
+#plotting endo estimates stacked
 ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = endo)) +
   scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
   scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
@@ -124,6 +124,18 @@ ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = en
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
+
+#plotting endo estimates grids
+ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = endo)) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  geom_line(linewidth = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
+  labs(x = "Year", y = "probability of flowering",
+       title = "Change in probability of E+ and E- flowering with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_wrap(~spec, scales = "free_y")
 
 
 ##PLOTTING CORRELATION COEFFICENTS
@@ -199,7 +211,7 @@ summary_df_all_f <- long_df_all_f %>%
     probgzero = mean(endo_effect>0),
     .groups = "drop")
 
-#plotting endo effect
+#plotting endo effect stacked
 ggplot(summary_df_all_f, aes(x = year, y = median)) +
   geom_line(linewidth = 0.5, col = "mediumpurple3") +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
@@ -209,6 +221,15 @@ ggplot(summary_df_all_f, aes(x = year, y = median)) +
   theme_minimal()+
   facet_grid("spec")
 
+#plotting endo effect grids
+ggplot(summary_df_all_f, aes(x = year, y = median)) +
+  geom_line(linewidth = 0.5, col = "mediumpurple3") +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
+  labs(x = "Year", y = "Endophyte effect",
+       title = "Difference of E+ and E- flowering with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_wrap(~spec, scales = "free_y")
 
 
 ##MODEL SI: SURVIVAL AS RESPONSE, CLIMATE IMPLICIT___________________
@@ -288,7 +309,7 @@ summary_df_all_beta0s <- long_df_all_beta0s %>%
     probgzero = mean(estimate>0),
     .groups = "drop")
 
-#plotting endo effect
+#plotting endo effect stacked
 ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = endo)) +
   scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
   scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
@@ -300,6 +321,17 @@ ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = en
   theme_minimal()+
   facet_grid("spec")
 
+#plotting endo effect grids
+ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = endo)) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  geom_line(linewidth = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
+  labs(x = "Year", y = "probaility of surviving",
+       title = "Change in probability of E+ and E- survival with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_wrap(~spec, scales = "free_y")
 
 ##PLOTTING CORRELATION COEFFICENTS
 #take a random subset of posterior draws for correlation coefficients
@@ -374,7 +406,7 @@ summary_df_all_s <- long_df_all_s %>%
     probgzero = mean(endo_effect>0),
     .groups = "drop")
 
-#plotting endo effect
+#plotting endo effect stacked
 ggplot(summary_df_all_s, aes(x = year, y = median)) +
   geom_line(linewidth = 0.5, col = "mediumpurple3") +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
@@ -383,6 +415,16 @@ ggplot(summary_df_all_s, aes(x = year, y = median)) +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
+
+#plotting endo effect grids
+ggplot(summary_df_all_s, aes(x = year, y = median)) +
+  geom_line(linewidth = 0.5, col = "mediumpurple3") +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
+  labs(x = "Year", y = "Endophyte effect",
+       title = "Difference of E+ and E- survival with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_wrap(~spec, scales = "free_y")
 
 
 
@@ -420,7 +462,7 @@ all_grow_dat <- list(n_obs=nrow(all_grow),
                      plot=all_grow$plot,
                      species=all_grow$spec)
 
-all_grow_model = stan_model(file="code/demogrowthh.stan")
+all_grow_model = stan_model(file="code/demogrowth.stan")
 all_grow_sampling <- sampling(all_grow_model,
                               data = all_grow_dat,
                               chains = 3, 
@@ -456,7 +498,7 @@ str(long_df_all_beta0g)
 long_df_all_beta0g <- as.data.frame.table(all_beta0_postg,
                                           responseName = "estimate") %>%
   rename(draw = iterations, species = Var2, endo = Var3, year = Var4, estimate = estimate) %>%
-  mutate(draw = as.integer(draw), species=as.integer(species))
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
 
 long_df_all_beta0g$spec <- case_when(long_df_all_beta0g$species == 8 ~ "AGPE",
                                      long_df_all_beta0g$species == 2 ~ "ELRI",
@@ -477,7 +519,7 @@ summary_df_all_beta0g <- long_df_all_beta0g %>%
     probgzero = mean(estimate>0),
     .groups = "drop")
 
-#plotting endo estimates
+#plotting endo estimates stacked
 ggplot(summary_df_all_beta0g, aes(x = year, y = median, colour = endo, fill = endo)) +
   scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
   scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
@@ -489,10 +531,22 @@ ggplot(summary_df_all_beta0g, aes(x = year, y = median, colour = endo, fill = en
   theme_minimal()+
   facet_grid("spec")
 
+#plotting endo estimates grids
+ggplot(summary_df_all_beta0g, aes(x = year, y = median, colour = endo, fill = endo)) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  geom_line(linewidth = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
+  labs(x = "Year", y = "growth (r)",
+       title = "Growth rate of E+ and E- with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_wrap(~spec, scales = "free_y")
+
 
 ##PLOTTING CORRELATION COEFFICIENTS
 #take a random subset of posterior draws for Omega
-all_corr_postg<-params_all_g$Omega[sample(dim(params_all_g$Omega)[1],size=1000,replace=F),,1,2]
+all_corr_postg<-params_all_g$Omega[sample(dim(params_all_g$Omega)[1],size=1000,replace=F),,2,1]
 dim(all_corr_postg)
 
 ## Convert to long data frame for correlation coefficients
@@ -526,11 +580,11 @@ summary_df_all_corrg <- long_df_all_corrg %>%
 #plotting correlation coefficients
 ggplot(long_df_all_corrg)+
   geom_histogram(aes (x=corr), fill="mediumpurple",binwidth = 0.02)+
-  facet_grid("spec")+xlim(-0.5,1) +
+  facet_grid("spec")+xlim(-1,1) +
   geom_vline(data = summary_df_all_corrg,
              aes(xintercept = median),
              colour = "mediumpurple4",
-             size=0.75,
+             linewidth=0.75,
              linetype = "dashed")
 
 #finding the mean correlation coefficients
@@ -566,12 +620,22 @@ summary_df_all_g <- long_df_all_g %>%
     probgzero = mean(endo_effect>0),
     .groups = "drop")
 
-#plotting endo effect
+#plotting endo effect stacked
 ggplot(summary_df_all_g, aes(x = year, y = median)) +
   geom_line(linewidth = 0.5, col = "mediumpurple3") +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
   labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- growth ratees with year") +
+       title = "Difference of E+ and E- growth rates with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_grid("spec")
+
+#plotting endo effect grids
+ggplot(summary_df_all_g, aes(x = year, y = median)) +
+  geom_line(linewidth = 0.5, col = "mediumpurple3") +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
+  labs(x = "Year", y = "Endophyte effect",
+       title = "Difference of E+ and E- growth rates with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_wrap(~spec, scales = "free_y")

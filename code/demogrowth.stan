@@ -1,4 +1,3 @@
-//climate demo growth
 data {
   int<lower=0> n_obs;
   real y[n_obs];
@@ -13,41 +12,62 @@ data {
 }
 
 parameters {
-  real beta_0[n_spp,n_endo];//species random effects unique to E+ and E-
-  real tau_plot[n_plots];//plot random effects
-  real gamma_year[n_yrs];//year random effects
+  matrix[n_endo, n_yrs] beta_raw[n_spp]; // Standard Normal "z-scores"
+  vector[n_plots] tau_raw;               // For plot effects
+  cholesky_factor_corr[n_endo] Omega[n_spp]; 
+  // ... (keep sigma, sigma_plot, sigma_year, meangrow)
+  real meangrow[n_spp,n_endo];//
+  vector<lower=0>[n_endo] sigma_year[n_spp];// separate SD for each endo level within species
   real<lower=0> sigma_plot;//plot variance -- shared across species
-  real<lower=0> sigma_year;//year variance -- shared across species
   real<lower=0> sigma; //residual variance
 }
 
-transformed parameters{
+transformed parameters {
+  real beta_0[n_spp, n_endo, n_yrs];
+  vector[n_plots] tau_plot = tau_raw * sigma_plot; // Non-centered plot effects
+  
+  for (i in 1:n_spp) {
+    // scale and correlate the raw z-scores
+    matrix[n_endo, n_endo] L_Sigma = diag_pre_multiply(sigma_year[i], Omega[i]);
+    for (t in 1:n_yrs) {
+      vector[n_endo] b = to_vector(meangrow[i]) + L_Sigma * col(beta_raw[i], t);
+      for (k in 1:n_endo) beta_0[i, k, t] = b[k];
+    }
+  }
+  // ... (keep your mu calculation loop)
   real mu[n_obs];
   for(i in 1:n_obs){
-  mu[i] = beta_0[species[i],(endo_01[i]+1)] 
-  + tau_plot[plot[i]] 
-  + gamma_year[year_index[i]];
+  mu[i] = beta_0[species[i],(endo_01[i]+1),year_index[i]] 
+  + tau_plot[plot[i]];
   }
 }
 
 model {
-  tau_plot ~ normal(0,sigma_plot);
-  sigma_plot ~ exponential(1);
-  gamma_year ~ normal(0,sigma_year);
-  sigma_year ~ exponential(1);
-  sigma ~ exponential(1);
   for (i in 1:n_spp) {
-    for (j in 1:n_endo) {
-      beta_0[i,j] ~ normal(0,1);
-    }
+    Omega[i] ~ lkj_corr_cholesky(2);
+    to_vector(beta_raw[i]) ~ std_normal(); // Standard Normal prior
+    sigma_year[i] ~ exponential(1);
   }
+  
+  tau_raw ~ std_normal(); // Non-centered plot effect prior
+  sigma_plot ~ exponential(1);
+  sigma ~ exponential(1); // Don't forget a prior for sigma!
+  
+  // Likelihood
   y ~ normal(mu, sigma);
 }
 
 generated quantities {
-  real endo_effect[n_spp];
+  real endo_effect[n_spp,n_yrs];
   for (i in 1:n_spp) {
-    endo_effect[i] = beta_0[i,2] - beta_0[i,1];
+    for (j in 1:n_yrs) {
+    endo_effect[i,j] = beta_0[i,2,j] - beta_0[i,1,j];
     }
   }
+  
+  real y_rep[n_obs];
+  for(i in 1:n_obs){
+    y_rep[i] = normal_rng(mu[i], sigma);
+  }
+}
 

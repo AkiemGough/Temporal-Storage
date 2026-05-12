@@ -18,7 +18,7 @@ grasclim <-read.csv("data/CombinedDataSegments")
 
 ##cleaning up data frame
 #removing rows with untrusted data
-gras <- gras[!(gras$id=="79 1164 4"),] 
+grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 
 
 ##Making integers for species
 grasclim$spec <- as.integer (case_when(grasclim$species == "POSY" ~ 1,
