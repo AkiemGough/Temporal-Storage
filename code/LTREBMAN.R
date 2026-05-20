@@ -3,7 +3,7 @@ library(tidyverse)
 library(dplyr)
 
 #read in pre-2023 data
-ltreb_allspp_qaqc <- read.csv("~/Library/CloudStorage/GoogleDrive-ag285@rice.edu/My Drive/Akiem PhD Research/GitHub/life_history/Untitled/data prep/ltreb_allspp_qaqc_indi_spiks.csv",stringsAsFactors = T)
+ltreb_allspp_qaqc <- read.csv("/Users/ag285/Desktop/Akiem PhD Research/GitHub/LTREB-life-history/data prep/ltreb_allspp_qaqc_indi_spiks.csv",stringsAsFactors = T)
 
 #create small table with endo status
 plot_endo <- ltreb_allspp_qaqc %>% select(species,plot,endo_01) %>% unique()
@@ -627,7 +627,29 @@ fessub25data <- read.csv("data/2025/LTREB_data_2025_recruits_inc.xlsx - FESU.csv
 ##instead of int or num except agreper24 & fessub25
 
 
-###POAL 2025 has no data___________________________________##
+###POAL 2025 has no data but ADDING 2025 DATA so we can have year_t for 2024____________________________________##
+
+###Creating POAL 2024-2025 transition year___________________________________##
+
+POAL_24_25 <- POAL_23_24
+
+## write over the relevant data 
+POAL_24_25$year_t <- 2025
+POAL_24_25$year_t1 <- NA
+POAL_24_25$size_t <- POAL_23_24$size_t1
+POAL_24_25$flw_count_t <- POAL_23_24$flw_count_t1
+#POAL_24_25$mean_spike_t <- POAL_23_24$mean_spike_t1
+POAL_24_25$spike_a_t <- POAL_23_24$spike_a_t1
+POAL_24_25$spike_b_t <- POAL_23_24$spike_b_t1
+POAL_24_25$spike_c_t <- POAL_23_24$spike_c_t1
+POAL_24_25$surv_t1 <- NA
+POAL_24_25$size_t1 <- NA
+POAL_24_25$flw_count_t1 <- NA
+#POAL_24_25$mean_spike_t1 <- NA
+POAL_24_25$spike_a_t1 <- NA
+POAL_24_25$spike_b_t1 <- NA
+POAL_24_25$spike_c_t1 <- NA
+
 
 ###Creating POSY 2024-2025 transition year___________________________________##
 
@@ -864,10 +886,125 @@ FESU_24_25 <- FESU_24_25 %>% select(-distance_A, -distance_B, -survival,
 
 names(FESU_24_25)
 
-#Combining all years for all species into one data frame
+
+
+#### ADDING 2026 DATA so we can have year_t for 2025
+####There isn't actually any 2026 data entered yet___________________________##
+
+###Creating POSY 2025-2026 transition year___________________________________##
+
+POSY_25_26 <- POSY_24_25
+
+## write over the relevant data 
+POSY_25_26$year_t <- 2025
+POSY_25_26$year_t1 <- NA
+POSY_25_26$size_t <- POSY_24_25$size_t1
+POSY_25_26$flw_count_t <- POSY_24_25$flw_count_t1
+#POSY_25_26$mean_spike_t <- POSY_24_25$mean_spike_t1
+POSY_25_26$spike_a_t <- POSY_24_25$spike_a_t1
+POSY_25_26$spike_b_t <- POSY_24_25$spike_b_t1
+POSY_25_26$spike_c_t <- POSY_24_25$spike_c_t1
+POSY_25_26$surv_t1 <- NA
+POSY_25_26$size_t1 <- NA
+POSY_25_26$flw_count_t1 <- NA
+#POSY_25_26$mean_spike_t1 <- NA
+POSY_25_26$spike_a_t1 <- NA
+POSY_25_26$spike_b_t1 <- NA
+POSY_25_26$spike_c_t1 <- NA
+
+###Creating elyvir25 2025-2026 transition year___________________________________##
+
+ELVI_25_26 <- ELVI_24_25
+
+## write over the relevant data
+ELVI_25_26$year_t <- 2025
+ELVI_25_26$year_t1 <- NA
+ELVI_25_26$size_t <- ELVI_24_25$size_t1
+ELVI_25_26$flw_count_t <- ELVI_24_25$flw_count_t1
+#ELVI_25_26$mean_spike_t <- ELVI_24_25$mean_spike_t1
+ELVI_25_26$spike_a_t <- ELVI_24_25$spike_a_t1
+ELVI_25_26$spike_b_t <- ELVI_24_25$spike_b_t1
+ELVI_25_26$spike_c_t <- ELVI_24_25$spike_c_t1
+ELVI_25_26$surv_t1 <- NA
+ELVI_25_26$size_t1 <- NA
+ELVI_25_26$flw_count_t1 <- NA
+#EELVI_25_26$mean_spike_t1 <- NA
+ELVI_25_26$spike_a_t1 <- NA
+ELVI_25_26$spike_b_t1 <- NA
+ELVI_25_26$spike_c_t1 <- NA
+
+
+
+###Creating elyvil25 2025-2026 transition year___________________________________##
+
+ELRI_25_26 <- ELRI_24_25
+
+## write over the relevant data
+ELRI_25_26$year_t <- 2025
+ELRI_25_26$year_t1 <- NA
+ELRI_25_26$size_t <- ELRI_24_25$size_t1
+ELRI_25_26$flw_count_t <- ELRI_24_25$flw_count_t1
+#EELRI_25_26$mean_spike_t <- ELRI_24_25$mean_spike_t1
+ELRI_25_26$spike_a_t <- ELRI_24_25$spike_a_t1
+ELRI_25_26$spike_b_t <- ELRI_24_25$spike_b_t1
+ELRI_25_26$spike_c_t <- ELRI_24_25$spike_c_t1
+ELRI_25_26$surv_t1 <- NA
+ELRI_25_26$size_t1 <- NA
+ELRI_25_26$flw_count_t1 <- NA
+#EELRI_25_26$mean_spike_t1 <- NA
+ELRI_25_26$spike_a_t1 <- NA
+ELRI_25_26$spike_b_t1 <- NA
+ELRI_25_26$spike_c_t1 <- NA
+
+
+###Creating agrper25 2025-2026 transition year___________________________________##
+
+## adding 2025 data (columns and rows) to 2023-2024 table in order to create 2025-2026 data
+AGPE_25_26 <- AGPE_24_25
+
+## write over the relevant data
+AGPE_25_26 $year_t <- 2025
+AGPE_25_26 $year_t1 <- NA
+AGPE_25_26 $size_t <- AGPE_24_25$size_t1
+AGPE_25_26 $flw_count_t <- AGPE_24_25$flw_count_t1
+#AGPE_25_26 $mean_spike_t <- AGPE_24_25$mean_spike_t1
+AGPE_25_26 $spike_a_t <- AGPE_24_25$spike_a_t1
+AGPE_25_26 $spike_b_t <- AGPE_24_25$spike_b_t1
+AGPE_25_26 $spike_c_t <- AGPE_24_25$spike_c_t1
+AGPE_25_26 $surv_t1 <- NA
+AGPE_25_26 $size_t1 <- NA
+AGPE_25_26 $flw_count_t1 <- AGPE_25_26 $flowering_tillers
+#AGPE_25_26 $mean_spike_t1 <- NA
+AGPE_25_26 $spike_a_t1 <- NA
+AGPE_25_26 $spike_b_t1 <- NA
+AGPE_25_26$spike_c_t1 <- NA
+
+
+
+###Creating fessub25 2025-2026 transition year___________________________________##
+
+FESU_25_26 <- FESU_24_25
+  
+## write over the relevant data
+FESU_25_26 $year_t <- 2025
+FESU_25_26 $year_t1 <- NA
+FESU_25_26 $size_t <- FESU_24_25$size_t1
+FESU_25_26 $flw_count_t <- FESU_24_25$flw_count_t1
+#FESU_25_26 $mean_spike_t <- FESU_24_25$mean_spike_t1
+FESU_25_26 $spike_a_t <- FESU_24_25$spike_a_t1
+FESU_25_26 $spike_b_t <- FESU_24_25$spike_b_t1
+FESU_25_26 $spike_c_t <- FESU_24_25$spike_c_t1
+FESU_25_26 $surv_t1 <- NA
+FESU_25_26 $size_t1 <- NA
+FESU_25_26 $flw_count_t1 <- NA
+#FESU_25_26 $mean_spike_t1 <- NA
+FESU_25_26 $spike_a_t1 <- NA
+FESU_25_26 $spike_b_t1 <- NA
+FESU_25_26$spike_c_t1 <- NA
+
+###Combining all years for all species into one data frame___________________________________#
 bind_rows(ltreb_allspp_qaqc,
           POAL_22_23,POSY_22_23,ELVI_22_23,ELRI_22_23,AGPE_22_23,FESU_22_23,
           POAL_23_24,POSY_23_24,ELVI_23_24,ELRI_23_24,AGPE_23_24,FESU_23_24,
-          POSY_24_25,ELVI_24_25,ELRI_24_25,AGPE_24_25,FESU_24_25) %>% write.csv("ltreb_allspp_2007_2025.csv")
-
-##The index column (X) kind of got duplicated
+          POAL_24_25,POSY_24_25,ELVI_24_25,ELRI_24_25,AGPE_24_25,FESU_24_25,
+          POSY_25_26,ELVI_25_26,ELRI_25_26,AGPE_25_26,FESU_25_26) %>% write.csv("data/ltreb_allspp_2007_2025.csv")

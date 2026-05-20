@@ -34,6 +34,9 @@ grasclim$spec <- as.integer (case_when(grasclim$species == "POSY" ~ 1,
 grasclim$log_tillers_centered <- log(grasclim$size_t) - mean(log(grasclim$size_t),na.rm=T)
 grasclim$ppt_tot_scaled <- as.numeric (scale(grasclim$ppt_tot))
 
+#renaming origin_01 
+gras$original <- gras$origin_01
+
 #Generating new data frame for Population Growth Rate
 
 pop_growth_df <- grasclim %>%

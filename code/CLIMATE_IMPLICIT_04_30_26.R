@@ -16,6 +16,7 @@ library(dplyr)
 #reading in demographic data
 gras <- read.csv("data/ltreb_allspp_2007_2025.csv")
 
+
 ##cleaning up data frame
 #removing rows with untrusted data
 gras <- gras[!(gras$id=="79 1164 4"),] 
@@ -36,7 +37,8 @@ gras$spec <- as.integer (case_when(gras$species == "AGPE" ~ 8,
 ##centering size
 gras$log_tillers_centered <- log(gras$size_t) - mean(log(gras$size_t),na.rm=T)
 
-
+#renaming origin_01 
+gras$original <- gras$origin_01
 
 ##MODEL FI: PROBAILITY OF FLOWERING AS RESPONSE, CLIMATE IMPLICIT___________________
 
