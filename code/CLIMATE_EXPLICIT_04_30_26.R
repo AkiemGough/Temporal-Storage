@@ -417,7 +417,7 @@ all_grow_sampling_ppt <- sampling(all_grow_model_ppt,
                                   include = TRUE)
 
 saveRDS(all_grow_sampling_ppt,"all_grow_sampling_ppt.rds")
-#all_grow_sampling_ppt<-readRDS("all_grow_sampling_ppt.rds")
+all_grow_sampling_ppt<-readRDS("all_grow_sampling_ppt.rds")
 
 ##posterior predictive check
 y_rep<-extract(all_grow_sampling_ppt,pars="y_rep")
@@ -524,6 +524,9 @@ long_df_all_wg_ppt$monthsprior <- case_when(long_df_all_wg_ppt$threemonth == "A"
                                            long_df_all_wg_ppt$threemonth == "B" ~ "4-6",
                                            long_df_all_wg_ppt$threemonth == "C" ~ "7-9",
                                            long_df_all_wg_ppt$threemonth == "D" ~ "10-12")
+
+long_df_all_wg_ppt$monthsprior <- factor(long_df_all_wg_ppt$monthsprior,
+                                         levels=c("1-3","4-6","7-9","10-12"))
 
 summary_df_all_wg_ppt <- long_df_all_wg_ppt %>%
   group_by(spec,monthsprior) %>% 
