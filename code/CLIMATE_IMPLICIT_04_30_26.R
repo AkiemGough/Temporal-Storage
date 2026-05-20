@@ -641,3 +641,4 @@ ggplot(summary_df_all_g, aes(x = year, y = median)) +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_wrap(~spec, scales = "free_y")
+
