@@ -32,7 +32,7 @@ grasclim$spec <- as.integer (case_when(grasclim$species == "POSY" ~ 1,
 
 ##centering size and climate variables
 grasclim$log_tillers_centered <- log(grasclim$size_t) - mean(log(grasclim$size_t),na.rm=T)
-grasclim$ppt_tot_scaled <- as.numeric (scale(grasclim$ppt_tot))
+#grasclim$ppt_tot_scaled <- as.numeric (scale(grasclim$ppt_tot))
 
 #renaming origin_01 
 gras$original <- gras$origin_01
@@ -41,7 +41,8 @@ gras$original <- gras$origin_01
 
 pop_growth_df <- grasclim %>%
   # 1. Group by the variables that define a "population"
-  group_by(species, plot, endo_01, year_t, spec, ppt_tot, ppt_tot_scaled, tmean_mean, vpdmax) %>%
+  group_by(species, plot, endo_01, year_t, spec, 
+           firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt) %>%
   # 2. Count the number of individuals (N) in each group/year
   summarise(N_t = n(), .groups = "drop") %>%
   # 3. Arrange by year to ensure the math follows the timeline
@@ -389,7 +390,7 @@ ggplot() +
 
 ##prep data for total precipitation, dropping NAs
 pop_growth_df %>% 
-  select(r,endo_01,spec,ppt_tot_scaled,plot,year_t) %>% 
+  select(r,endo_01,spec,firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt,plot,year_t) %>% 
   drop_na() -> all_grow_ppt
 
 all_grow_dat_ppt <- list(n_obs = nrow(all_grow_ppt),
@@ -399,28 +400,36 @@ all_grow_dat_ppt <- list(n_obs = nrow(all_grow_ppt),
                          n_endo = 2,
                          n_spp = max(all_grow_ppt$spec),
                          endo_01 = all_grow_ppt$endo_01,
+                         K = 4,
+                         climate = all_grow_ppt[,c("firstthreeback_ppt","secondthreeback_ppt","thirdthreeback_ppt","fourththreeback_ppt")],
                          year_index = all_grow_ppt$year_t-2006,
-                         climate = all_grow_ppt$ppt_tot_scaled,
                          plot = all_grow_ppt$plot,
                          species = all_grow_ppt$spec)
 
-all_grow_model_ppt = stan_model(file="code/climatedemogrowth.stan")
+all_grow_model_ppt = stan_model(file="code/climatedemogrowthSAM.stan")
 all_grow_sampling_ppt <- sampling(all_grow_model_ppt,
                                   data = all_grow_dat_ppt,
                                   chains = 3, 
                                   iter = 5000, 
                                   warmup  = 1000,
+                                  pars=c("beta_0","beta_clim","sigma_year",
+                                         "sigma_plot","sigma", "w", "y_rep"),
                                   include = TRUE)
 
-#saveRDS(all_grow_sampling_ppt,"all_grow_sampling_ppt.rds")
+saveRDS(all_grow_sampling_ppt,"all_grow_sampling_ppt.rds")
 #all_grow_sampling_ppt<-readRDS("all_grow_sampling_ppt.rds")
+
+##posterior predictive check
+y_rep<-extract(all_grow_sampling_ppt,pars="y_rep")
+ppc_dens_overlay(all_grow_dat_ppt$y,y_rep$y_rep[1:500,])
 
 summary(all_grow_sampling_ppt)
 
 #extracting parameters
-params_all_g_ppt<-rstan::extract(all_grow_sampling_ppt,pars=c('beta_0','beta_clim'))
+params_all_g_ppt<-rstan::extract(all_grow_sampling_ppt,pars=c('beta_0','beta_clim','w'))
 dim(params_all_g_ppt$beta_0)
 dim(params_all_g_ppt$beta_clim)
+dim(params_all_g_ppt$w)
 
 
 ##PLOTTING ENDO ESTIMATES
@@ -487,6 +496,60 @@ summary_df_all_betaclimg_ppt <- long_df_all_betaclimg_ppt %>%
     lower_slope = quantile(slope_val, 0.05),
     upper_slope = quantile(slope_val, 0.95),
     .groups = "drop")
+
+#take a random subset of posterior draws for the w 
+all_w_postg_ppt<-params_all_g_ppt$w[sample(dim(params_all_g_ppt$w)[1],size=1000),,]
+dim(all_w_postg_ppt)
+
+long_df_all_wg_ppt <- as.data.frame.table(all_w_postg_ppt,
+                                                 responseName = "estimate")
+str(long_df_all_wg_ppt)
+
+# Convert to long data frame
+long_df_all_wg_ppt <- as.data.frame.table(all_w_postg_ppt,
+                                                 responseName = "weight") %>%
+  rename(draw = iterations, species = Var2, threemonth = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_wg_ppt$spec <- case_when(long_df_all_wg_ppt$species == 8 ~ "AGPE",
+                                            long_df_all_wg_ppt$species == 2 ~ "ELRI",
+                                            long_df_all_wg_ppt$species == 3 ~ "ELVI",
+                                            long_df_all_wg_ppt$species == 4 ~ "FESU",
+                                            long_df_all_wg_ppt$species == 5 ~ "LOAR",
+                                            long_df_all_wg_ppt$species == 6 ~ "POAL",
+                                            long_df_all_wg_ppt$species == 7 ~ "POAU",
+                                            long_df_all_wg_ppt$species == 1 ~ "POSY")
+
+long_df_all_wg_ppt$monthsprior <- case_when(long_df_all_wg_ppt$threemonth == "A" ~ "1-3",
+                                           long_df_all_wg_ppt$threemonth == "B" ~ "4-6",
+                                           long_df_all_wg_ppt$threemonth == "C" ~ "7-9",
+                                           long_df_all_wg_ppt$threemonth == "D" ~ "10-12")
+
+summary_df_all_wg_ppt <- long_df_all_wg_ppt %>%
+  group_by(spec,monthsprior) %>% 
+  summarize(
+    median_weight = median(weight),
+    lower_weight = quantile(weight, 0.05),
+    upper_weight = quantile(weight, 0.95),
+    .groups = "drop")
+
+#ggplot(summary_df_all_wg_ppt)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
+
+ggplot(data = summary_df_all_wg_ppt, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
+  geom_point() + geom_line() +
+  scale_color_manual(
+    values = c(
+      "AGPE" = "olivedrab",
+      "ELRI" = "goldenrod",
+      "ELVI" = "darkorange",
+      "FESU" = "tomato",
+      "LOAR" = "deeppink",
+      "POAL" = "purple",
+      "POAU" = "slateblue",
+      "POSY" = "cornflowerblue")) +
+  labs(x = "months prior", 
+       y = "weight",
+       title = "Comparison of Weights of Precipitation in Each Time Scale")
 
 #creating a "grid" of all combinations to be predicted (AS SUGGESTED BY GEMINI)
 plot_data_pptg <- expand.grid(
