@@ -23,6 +23,7 @@ parameters {
   real<lower=0> sigma_year;//year variance -- shared across species
   real<lower=0> sigma; //residual variance
   array[n_spp] simplex[K] w; //simplex means we are forcing w to sum to 1, to represent the weighting - Dirichlet-constrained weights
+  real<lower=2> nu; //student's t df, variance undefined for nu<2
 }
 
 transformed parameters{
@@ -41,6 +42,7 @@ model {
   gamma_year ~ normal(0,sigma_year);
   sigma_year ~ exponential(1);
   sigma ~ exponential(1);
+  nu ~ gamma(2, 0.1);
   for (i in 1:n_spp) {
     w[i] ~ dirichlet(rep_vector(1.0,K)); //uniform over simplex
     for (j in 1:n_endo) {
@@ -48,13 +50,15 @@ model {
       beta_clim[i,j] ~ normal(0,1);
     }
   }
-  y ~ normal(mu, sigma);
+  //y ~ normal(mu, sigma);
+  y ~ student_t(nu, mu, sigma);
 }
 
 generated quantities {
   real y_rep[n_obs];
   for(i in 1:n_obs){
-    y_rep[i] = normal_rng(mu[i], sigma);
+    //y_rep[i] = normal_rng(mu[i], sigma);
+    y_rep[i] = student_t_rng(nu, mu[i], sigma);
   }
 }
 

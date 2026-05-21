@@ -401,7 +401,7 @@ all_grow_dat_ppt <- list(n_obs = nrow(all_grow_ppt),
                          n_spp = max(all_grow_ppt$spec),
                          endo_01 = all_grow_ppt$endo_01,
                          K = 4,
-                         climate = all_grow_ppt[,c("firstthreeback_ppt","secondthreeback_ppt","thirdthreeback_ppt","fourththreeback_ppt")],
+                         climate = scale(all_grow_ppt[,c("firstthreeback_ppt","secondthreeback_ppt","thirdthreeback_ppt","fourththreeback_ppt")]),
                          year_index = all_grow_ppt$year_t-2006,
                          plot = all_grow_ppt$plot,
                          species = all_grow_ppt$spec)
@@ -423,6 +423,7 @@ all_grow_sampling_ppt<-readRDS("all_grow_sampling_ppt.rds")
 y_rep<-extract(all_grow_sampling_ppt,pars="y_rep")
 ppc_dens_overlay(all_grow_dat_ppt$y,y_rep$y_rep[1:500,])
 
+
 summary(all_grow_sampling_ppt)
 
 #extracting parameters
@@ -431,6 +432,9 @@ dim(params_all_g_ppt$beta_0)
 dim(params_all_g_ppt$beta_clim)
 dim(params_all_g_ppt$w)
 
+##trace plots of beta clim
+mcmc_trace(all_grow_sampling_ppt,regex_pars = "beta_clim")
+mcmc_trace(all_grow_sampling_ppt,regex_pars = "w")
 
 ##PLOTTING ENDO ESTIMATES
 #take a random subset of posterior draws for beta_0
