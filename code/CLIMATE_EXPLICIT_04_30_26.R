@@ -42,7 +42,8 @@ gras$original <- gras$origin_01
 pop_growth_df <- grasclim %>%
   # 1. Group by the variables that define a "population"
   group_by(species, plot, endo_01, year_t, spec, 
-           firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt) %>%
+           firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt,
+           fifththreeback_ppt,sixththreeback_ppt,sevenththreeback_ppt,eighththreeback_ppt) %>%
   # 2. Count the number of individuals (N) in each group/year
   summarise(N_t = n(), .groups = "drop") %>%
   # 3. Arrange by year to ensure the math follows the timeline
@@ -390,19 +391,25 @@ ggplot() +
 
 ##prep data for total precipitation, dropping NAs
 pop_growth_df %>% 
-  select(r,endo_01,spec,firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt,plot,year_t) %>% 
+  select(r,endo_01,spec,
+         firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt,
+         fifththreeback_ppt,sixththreeback_ppt,sevenththreeback_ppt,eighththreeback_ppt,
+         plot,year_t) %>% 
   drop_na() -> all_grow_ppt
 
 all_grow_dat_ppt <- list(n_obs = nrow(all_grow_ppt),
                          y = all_grow_ppt$r,
-                         n_yrs = length(unique(all_grow_ppt$year_t))+1,
+                         n_yrs = length(unique(all_grow_ppt$year_t)),
                          n_plots = max(all_grow_ppt$plot),
                          n_endo = 2,
                          n_spp = max(all_grow_ppt$spec),
                          endo_01 = all_grow_ppt$endo_01,
-                         K = 4,
-                         climate = scale(all_grow_ppt[,c("firstthreeback_ppt","secondthreeback_ppt","thirdthreeback_ppt","fourththreeback_ppt")]),
-                         year_index = all_grow_ppt$year_t-2006,
+                         K = 8,
+                         climate = scale(all_grow_ppt[,c("firstthreeback_ppt","secondthreeback_ppt",
+                                                         "thirdthreeback_ppt","fourththreeback_ppt",
+                                                         "fifththreeback_ppt","sixththreeback_ppt",
+                                                         "sevenththreeback_ppt","eighththreeback_ppt")]),
+                         year_index = as.integer(as.factor(all_grow_ppt$year_t)),
                          plot = all_grow_ppt$plot,
                          species = all_grow_ppt$spec)
 
@@ -501,63 +508,6 @@ summary_df_all_betaclimg_ppt <- long_df_all_betaclimg_ppt %>%
     upper_slope = quantile(slope_val, 0.95),
     .groups = "drop")
 
-#take a random subset of posterior draws for the w 
-all_w_postg_ppt<-params_all_g_ppt$w[sample(dim(params_all_g_ppt$w)[1],size=1000),,]
-dim(all_w_postg_ppt)
-
-long_df_all_wg_ppt <- as.data.frame.table(all_w_postg_ppt,
-                                                 responseName = "estimate")
-str(long_df_all_wg_ppt)
-
-# Convert to long data frame
-long_df_all_wg_ppt <- as.data.frame.table(all_w_postg_ppt,
-                                                 responseName = "weight") %>%
-  rename(draw = iterations, species = Var2, threemonth = Var3) %>%
-  mutate(draw = as.integer(draw), species=as.integer(species))
-
-long_df_all_wg_ppt$spec <- case_when(long_df_all_wg_ppt$species == 8 ~ "AGPE",
-                                            long_df_all_wg_ppt$species == 2 ~ "ELRI",
-                                            long_df_all_wg_ppt$species == 3 ~ "ELVI",
-                                            long_df_all_wg_ppt$species == 4 ~ "FESU",
-                                            long_df_all_wg_ppt$species == 5 ~ "LOAR",
-                                            long_df_all_wg_ppt$species == 6 ~ "POAL",
-                                            long_df_all_wg_ppt$species == 7 ~ "POAU",
-                                            long_df_all_wg_ppt$species == 1 ~ "POSY")
-
-long_df_all_wg_ppt$monthsprior <- case_when(long_df_all_wg_ppt$threemonth == "A" ~ "1-3",
-                                           long_df_all_wg_ppt$threemonth == "B" ~ "4-6",
-                                           long_df_all_wg_ppt$threemonth == "C" ~ "7-9",
-                                           long_df_all_wg_ppt$threemonth == "D" ~ "10-12")
-
-long_df_all_wg_ppt$monthsprior <- factor(long_df_all_wg_ppt$monthsprior,
-                                         levels=c("1-3","4-6","7-9","10-12"))
-
-summary_df_all_wg_ppt <- long_df_all_wg_ppt %>%
-  group_by(spec,monthsprior) %>% 
-  summarize(
-    median_weight = median(weight),
-    lower_weight = quantile(weight, 0.05),
-    upper_weight = quantile(weight, 0.95),
-    .groups = "drop")
-
-#ggplot(summary_df_all_wg_ppt)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
-
-ggplot(data = summary_df_all_wg_ppt, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
-  geom_point() + geom_line() +
-  scale_color_manual(
-    values = c(
-      "AGPE" = "olivedrab",
-      "ELRI" = "goldenrod",
-      "ELVI" = "darkorange",
-      "FESU" = "tomato",
-      "LOAR" = "deeppink",
-      "POAL" = "purple",
-      "POAU" = "slateblue",
-      "POSY" = "cornflowerblue")) +
-  labs(x = "months prior", 
-       y = "weight",
-       title = "Comparison of Weights of Precipitation in Each Time Scale")
-
 #creating a "grid" of all combinations to be predicted (AS SUGGESTED BY GEMINI)
 plot_data_pptg <- expand.grid(
   ppt_tot_scaled = seq(min(all_grow_ppt$ppt_tot_scaled, na.rm=T), 
@@ -615,6 +565,68 @@ ggplot() +
        title = "Population Growth Rate with 90% Credible Intervals") +
   theme_minimal()
 
+
+##PLOTTING Ws
+#take a random subset of posterior draws for the w 
+all_w_postg_ppt<-params_all_g_ppt$w[sample(dim(params_all_g_ppt$w)[1],size=1000),,]
+dim(all_w_postg_ppt)
+
+long_df_all_wg_ppt <- as.data.frame.table(all_w_postg_ppt,
+                                                 responseName = "estimate")
+str(long_df_all_wg_ppt)
+
+# Convert to long data frame
+long_df_all_wg_ppt <- as.data.frame.table(all_w_postg_ppt,
+                                                 responseName = "weight") %>%
+  rename(draw = iterations, species = Var2, threemonth = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_wg_ppt$spec <- case_when(long_df_all_wg_ppt$species == 8 ~ "AGPE",
+                                            long_df_all_wg_ppt$species == 2 ~ "ELRI",
+                                            long_df_all_wg_ppt$species == 3 ~ "ELVI",
+                                            long_df_all_wg_ppt$species == 4 ~ "FESU",
+                                            long_df_all_wg_ppt$species == 5 ~ "LOAR",
+                                            long_df_all_wg_ppt$species == 6 ~ "POAL",
+                                            long_df_all_wg_ppt$species == 7 ~ "POAU",
+                                            long_df_all_wg_ppt$species == 1 ~ "POSY")
+
+long_df_all_wg_ppt$monthsprior <- case_when(long_df_all_wg_ppt$threemonth == "A" ~ "1-3",
+                                            long_df_all_wg_ppt$threemonth == "B" ~ "4-6",
+                                            long_df_all_wg_ppt$threemonth == "C" ~ "7-9",
+                                            long_df_all_wg_ppt$threemonth == "D" ~ "10-12",
+                                            long_df_all_wg_ppt$threemonth == "E" ~ "13-15",
+                                            long_df_all_wg_ppt$threemonth == "F" ~ "16-18",
+                                            long_df_all_wg_ppt$threemonth == "G" ~ "19-21",
+                                            long_df_all_wg_ppt$threemonth == "H" ~ "22-24")
+
+long_df_all_wg_ppt$monthsprior <- factor(long_df_all_wg_ppt$monthsprior,
+                                         levels=c("1-3","4-6","7-9","10-12","13-15","16-18","19-21","22-24"))
+
+summary_df_all_wg_ppt <- long_df_all_wg_ppt %>%
+  group_by(spec,monthsprior) %>% 
+  summarize(
+    median_weight = median(weight),
+    lower_weight = quantile(weight, 0.05),
+    upper_weight = quantile(weight, 0.95),
+    .groups = "drop")
+
+#ggplot(summary_df_all_wg_ppt)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
+
+ggplot(data = summary_df_all_wg_ppt, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
+  geom_point() + geom_line() +
+  scale_color_manual(
+    values = c(
+      "AGPE" = "olivedrab",
+      "ELRI" = "goldenrod",
+      "ELVI" = "darkorange",
+      "FESU" = "tomato",
+      "LOAR" = "deeppink",
+      "POAL" = "purple",
+      "POAU" = "slateblue",
+      "POSY" = "cornflowerblue")) +
+  labs(x = "months prior", 
+       y = "weight",
+       title = "Comparison of Weights of Precipitation in Each Time Scale")
 
 
 
@@ -960,12 +972,16 @@ all_grow_dat_temp <- list(n_obs = nrow(all_grow_temp),
                           n_endo = 2,
                           n_spp = max(all_grow_temp$spec),
                           endo_01 = all_grow_temp$endo_01,
+                          K = 4,
+                          climate = scale(all_grow_ppt[,c("firstthreeback_tmean","secondthreeback_tmean",
+                                                          "thirdthreeback_tmean","fourththreeback_tmean",
+                                                          "fifththreeback_tmean","sixththreeback_tmean",
+                                                          "sevenththreeback_tmean","eighththreeback_tmean")]),
                           year_index = all_grow_temp$year_t-2006,
-                          climate = all_grow_temp$tmean_mean,
                           plot = all_grow_temp$plot,
                           species = all_grow_temp$spec)
 
-all_grow_model_temp = stan_model(file="code/climatedemogrowth.stan")
+all_grow_model_temp = stan_model(file="code/climatedemogrowthSAM.stan")
 all_grow_sampling_temp <- sampling(all_grow_model_temp,
                                    data = all_grow_dat_temp,
                                    chains = 3, 
@@ -1436,7 +1452,7 @@ ggplot() +
 
 
 
-##MODEL GT: GROWTH RATE AS RESPONSE TO VPDMAX___________________
+##MODEL GV: GROWTH RATE AS RESPONSE TO VPDMAX___________________
 
 ##prep data for total precipitation, dropping NAs
 pop_growth_df %>% 

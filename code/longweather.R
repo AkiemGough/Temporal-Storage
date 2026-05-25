@@ -360,10 +360,10 @@ weatherINDSep_Nov_lastyear <- weatherIND_three_month %>%
          sevenththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
 weatherINDJun_Aug_lastyear <- weatherIND_three_month %>% 
-  filter(Census_three_month == "eightthreeback" & CensusGroup == "May") %>%
-  rename(eightthreeback_vpdmax = trimonthly_vpdmax,
-         eightthreeback_ppt = trimonthly_ppt_tot,
-         eightthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
+  filter(Census_three_month == "eighththreeback" & CensusGroup == "May") %>%
+  rename(eighththreeback_vpdmax = trimonthly_vpdmax,
+         eighththreeback_ppt = trimonthly_ppt_tot,
+         eighththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
 #making data frames with only necessary data for each 6 months back from May for Indiana
 weatherINDDec_May <- weatherIND_six_month %>%
@@ -536,75 +536,75 @@ weatherINDJulAug_lastyear <- weatherIND_one_month %>%
          twentyfourthoneback_tmean = monthly_tmean_mean) %>% select(-Census_one_month)
 
 #making data frames with only necessary data for each 3 months back from Jul for Indiana
-weatherINDMay_Jul <- weatherIND_three_month_jul %>% 
-  filter(Census_three_month_Jul == "firstthreeback" & CensusGroup == "Jul") %>%
+weatherINDMay_Jul <- weatherIND_three_month %>% 
+  filter(Census_three_month == "firstthreeback" & CensusGroup == "Jul") %>%
   rename(firstthreeback_vpdmax = trimonthly_vpdmax,
          firstthreeback_ppt = trimonthly_ppt_tot,
          firstthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDFeb_Apr <- weatherIND_three_month_jul %>%
-  filter(Census_three_month_Jul == "secondthreeback" & CensusGroup == "Jul") %>%
+weatherINDFeb_Apr <- weatherIND_three_month %>%
+  filter(Census_three_month == "secondthreeback" & CensusGroup == "Jul") %>%
   rename(secondthreeback_vpdmax = trimonthly_vpdmax,
          secondthreeback_ppt = trimonthly_ppt_tot,
          secondthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDNov_Jan <- weatherIND_three_month_jul %>%
-  filter(Census_three_month_Jul == "thirdthreeback" & CensusGroup == "Jul") %>%
+weatherINDNov_Jan <- weatherIND_three_month %>%
+  filter(Census_three_month == "thirdthreeback" & CensusGroup == "Jul") %>%
   rename(thirdthreeback_vpdmax = trimonthly_vpdmax,
          thirdthreeback_ppt = trimonthly_ppt_tot,
          thirdthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDAug_Oct <- weatherIND_three_month_jul %>% 
-  filter(Census_three_month_Jul == "fourththreeback" & CensusGroup == "Jul") %>%
+weatherINDAug_Oct <- weatherIND_three_month %>% 
+  filter(Census_three_month == "fourththreeback" & CensusGroup == "Jul") %>%
   rename(fourththreeback_vpdmax = trimonthly_vpdmax,
          fourththreeback_ppt = trimonthly_ppt_tot,
          fourththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDMay_Jul_lastyear <- weatherIND_three_month_jul %>% 
-  filter(Census_three_month_Jul == "fifththreeback" & CensusGroup == "Jul") %>%
+weatherINDMay_Jul_lastyear <- weatherIND_three_month %>% 
+  filter(Census_three_month == "fifththreeback" & CensusGroup == "Jul") %>%
   rename(fifththreeback_vpdmax = trimonthly_vpdmax,
          fifththreeback_ppt = trimonthly_ppt_tot,
          fifththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDFeb_Apr_lastyear <- weatherIND_three_month_jul %>% 
-  filter(Census_three_month_Jul == "sixththreeback" & CensusGroup == "Jul") %>%
+weatherINDFeb_Apr_lastyear <- weatherIND_three_month %>% 
+  filter(Census_three_month == "sixththreeback" & CensusGroup == "Jul") %>%
   rename(sixththreeback_vpdmax = trimonthly_vpdmax,
          sixththreeback_ppt = trimonthly_ppt_tot,
          sixththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDNov_Jan_lastyear <- weatherIND_three_month_jul %>% 
-  filter(Census_three_month_Jul == "sevenththreeback" & CensusGroup == "Jul") %>%
+weatherINDNov_Jan_lastyear <- weatherIND_three_month %>% 
+  filter(Census_three_month == "sevenththreeback" & CensusGroup == "Jul") %>%
   rename(sevenththreeback_vpdmax = trimonthly_vpdmax,
          sevenththreeback_ppt = trimonthly_ppt_tot,
          sevenththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDAug_Oct_lastyear <- weatherIND_three_month_jul %>% 
-  filter(Census_three_month_Jul == "eightthreeback" & CensusGroup == "Jul") %>%
-  rename(eightthreeback_vpdmax = trimonthly_vpdmax,
-         eightthreeback_ppt = trimonthly_ppt_tot,
-         eightthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
+weatherINDAug_Oct_lastyear <- weatherIND_three_month %>% 
+  filter(Census_three_month == "eighththreeback" & CensusGroup == "Jul") %>%
+  rename(eighththreeback_vpdmax = trimonthly_vpdmax,
+         eighththreeback_ppt = trimonthly_ppt_tot,
+         eighththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
 #making data frames with only necessary data for each 6 months back from Jul for Indiana
-weatherINDFeb_Jul <- weatherIND_six_month_jul %>%
-  filter(Census_six_month_Jul == "firstsixback" & CensusGroup == "Jul") %>%
+weatherINDFeb_Jul <- weatherIND_six_month %>%
+  filter(Census_six_month == "firstsixback" & CensusGroup == "Jul") %>%
   rename(firstsixback_vpdmax = hexamonthly_vpdmax,
          firstsixback_ppt = hexamonthly_ppt_tot,
          firstsixback_tmean = hexamonthly_tmean_mean) %>% select(-Census_six_month)
 
-weatherINDAug_Jan <- weatherIND_six_month_jul %>% 
-  filter(Census_six_month_Jul == "secondsixback" & CensusGroup == "Jul") %>%
+weatherINDAug_Jan <- weatherIND_six_month %>% 
+  filter(Census_six_month == "secondsixback" & CensusGroup == "Jul") %>%
   rename(secondsixback_vpdmax = hexamonthly_vpdmax,
          secondsixback_ppt = hexamonthly_ppt_tot,
          secondsixback_tmean = hexamonthly_tmean_mean) %>% select(-Census_six_month)
 
-weatherINDFeb_Jul_lastyear <- weatherIND_six_month_jul %>%
-  filter(Census_six_month_Jul == "thirdsixback" & CensusGroup == "Jul") %>%
+weatherINDFeb_Jul_lastyear <- weatherIND_six_month %>%
+  filter(Census_six_month == "thirdsixback" & CensusGroup == "Jul") %>%
   rename(thirdsixback_vpdmax = hexamonthly_vpdmax,
          thirdsixback_ppt = hexamonthly_ppt_tot,
          thirdsixback_tmean = hexamonthly_tmean_mean) %>% select(-Census_six_month)
 
-weatherINDAug_Jan_lastyear <- weatherIND_six_month_jul %>% 
-  filter(Census_six_month_Jul == "fourthsixback" & CensusGroup == "Jul") %>%
+weatherINDAug_Jan_lastyear <- weatherIND_six_month %>% 
+  filter(Census_six_month == "fourthsixback" & CensusGroup == "Jul") %>%
   rename(fourthsixback_vpdmax = hexamonthly_vpdmax,
          fourthsixback_ppt = hexamonthly_ppt_tot,
          fourthsixback_tmean = hexamonthly_tmean_mean) %>% select(-Census_six_month)
@@ -755,75 +755,75 @@ weatherINDSepOct_lastyear <- weatherIND_one_month %>%
          twentyfourthoneback_tmean = monthly_tmean_mean) %>% select(-Census_one_month)
 
 #making data frames with only necessary data for each 3 months back from Sep for Indiana
-weatherINDJul_Sep <- weatherIND_three_month_sep %>% 
-  filter(Census_three_month_Sep == "firstthreeback" & CensusGroup == "Sep") %>%
+weatherINDJul_Sep <- weatherIND_three_month %>% 
+  filter(Census_three_month == "firstthreeback" & CensusGroup == "Sep") %>%
   rename(firstthreeback_vpdmax = trimonthly_vpdmax,
          firstthreeback_ppt = trimonthly_ppt_tot,
          firstthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDApr_Jun <- weatherIND_three_month_sep %>% 
-  filter(Census_three_month_Sep == "secondthreeback" & CensusGroup == "Sep") %>%
+weatherINDApr_Jun <- weatherIND_three_month %>% 
+  filter(Census_three_month == "secondthreeback" & CensusGroup == "Sep") %>%
   rename(secondthreeback_vpdmax = trimonthly_vpdmax,
          secondthreeback_ppt = trimonthly_ppt_tot,
          secondthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDJan_Mar <- weatherIND_three_month_sep %>% 
-  filter(Census_three_month_Sep == "thirdthreeback" & CensusGroup == "Sep") %>%
+weatherINDJan_Mar <- weatherIND_three_month %>% 
+  filter(Census_three_month == "thirdthreeback" & CensusGroup == "Sep") %>%
   rename(thirdthreeback_vpdmax = trimonthly_vpdmax,
          thirdthreeback_ppt = trimonthly_ppt_tot,
          thirdthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDOct_Dec <- weatherIND_three_month_sep %>% 
-  filter(Census_three_month_Sep == "fourththreeback" & CensusGroup == "Sep") %>%
+weatherINDOct_Dec <- weatherIND_three_month %>% 
+  filter(Census_three_month == "fourththreeback" & CensusGroup == "Sep") %>%
   rename(fourththreeback_vpdmax = trimonthly_vpdmax,
          fourththreeback_ppt = trimonthly_ppt_tot,
          fourththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDJul_Sep_lastyear <- weatherIND_three_month_sep %>% 
-  filter(Census_three_month_Sep == "fifththreeback" & CensusGroup == "Sep") %>%
+weatherINDJul_Sep_lastyear <- weatherIND_three_month %>% 
+  filter(Census_three_month == "fifththreeback" & CensusGroup == "Sep") %>%
   rename(fifththreeback_vpdmax = trimonthly_vpdmax,
          fifththreeback_ppt = trimonthly_ppt_tot,
          fifththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDApr_Jun_lastyear <- weatherIND_three_month_sep %>% 
-  filter(Census_three_month_Sep == "sixththreeback" & CensusGroup == "Sep") %>%
+weatherINDApr_Jun_lastyear <- weatherIND_three_month %>% 
+  filter(Census_three_month == "sixththreeback" & CensusGroup == "Sep") %>%
   rename(sixththreeback_vpdmax = trimonthly_vpdmax,
          sixththreeback_ppt = trimonthly_ppt_tot,
          sixththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDJan_Mar_lastyear <- weatherIND_three_month_sep %>% 
-  filter(Census_three_month_Sep == "sevenththreeback" & CensusGroup == "Sep") %>%
+weatherINDJan_Mar_lastyear <- weatherIND_three_month %>% 
+  filter(Census_three_month == "sevenththreeback" & CensusGroup == "Sep") %>%
   rename(sevenththreeback_vpdmax = trimonthly_vpdmax,
          sevenththreeback_ppt = trimonthly_ppt_tot,
          sevenththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
-weatherINDOct_Dec_lastyear <- weatherIND_three_month_sep %>% 
-  filter(Census_three_month_Sep == "eightthreeback" & CensusGroup == "Sep") %>%
-  rename(eightthreeback_vpdmax = trimonthly_vpdmax,
-         eightthreeback_ppt = trimonthly_ppt_tot,
-         eightthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
+weatherINDOct_Dec_lastyear <- weatherIND_three_month %>% 
+  filter(Census_three_month == "eighththreeback" & CensusGroup == "Sep") %>%
+  rename(eighththreeback_vpdmax = trimonthly_vpdmax,
+         eighththreeback_ppt = trimonthly_ppt_tot,
+         eighththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
 #making data frames with only necessary data for each 6 months back from Sep for Indiana
-weatherINDApr_Sep <- weatherIND_six_month_sep %>% 
-  filter(Census_six_month_Sep == "firstsixback" & CensusGroup == "Sep") %>%
+weatherINDApr_Sep <- weatherIND_six_month %>% 
+  filter(Census_six_month == "firstsixback" & CensusGroup == "Sep") %>%
   rename(firstsixback_vpdmax = hexamonthly_vpdmax,
          firstsixback_ppt = hexamonthly_ppt_tot,
          firstsixback_tmean = hexamonthly_tmean_mean) %>% select(-Census_six_month)
 
-weatherINDOct_Mar <- weatherIND_six_month_sep %>% 
-  filter(Census_six_month_Sep == "secondsixback" & CensusGroup == "Sep") %>%
+weatherINDOct_Mar <- weatherIND_six_month %>% 
+  filter(Census_six_month == "secondsixback" & CensusGroup == "Sep") %>%
   rename(secondsixback_vpdmax = hexamonthly_vpdmax,
          secondsixback_ppt = hexamonthly_ppt_tot,
          secondsixback_tmean = hexamonthly_tmean_mean) %>% select(-Census_six_month)
 
-weatherINDApr_Sep_lastyear <- weatherIND_six_month_sep %>%
-  filter(Census_six_month_Sep == "thirdsixback" & CensusGroup == "Sep") %>%
+weatherINDApr_Sep_lastyear <- weatherIND_six_month %>%
+  filter(Census_six_month == "thirdsixback" & CensusGroup == "Sep") %>%
   rename(thirdsixback_vpdmax = hexamonthly_vpdmax,
          thirdsixback_ppt = hexamonthly_ppt_tot,
          thirdsixback_tmean = hexamonthly_tmean_mean) %>% select(-Census_six_month)
 
-weatherINDOct_Mar_lastyear <- weatherIND_six_month_sep %>%
-  filter(Census_six_month_Sep == "fourthsixback" & CensusGroup == "Sep") %>%
+weatherINDOct_Mar_lastyear <- weatherIND_six_month %>%
+  filter(Census_six_month == "fourthsixback" & CensusGroup == "Sep") %>%
   rename(fourthsixback_vpdmax = hexamonthly_vpdmax,
          fourthsixback_ppt = hexamonthly_ppt_tot,
          fourthsixback_tmean = hexamonthly_tmean_mean) %>% select(-Census_six_month)
@@ -1017,10 +1017,10 @@ weatherTEXSep_Nov_lastyear <- weatherTEX_three_month %>%
          sevenththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
 weatherTEXJun_Aug_lastyear <- weatherTEX_three_month %>% 
-  filter(Census_three_month == "eightthreeback" & CensusGroup == "May") %>%
-  rename(eightthreeback_vpdmax = trimonthly_vpdmax,
-         eightthreeback_ppt = trimonthly_ppt_tot,
-         eightthreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
+  filter(Census_three_month == "eighththreeback" & CensusGroup == "May") %>%
+  rename(eighththreeback_vpdmax = trimonthly_vpdmax,
+         eighththreeback_ppt = trimonthly_ppt_tot,
+         eighththreeback_tmean = trimonthly_tmean_mean) %>% select(-Census_three_month)
 
 #making data frames with only necessary data for each 6 months back from May for Texas
 weatherTEXDec_May <- weatherTEX_six_month %>%
