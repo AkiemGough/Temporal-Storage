@@ -48,7 +48,7 @@ gras %>%
   drop_na() -> all_flow
 
 all_flow_dat <- list(n_obs=nrow(all_flow),
-                     y=all_flow$flw_count_t>0,
+                     y= as.integer(all_flow$flw_count_t > 0),
                      n_yrs = length(unique(all_flow$year_t))+1,
                      n_plots = max(all_flow$plot),
                      n_endo = 2,
@@ -60,7 +60,7 @@ all_flow_dat <- list(n_obs=nrow(all_flow),
                      species=all_flow$spec,
                      original=all_flow$original)
 
-all_flow_model = stan_model(file="code/flowering_mvn.stan")
+all_flow_model = stan_model(file="code/implicit_binomial_mvn.stan")
 all_flow_sampling<-sampling(all_flow_model,
                             data=all_flow_dat,
                             chains = 3,thin=5,
@@ -68,7 +68,7 @@ all_flow_sampling<-sampling(all_flow_model,
                             warmup = 1000,
                             pars=c("beta_0","beta_size","beta_size_endo",
                                    "meanflow","beta_orig","sigma_year",
-                                   "sigma_plot","Omega","endo_effect"),
+                                   "sigma_plot","Omega","endo_effect","y_rep"),
                             save_warmup=F)
 
 #saveRDS(all_flow_sampling,"all_flow_sampling.rds")
@@ -76,9 +76,12 @@ all_flow_sampling<-readRDS("all_flow_sampling.rds")
 
 mcmc_trace(all_flow_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_flow_sampling,par=c('Omega[1,1,2]'))
-mcmc_dens(all_flow_sampling,par=c('Omega[1,1,2]'))
 mcmc_dens(all_flow_sampling,par=c('Omega[2,1,2]'))
-mcmc_dens(all_flow_sampling,par=c('Omega[2,1,2]'))
+
+
+##posterior predictive check
+y_rep<-extract(all_flow_sampling_ppt,pars="y_rep")
+ppc_dens_overlay(all_flow_dat_ppt$y,y_rep$y_rep[1:500,])
 
 #extracting parameters
 params_all_f<-rstan::extract(all_flow_sampling,pars=c('beta_0','endo_effect','Omega'))
@@ -261,7 +264,7 @@ all_surv_sampling<-sampling(all_surv_model,
                             warmup = 1000,
                             pars=c("beta_0","beta_size","beta_size_endo",
                                    "meanflow","beta_orig","sigma_year",
-                                   "sigma_plot","Omega","endo_effect"),
+                                   "sigma_plot","Omega","endo_effect","y_rep"),
                             save_warmup=F)
 
 #saveRDS(all_surv_sampling,"all_surv_sampling.rds")
@@ -269,9 +272,11 @@ all_surv_sampling<-sampling(all_surv_model,
 
 mcmc_trace(all_surv_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_surv_sampling,par=c('Omega[1,1,2]'))
-mcmc_dens(all_surv_sampling,par=c('Omega[1,1,2]'))
 mcmc_dens(all_surv_sampling,par=c('Omega[2,1,2]'))
-mcmc_dens(all_surv_sampling,par=c('Omega[2,1,2]'))
+
+##posterior predictive check
+y_rep<-extract(all_surv_sampling_ppt,pars="y_rep")
+ppc_dens_overlay(all_surv_dat_ppt$y,y_rep$y_rep[1:500,])
 
 #mcmc_trace(surv_sampling,pars='tau_plot[111]')
 
@@ -424,6 +429,207 @@ ggplot(summary_df_all_s, aes(x = year, y = median)) +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
   labs(x = "Year", y = "Endophyte effect",
        title = "Difference of E+ and E- survival with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_wrap(~spec, scales = "free_y")
+
+
+
+##MODEL II: INFLORESCENE COUNT AS RESPONSE, CLIMATE IMPLICIT___________________
+
+##prepping data, dropping NAs
+gras %>%
+  select(flw_count_t1,endo_01,log_tillers_centered,year_t,plot,spec,original) %>% 
+  drop_na() -> all_infl
+
+all_infl_dat <- list(n_obs=nrow(all_infl),
+                     y=all_infl$flw_count_t1,
+                     n_yrs = length(unique(all_infl$year_t))+1,
+                     n_plots = max(all_infl$plot),
+                     n_endo = 2,
+                     n_spp = length(unique(all_infl$spec)),
+                     endo_01=all_infl$endo_01,
+                     size=all_infl$log_tillers_centered,
+                     year_index=all_infl$year_t-2006,
+                     plot=all_infl$plot,
+                     species=all_infl$spec,
+                     original=all_infl$original)
+
+all_infl_model = stan_model(file="code/implicit_poisson_mvn.stan")
+all_infl_sampling<-sampling(all_infl_model,
+                            data=all_infl_dat,
+                            chains = 3,thin=5,
+                            iter = 5000,
+                            warmup = 1000,
+                            pars=c("beta_0","beta_size","beta_size_endo",
+                                   "meanflow","beta_orig","sigma_year",
+                                   "sigma_plot","Omega","endo_effect","y_rep"),
+                            save_warmup=F)
+
+#saveRDS(all_infl_sampling,"all_infl_sampling.rds")
+all_infl_sampling<-readRDS("all_infl_sampling.rds")
+
+mcmc_trace(all_infl_sampling,par=c('endo_effect[1,5]'))
+mcmc_trace(all_infl_sampling,par=c('Omega[1,1,2]'))
+mcmc_dens(all_infl_sampling,par=c('Omega[2,1,2]'))
+
+
+##posterior predictive check
+y_rep<-extract(all_infl_sampling_ppt,pars="y_rep")
+ppc_dens_overlay(all_infl_dat_ppt$y,y_rep$y_rep[1:500,])
+
+#extracting parameters
+params_all_i<-rstan::extract(all_infl_sampling,pars=c('beta_0','endo_effect','Omega'))
+dim(params_all_i$beta_0)
+dim(params_all_i$Omega)
+
+
+##PLOTTING ENDO ESTIMATES
+#take a random subset of posterior draws for beta0
+all_beta0_posti<-params_all_i$beta_0[sample(dim(params_all_i$beta_0)[1],size=1000,replace=F),,,]
+dim(all_beta0_posti)
+
+long_df_all_beta0i <- as.data.frame.table(all_beta0_posti,
+                                               responseName = "estimate")
+str(long_df_all_beta0i)
+# Convert to long data frame 
+long_df_all_beta0i <- as.data.frame.table(all_beta0_posti,
+                                          responseName = "estimate") %>%
+  rename(draw = iterations, species = Var2, endo = Var3, year = Var4, estimate = estimate) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
+
+long_df_all_beta0i$spec <- case_when(long_df_all_beta0i$species == 8 ~ "AGPE",
+                                     long_df_all_beta0i$species == 2 ~ "ELRI",
+                                     long_df_all_beta0i$species == 3 ~ "ELVI",
+                                     long_df_all_beta0i$species == 4 ~ "FESU",
+                                     long_df_all_beta0i$species == 5 ~ "LOAR",
+                                     long_df_all_beta0i$species == 6 ~ "POAL",
+                                     long_df_all_beta0i$species == 7 ~ "POAU",
+                                     long_df_all_beta0i$species == 1 ~ "POSY")
+
+
+summary_df_all_beta0i <- long_df_all_beta0i %>%
+  group_by(year,spec,endo) %>% 
+  summarize(
+    median = median(estimate),
+    lower = quantile(estimate, 0.05),
+    upper = quantile(estimate, 0.95),
+    probgzero = mean(estimate>0),
+    .groups = "drop")
+
+#plotting endo estimates stacked
+ggplot(summary_df_all_beta0i, aes(x = year, y = median, colour = endo, fill = endo)) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  geom_line(linewidth = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
+  labs(x = "Year", y = "inflorescence count",
+       title = "Change in inflorescence count of E+ and E- with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_grid("spec")
+
+#plotting endo estimates grids
+ggplot(summary_df_all_beta0i, aes(x = year, y = median, colour = endo, fill = endo)) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  geom_line(linewidth = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
+  labs(x = "Year", y = "inflorescence count",
+       title = "Change in inflorescence count of E+ and E- with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_wrap(~spec, scales = "free_y")
+
+##PLOTTING CORRELATION COEFFICENTS
+#take a random subset of posterior draws for correlation coefficients
+all_corr_posti<-params_all_i$Omega[sample(dim(params_all_i$Omega)[1],size=1000,replace=F),,1,2]
+dim(all_corr_posti)
+
+## Convert to long data frame for correlation coefficients
+long_df_all_corri <- as.data.frame.table(all_corr_posti,
+                                         responseName = "value") %>%
+  rename(draw = Var1, species = Var2, corr = value) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_corri$spec <- case_when(long_df_all_corri$species == 8 ~ "AGPE",
+                                    long_df_all_corri$species == 2 ~ "ELRI",
+                                    long_df_all_corri$species == 3 ~ "ELVI",
+                                    long_df_all_corri$species == 4 ~ "FESU",
+                                    long_df_all_corri$species == 5 ~ "LOAR",
+                                    long_df_all_corri$species == 6 ~ "POAL",
+                                    long_df_all_corri$species == 7 ~ "POAU",
+                                    long_df_all_corri$species == 1 ~ "POSY")
+
+#plotting correlation coefficients
+summary_df_all_corri <- long_df_all_corri %>%
+  group_by(spec) %>% 
+  summarize(
+    mean = mean(corr),
+    median = median(corr),
+    lower = quantile(corr, 0.05),
+    upper = quantile(corr, 0.95),
+    probgzero = mean(corr>0),
+    .groups = "drop")
+
+ggplot(long_df_all_corri)+
+  geom_histogram(aes (x=corr), fill="mediumpurple",binwidth = 0.02)+
+  facet_grid("spec")+xlim(-0.5,1) +
+  geom_vline(data = summary_df_all_corri,
+             aes(xintercept = mean),
+             colour = "mediumpurple4",
+             size=0.75,
+             linetype = "dashed")
+
+#finding the mean correlation coefficients
+long_df_all_corri %>% group_by(spec) %>% summarize(mean = mean(corr, na.rm = TRUE))
+
+
+##PLOTTING ENDO EFFECT (DIFFERENCE)
+#take a random subset of posterior draws for endo effect
+all_endoeffect_posti<-params_all_i$endo_effect[sample(dim(params_all_i$endo_effect)[1],size=1000,replace=F),,]
+dim(all_endoeffect_posti)
+
+# Convert to long data frame for endo effect
+long_df_all_i <- as.data.frame.table(all_endoeffect_posti,
+                                     responseName = "value") %>%
+  rename(draw = iterations, species = Var2, year = Var3, endo_effect = value) %>%
+  mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
+
+long_df_all_i$spec <- case_when(long_df_all_i$species == 8 ~ "AGPE",
+                                long_df_all_i$species == 2 ~ "ELRI",
+                                long_df_all_i$species == 3 ~ "ELVI",
+                                long_df_all_i$species == 4 ~ "FESU",
+                                long_df_all_i$species == 5 ~ "LOAR",
+                                long_df_all_i$species == 6 ~ "POAL",
+                                long_df_all_i$species == 7 ~ "POAU",
+                                long_df_all_i$species == 1 ~ "POSY")
+
+summary_df_all_i <- long_df_all_i %>%
+  group_by(year,spec) %>% 
+  summarize(
+    median = median(endo_effect),
+    lower = quantile(endo_effect, 0.05),
+    upper = quantile(endo_effect, 0.95),
+    probgzero = mean(endo_effect>0),
+    .groups = "drop")
+
+#plotting endo effect stacked
+ggplot(summary_df_all_i, aes(x = year, y = median)) +
+  geom_line(linewidth = 0.5, col = "mediumpurple3") +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
+  labs(x = "Year", y = "Endophyte effect",
+       title = "Difference of E+ and E- inflorescence count with year") +
+  geom_hline(yintercept = 0) +
+  theme_minimal()+
+  facet_grid("spec")
+
+#plotting endo effect grids
+ggplot(summary_df_all_i, aes(x = year, y = median)) +
+  geom_line(linewidth = 0.5, col = "mediumpurple3") +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
+  labs(x = "Year", y = "Endophyte effect",
+       title = "Difference of E+ and E- inflorescence count with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_wrap(~spec, scales = "free_y")

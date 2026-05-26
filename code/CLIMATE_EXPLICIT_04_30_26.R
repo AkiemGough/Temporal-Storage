@@ -35,7 +35,7 @@ grasclim$log_tillers_centered <- log(grasclim$size_t) - mean(log(grasclim$size_t
 #grasclim$ppt_tot_scaled <- as.numeric (scale(grasclim$ppt_tot))
 
 #renaming origin_01 
-gras$original <- gras$origin_01
+grasclim$original <- grasclim$origin_01
 
 #Generating new data frame for Population Growth Rate
 
@@ -43,7 +43,11 @@ pop_growth_df <- grasclim %>%
   # 1. Group by the variables that define a "population"
   group_by(species, plot, endo_01, year_t, spec, 
            firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt,
-           fifththreeback_ppt,sixththreeback_ppt,sevenththreeback_ppt,eighththreeback_ppt) %>%
+           fifththreeback_ppt,sixththreeback_ppt,sevenththreeback_ppt,eighththreeback_ppt,
+           firstthreeback_tmean,secondthreeback_tmean,thirdthreeback_tmean,fourththreeback_tmean,
+           fifththreeback_tmean,sixththreeback_tmean,sevenththreeback_tmean,eighththreeback_tmean,
+           firstthreeback_vpdmax,secondthreeback_vpdmax,thirdthreeback_vpdmax,fourththreeback_vpdmax,
+           fifththreeback_vpdmax,sixththreeback_vpdmax,sevenththreeback_vpdmax,eighththreeback_vpdmax) %>%
   # 2. Count the number of individuals (N) in each group/year
   summarise(N_t = n(), .groups = "drop") %>%
   # 3. Arrange by year to ensure the math follows the timeline
@@ -439,7 +443,7 @@ dim(params_all_g_ppt$beta_0)
 dim(params_all_g_ppt$beta_clim)
 dim(params_all_g_ppt$w)
 
-##trace plots of beta clim
+##trace plots of beta clim and w
 mcmc_trace(all_grow_sampling_ppt,regex_pars = "beta_clim")
 mcmc_trace(all_grow_sampling_ppt,regex_pars = "w")
 
@@ -627,6 +631,7 @@ ggplot(data = summary_df_all_wg_ppt, aes(x = monthsprior, y = median_weight, col
   labs(x = "months prior", 
        y = "weight",
        title = "Comparison of Weights of Precipitation in Each Time Scale")
+
 
 
 
@@ -962,22 +967,24 @@ ggplot() +
 
 ##prep data for total precipitation, dropping NAs
 pop_growth_df %>% 
-  select(r,endo_01,spec,tmean_mean,plot,year_t) %>% 
+  select(r,endo_01,spec,,
+         firstthreeback_tmean,secondthreeback_tmean,thirdthreeback_tmean,fourththreeback_tmean,
+         fifththreeback_tmean,sixththreeback_tmean,sevenththreeback_tmean,eighththreeback_tmean,plot,year_t) %>% 
   drop_na() -> all_grow_temp
 
 all_grow_dat_temp <- list(n_obs = nrow(all_grow_temp),
                           y = all_grow_temp$r,
-                          n_yrs = length(unique(all_grow_temp$year_t))+1,
+                          n_yrs = length(unique(all_grow_temp$year_t)),
                           n_plots = max(all_grow_temp$plot),
                           n_endo = 2,
                           n_spp = max(all_grow_temp$spec),
                           endo_01 = all_grow_temp$endo_01,
-                          K = 4,
-                          climate = scale(all_grow_ppt[,c("firstthreeback_tmean","secondthreeback_tmean",
+                          K = 8,
+                          climate = scale(all_grow_temp[,c("firstthreeback_tmean","secondthreeback_tmean",
                                                           "thirdthreeback_tmean","fourththreeback_tmean",
                                                           "fifththreeback_tmean","sixththreeback_tmean",
                                                           "sevenththreeback_tmean","eighththreeback_tmean")]),
-                          year_index = all_grow_temp$year_t-2006,
+                          year_index = as.integer(as.factor(all_grow_temp$year_t)),
                           plot = all_grow_temp$plot,
                           species = all_grow_temp$spec)
 
@@ -987,18 +994,28 @@ all_grow_sampling_temp <- sampling(all_grow_model_temp,
                                    chains = 3, 
                                    iter = 5000, 
                                    warmup  = 1000,
+                                   pars=c("beta_0","beta_clim","sigma_year",
+                                          "sigma_plot","sigma", "w", "y_rep"),
                                    include = TRUE)
 
-#saveRDS(all_grow_sampling_temp,"all_grow_sampling_temp.rds")
+saveRDS(all_grow_sampling_temp,"all_grow_sampling_temp.rds")
 #all_grow_sampling_temp<-readRDS("all_grow_sampling_temp.rds")
+
+##posterior predictive check
+y_rep<-extract(all_grow_sampling_temp,pars="y_rep")
+ppc_dens_overlay(all_grow_dat_temp$y,y_rep$y_rep[1:500,])
 
 summary(all_grow_sampling_temp)
 
 #extracting parameters
-params_all_g_temp<-rstan::extract(all_grow_sampling_temp,pars=c('beta_0','beta_clim'))
+params_all_g_temp<-rstan::extract(all_grow_sampling_temp,pars=c('beta_0','beta_clim','w'))
 dim(params_all_g_temp$beta_0)
 dim(params_all_g_temp$beta_clim)
+dim(params_all_g_temp$w)
 
+##trace plots of beta clim and w
+mcmc_trace(all_grow_sampling_temp,regex_pars = "beta_clim")
+mcmc_trace(all_grow_sampling_temp,regex_pars = "w")
 
 ##PLOTTING ENDO ESTIMATES
 #take a random subset of posterior draws for beta_0 (endophyte estimates?)
@@ -1121,6 +1138,67 @@ ggplot() +
        title = "Population Growth Rate with 90% Credible Intervals") +
   theme_minimal()
 
+##PLOTTING Ws
+#take a random subset of posterior draws for the w 
+all_w_postg_temp<-params_all_g_temp$w[sample(dim(params_all_g_temp$w)[1],size=1000),,]
+dim(all_w_postg_temp)
+
+long_df_all_wg_temp <- as.data.frame.table(all_w_postg_temp,
+                                          responseName = "estimate")
+str(long_df_all_wg_temp)
+
+# Convert to long data frame
+long_df_all_wg_temp <- as.data.frame.table(all_w_postg_temp,
+                                          responseName = "weight") %>%
+  rename(draw = iterations, species = Var2, threemonth = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_wg_temp$spec <- case_when(long_df_all_wg_temp$species == 8 ~ "AGPE",
+                                     long_df_all_wg_temp$species == 2 ~ "ELRI",
+                                     long_df_all_wg_temp$species == 3 ~ "ELVI",
+                                     long_df_all_wg_temp$species == 4 ~ "FESU",
+                                     long_df_all_wg_temp$species == 5 ~ "LOAR",
+                                     long_df_all_wg_temp$species == 6 ~ "POAL",
+                                     long_df_all_wg_temp$species == 7 ~ "POAU",
+                                     long_df_all_wg_temp$species == 1 ~ "POSY")
+
+long_df_all_wg_temp$monthsprior <- case_when(long_df_all_wg_temp$threemonth == "A" ~ "1-3",
+                                            long_df_all_wg_temp$threemonth == "B" ~ "4-6",
+                                            long_df_all_wg_temp$threemonth == "C" ~ "7-9",
+                                            long_df_all_wg_temp$threemonth == "D" ~ "10-12",
+                                            long_df_all_wg_temp$threemonth == "E" ~ "13-15",
+                                            long_df_all_wg_temp$threemonth == "F" ~ "16-18",
+                                            long_df_all_wg_temp$threemonth == "G" ~ "19-21",
+                                            long_df_all_wg_temp$threemonth == "H" ~ "22-24")
+
+long_df_all_wg_temp$monthsprior <- factor(long_df_all_wg_temp$monthsprior,
+                                         levels=c("1-3","4-6","7-9","10-12","13-15","16-18","19-21","22-24"))
+
+summary_df_all_wg_temp <- long_df_all_wg_temp %>%
+  group_by(spec,monthsprior) %>% 
+  summarize(
+    median_weight = median(weight),
+    lower_weight = quantile(weight, 0.05),
+    upper_weight = quantile(weight, 0.95),
+    .groups = "drop")
+
+#ggplot(summary_df_all_wg_temp)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
+
+ggplot(data = summary_df_all_wg_temp, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
+  geom_point() + geom_line() +
+  scale_color_manual(
+    values = c(
+      "AGPE" = "olivedrab",
+      "ELRI" = "goldenrod",
+      "ELVI" = "darkorange",
+      "FESU" = "tomato",
+      "LOAR" = "deeppink",
+      "POAL" = "purple",
+      "POAU" = "slateblue",
+      "POSY" = "cornflowerblue")) +
+  labs(x = "months prior", 
+       y = "weight",
+       title = "Comparison of Weights of Precipitation in Each Time Scale")
 
 
 
