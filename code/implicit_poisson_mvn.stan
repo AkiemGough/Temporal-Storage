@@ -74,13 +74,7 @@ model {
 }
 
 generated quantities {
-  array[n_obs] int y_rep; 
   array[n_spp, n_yrs] real endo_effect; 
-
-  for(i in 1:n_obs){
-    y_rep[i] = poisson_log_rng(log_lambda[i]);
-  }
-
   for (i in 1:n_spp) {
     for (j in 1:n_yrs) {
       endo_effect[i, j] = beta_0[i, 2, j] - beta_0[i, 1, j];
