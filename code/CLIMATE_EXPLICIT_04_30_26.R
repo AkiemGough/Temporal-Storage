@@ -391,6 +391,172 @@ ggplot() +
        title = "Survival with 90% Credible Intervals") +
   theme_minimal()
 
+
+
+##MODEL IP: INFLORESCENE COUNT AS RESPONSE TO PREICIPITATION___________________
+
+##prep data for total precipitation, dropping NAs
+grasclim %>% 
+  select(flw_count_t1,endo_01,spec,log_tillers_centered,ppt_tot_scaled,plot,year_t,original) %>% 
+  drop_na() -> all_infl_ppt
+
+all_infl_dat_ppt<-list(n_obs=nrow(all_inf_ppt),
+                       y=all_infl_ppt$flw_count_t1,
+                       n_yrs = length(unique(all_infl_ppt$year_t))+1,
+                       n_plots = max(all_infl_ppt$plot),
+                       n_endo = 2,
+                       n_spp = length(unique(all_infl_ppt$spec)),
+                       endo_01=all_infl_ppt$endo_01,
+                       size=all_infl_ppt$log_tillers_centered,
+                       year_index=all_infl_ppt$year_t-2006,
+                       climate=all_infl_ppt$ppt_tot_scaled,
+                       plot=all_infl_ppt$plot,
+                       species=all_infl_ppt$spec,
+                       original=all_infl_ppt$original)
+
+all_infl_model_ppt = stan_model(file="code/explicit_poisson_mvn.stan")
+all_infl_sampling_ppt<-sampling(all_infl_model_ppt,
+                                data=all_infl_dat_ppt,
+                                chains = 3,
+                                iter = 5000,
+                                warmup = 1000)
+
+#saveRDS(all_infl_sampling_ppt,"all_infl_sampling_ppt.rds")
+#all_infl_sampling_ppt<-readRDS("all_infl_sampling_ppt.rds")
+
+summary(all_infl_sampling_ppt)
+
+#extracting parameters
+params_all_i_ppt<-rstan::extract(all_infl_sampling_ppt,pars=c('beta_0','beta_clim','beta_size_clim'))
+dim(params_all_i_ppt$beta_0)
+dim(params_all_i_ppt$beta_clim)
+dim(params_all_i_ppt$beta_size_clim)
+
+
+##PLOTTING ENDO ESTIMATES
+#take a random subset of posterior draws for beta_0
+all_beta0_posti_ppt<-params_all_i_ppt$beta_0[sample(dim(params_all_i_ppt$beta_0)[1],size=1000,replace=F),,]
+dim(all_beta0_posti_ppt)
+
+long_df_all_beta0i_ppt <- as.data.frame.table(all_beta0_posti_ppt,
+                                              responseName = "estimate")
+str(long_df_all_beta0i_ppt)
+
+# Convert to long data frame
+long_df_all_beta0i_ppt <- as.data.frame.table(all_beta0_posti_ppt,
+                                              responseName = "estimate") %>%
+  rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_beta0i_ppt$spec <- case_when(long_df_all_beta0i_ppt$species == 8 ~ "AGPE",
+                                         long_df_all_beta0i_ppt$species == 2 ~ "ELRI",
+                                         long_df_all_beta0i_ppt$species == 3 ~ "ELVI",
+                                         long_df_all_beta0i_ppt$species == 4 ~ "FESU",
+                                         long_df_all_beta0i_ppt$species == 5 ~ "LOAR",
+                                         long_df_all_beta0i_ppt$species == 6 ~ "POAL",
+                                         long_df_all_beta0i_ppt$species == 7 ~ "POAU",
+                                         long_df_all_beta0i_ppt$species == 1 ~ "POSY")
+
+summary_df_all_beta0i_ppt <- long_df_all_beta0i_ppt %>%
+  group_by(spec,endo) %>% 
+  summarize(
+    median = median(estimate),
+    lower = quantile(estimate, 0.05),
+    upper = quantile(estimate, 0.95),
+    probgzero = mean(estimate>0),
+    .groups = "drop")
+
+#take a random subset of posterior draws for the slope / beta_clim / climate effect (AS SUGGESTED BY GEMINI)
+all_betaclim_posti_ppt<-params_all_i_ppt$beta_clim[sample(dim(params_all_i_ppt$beta_clim)[1],size=1000),,]
+dim(all_betaclim_posti_ppt)
+
+long_df_all_betaclimi_ppt <- as.data.frame.table(all_betaclim_posti_ppt,
+                                                 responseName = "estimate")
+str(long_df_all_betaclimi_ppt)
+
+# Convert to long data frame for endo effect
+long_df_all_betaclimi_ppt <- as.data.frame.table(all_betaclim_posti_ppt,
+                                                 responseName = "slope_val") %>%
+  rename(draw = iterations, species = Var2, endo = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_betaclimi_ppt$spec <- case_when(long_df_all_betaclimi_ppt$species == 8 ~ "AGPE",
+                                            long_df_all_betaclimi_ppt$species == 2 ~ "ELRI",
+                                            long_df_all_betaclimi_ppt$species == 3 ~ "ELVI",
+                                            long_df_all_betaclimi_ppt$species == 4 ~ "FESU",
+                                            long_df_all_betaclimi_ppt$species == 5 ~ "LOAR",
+                                            long_df_all_betaclimi_ppt$species == 6 ~ "POAL",
+                                            long_df_all_betaclimi_ppt$species == 7 ~ "POAU",
+                                            long_df_all_betaclimi_ppt$species == 1 ~ "POSY")
+
+
+summary_df_all_betaclimi_ppt <- long_df_all_betaclimi_ppt %>%
+  group_by(spec,endo) %>% 
+  summarize(
+    median_slope = median(slope_val),
+    lower_slope = quantile(slope_val, 0.05),
+    upper_slope = quantile(slope_val, 0.95),
+    .groups = "drop")
+
+
+#creating a "grid" of all combinations to be predicted (AS SUGGESTED BY GEMINI)
+plot_data <- expand.grid(
+  ppt_tot_scaled = seq(min(all_infl_ppt$ppt_tot_scaled, na.rm=T), 
+                       max(all_infl_ppt$ppt_tot_scaled, na.rm=T), 
+                       length.out = 100),
+  spec = unique(long_df_all_beta0i_ppt$spec),
+  endo = unique(long_df_all_beta0i_ppt$endo)
+)
+
+plot_data <- plot_data %>%
+  left_join(summary_df_all_beta0i_ppt, by = c("spec", "endo")) %>% # Brings in 'median' (intercept)
+  left_join(summary_df_all_betaclimi_ppt, by = c("spec", "endo")) %>% # Brings in 'median_slope'
+  mutate(
+    # plogis(intercept + slope * x)
+    flowering = plogis(median + (median_slope * ppt_tot_scaled)),
+    # Calculate ribbon bounds
+    prob_lower = plogis(lower + (lower_slope * ppt_tot_scaled)),
+    prob_upper = plogis(upper + (upper_slope * ppt_tot_scaled))
+  )
+
+all_infl_ppt$spec <- case_when(
+  all_infl_ppt$spec == 8 ~ "AGPE",
+  all_infl_ppt$spec == 2 ~ "ELRI",
+  all_infl_ppt$spec == 3 ~ "ELVI",
+  all_infl_ppt$spec == 4 ~ "FESU",
+  all_infl_ppt$spec == 5 ~ "LOAR",
+  all_infl_ppt$spec == 6 ~ "POAL",
+  all_infl_ppt$spec == 7 ~ "POAU",
+  all_infl_ppt$spec == 1 ~ "POSY"
+)
+
+#The actual plot
+ggplot() +
+  # 1. The Ribbon (Uncertainty)
+  geom_ribbon(data = plot_data, 
+              aes(x = ppt_tot_scaled, ymin = prob_lower, ymax = prob_upper, fill = endo), 
+              alpha = 0.2) + 
+  # 2. The Prediction Lines
+  geom_line(data = plot_data, 
+            aes(x = ppt_tot_scaled, y = flowering, color = endo), 
+            linewidth = 1) +
+  # 3. The Raw Points
+  geom_point(data = all_infl_ppt, 
+             aes(x = ppt_tot_scaled, y = as.numeric(flw_count_t > 1)), 
+             alpha = 0.2, color = "purple") + 
+  facet_wrap(~spec) +
+  
+  # Make sure to set scale_fill_manual to match your colors!
+  scale_color_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
+  scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
+  
+  labs(x = "Precipitation (Scaled)", 
+       y = "Inflorescence Count",
+       title = "Inflorescence Count with 90% Credible Intervals") +
+  theme_minimal()
+
+
+
 ##MODEL GP: GROWTH RATE AS RESPONSE TO PREICIPITATION___________________
 
 ##prep data for total precipitation, dropping NAs
@@ -429,6 +595,9 @@ all_grow_sampling_ppt <- sampling(all_grow_model_ppt,
 
 saveRDS(all_grow_sampling_ppt,"all_grow_sampling_ppt.rds")
 all_grow_sampling_ppt<-readRDS("all_grow_sampling_ppt.rds")
+
+mcmc_intervals(all_grow_sampling_ppt,regex_pars = "beta_clim",cols=c("red","blue"))
+#note to self - make the E+ E- pairs close to each other and distinguished by color
 
 ##posterior predictive check
 y_rep<-extract(all_grow_sampling_ppt,pars="y_rep")
@@ -1001,6 +1170,9 @@ all_grow_sampling_temp <- sampling(all_grow_model_temp,
 saveRDS(all_grow_sampling_temp,"all_grow_sampling_temp.rds")
 #all_grow_sampling_temp<-readRDS("all_grow_sampling_temp.rds")
 
+mcmc_intervals(all_grow_sampling_temp,regex_pars = "beta_clim",cols=c("red","blue"))
+#note to self - make the E+ E- pairs close to each other and distinguished by color
+
 ##posterior predictive check
 y_rep<-extract(all_grow_sampling_temp,pars="y_rep")
 ppc_dens_overlay(all_grow_dat_temp$y,y_rep$y_rep[1:500,])
@@ -1198,7 +1370,7 @@ ggplot(data = summary_df_all_wg_temp, aes(x = monthsprior, y = median_weight, co
       "POSY" = "cornflowerblue")) +
   labs(x = "months prior", 
        y = "weight",
-       title = "Comparison of Weights of Precipitation in Each Time Scale")
+       title = "Comparison of Weights of Temperature in Each Time Scale")
 
 
 

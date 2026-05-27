@@ -60,7 +60,7 @@ all_flow_dat <- list(n_obs=nrow(all_flow),
                      species=all_flow$spec,
                      original=all_flow$original)
 
-all_flow_model = stan_model(file="code/implicit_binomial_mvn.stan")
+all_flow_model = stan_model(file="code/flowering_mvn.stan")
 all_flow_sampling<-sampling(all_flow_model,
                             data=all_flow_dat,
                             chains = 3,thin=5,
@@ -68,7 +68,7 @@ all_flow_sampling<-sampling(all_flow_model,
                             warmup = 1000,
                             pars=c("beta_0","beta_size","beta_size_endo",
                                    "meanflow","beta_orig","sigma_year",
-                                   "sigma_plot","Omega","endo_effect","y_rep"),
+                                   "sigma_plot","Omega","endo_effect"),
                             save_warmup=F)
 
 #saveRDS(all_flow_sampling,"all_flow_sampling.rds")
@@ -442,29 +442,42 @@ gras %>%
   select(flw_count_t1,endo_01,log_tillers_centered,year_t,plot,spec,original) %>% 
   drop_na() -> all_infl
 
-all_infl_dat <- list(n_obs=nrow(all_infl),
-                     y=all_infl$flw_count_t1,
-                     n_yrs = length(unique(all_infl$year_t))+1,
-                     n_plots = max(all_infl$plot),
-                     n_endo = 2,
-                     n_spp = length(unique(all_infl$spec)),
-                     endo_01=all_infl$endo_01,
-                     size=all_infl$log_tillers_centered,
-                     year_index=all_infl$year_t-2006,
-                     plot=all_infl$plot,
-                     species=all_infl$spec,
-                     original=all_infl$original)
+# Safety conversion to continuous sequential factor integers 
+all_infl$plot    <- as.integer(as.factor(all_infl$plot))
+all_infl$spec    <- as.integer(as.factor(all_infl$spec))
+all_infl$year_t  <- as.integer(as.factor(all_infl$year_t))
 
-all_infl_model = stan_model(file="code/implicit_poisson_mvn.stan")
-all_infl_sampling<-sampling(all_infl_model,
-                            data=all_infl_dat,
-                            chains = 3,thin=5,
-                            iter = 5000,
-                            warmup = 1000,
-                            pars=c("beta_0","beta_size","beta_size_endo",
-                                   "meanflow","beta_orig","sigma_year",
-                                   "sigma_plot","Omega","endo_effect","y_rep"),
-                            save_warmup=F)
+all_infl_dat <- list(
+  n_obs       = nrow(all_infl),
+  y           = as.integer(all_infl$flw_count_t1), 
+  n_yrs       = length(unique(all_infl$year_t)),   
+  n_plots     = length(unique(all_infl$plot)),
+  n_endo      = 2,
+  n_spp       = length(unique(all_infl$spec)),
+  endo_01     = as.integer(all_infl$endo_01),
+  size        = as.numeric(all_infl$log_tillers_centered),
+  year_index  = all_infl$year_t,
+  plot        = all_infl$plot,
+  species     = all_infl$spec,
+  original    = as.integer(all_infl$original)
+)
+
+all_infl_model = stan_model(file="code/imp_poisson_gem.stan")
+all_infl_sampling <- sampling(
+  all_infl_model,
+  data = all_infl_dat,
+  chains = 1, 
+  thin = 5,
+  iter = 5000,
+  warmup = 1000,
+  # CRITICAL UPDATE: Updated to track "beta_0_vec" instead of "beta_0"
+  pars = c("beta_0_vec", "beta_size", "beta_size_endo",
+           "meanflow", "beta_orig", "sigma_year",
+           "sigma_plot", "Omega", "endo_effect"),
+  save_warmup = FALSE,
+  # SAFETY OPTION: bound random initialization tightly around 0 to avoid large exponential blowups
+  init = "0" 
+)
 
 #saveRDS(all_infl_sampling,"all_infl_sampling.rds")
 all_infl_sampling<-readRDS("all_infl_sampling.rds")

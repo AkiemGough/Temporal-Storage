@@ -71,8 +71,8 @@ model {
 
 generated quantities {
   array[n_obs] int y_rep; // GEMINI: Changed type from 'real' to 'int'
-  array[n_spp, n_yrs] real endo_effect; // GEMINI: Formatted to match modern style
-  
+  real endo_effect[n_spp, n_yrs]; // GEMINI: All declarations must be at the top of the block
+
   for(i in 1:n_obs){
     //y_rep[i] = bernoulli_logit[i]);
     y_rep[i] = bernoulli_logit_rng(p[i]);

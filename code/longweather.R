@@ -1099,7 +1099,7 @@ weatherINDAllMay <- left_join(x=weatherINDAllMay, y=weatherINDDec_May_lastyear, 
 weatherINDAllMay <- left_join(x=weatherINDAllMay, y=weatherINDJun_Nov_lastyear, by= c("CensusGroup","CensusYear"))
 
 #combing weather and demographic data for species censused in May Indiana
-CombinedMay <- left_join(x=grasMayCensus, y=weatherINDAllMay, by=c("year_t" = "CensusYear"))
+CombinedMay <- left_join(x=grasMayCensus, y=weatherINDAllMay, by=c("year_t1" = "CensusYear"))
 
 #recombining weather data for Jul census
 
@@ -1142,7 +1142,7 @@ weatherINDAllJul <- left_join(x=weatherINDAllJul, y=weatherINDFeb_Jul_lastyear, 
 weatherINDAllJul <- left_join(x=weatherINDAllJul, y=weatherINDAug_Jan_lastyear, by=c("CensusGroup","CensusYear"))
 
 #combing weather and demographic data for species censused in Jul
-CombinedJul <- left_join(x=grasJulCensus, y=weatherINDAllJul, by=c("year_t" = "CensusYear"))
+CombinedJul <- left_join(x=grasJulCensus, y=weatherINDAllJul, by=c("year_t1" = "CensusYear"))
 
 #recombining weather data for Sep census
 weatherINDAllSep <- left_join(x=weatherINDSepSep, y=weatherINDSepAug, by=c("CensusGroup","CensusYear"))
@@ -1184,7 +1184,7 @@ weatherINDAllSep <- left_join(x=weatherINDAllSep, y=weatherINDApr_Sep_lastyear, 
 weatherINDAllSep <- left_join(x=weatherINDAllSep, y=weatherINDOct_Mar_lastyear, by=c("CensusGroup","CensusYear"))
 
 #combing weather and demographic data for species censused in Sep
-CombinedSep <- left_join(x=grasSepCensus, y=weatherINDAllSep, by=c("year_t" = "CensusYear"))
+CombinedSep <- left_join(x=grasSepCensus, y=weatherINDAllSep, by=c("year_t1" = "CensusYear"))
 
 #recombining weather data for May census Texas
 weatherTEXAllMay <- left_join(x=weatherTEXMayMay, y=weatherTEXMayApr, by= c("CensusGroup","CensusYear"))
@@ -1226,10 +1226,11 @@ weatherTEXAllMay <- left_join(x=weatherTEXAllMay, y=weatherTEXDec_May_lastyear, 
 weatherTEXAllMay <- left_join(x=weatherTEXAllMay, y=weatherTEXJun_Nov_lastyear, by= c("CensusGroup","CensusYear"))
 
 #combing weather and demographic data for species censused in May Texas
-CombinedMayTEX <- left_join(x=grasMayCensusTEX, y=weatherTEXAllMay, by=c("year_t" = "CensusYear"))
+CombinedMayTEX <- left_join(x=grasMayCensusTEX, y=weatherTEXAllMay, by=c("year_t1" = "CensusYear"))
 
 
 #Combining all species and censusmonths of data
 CombinedDataSegments <- bind_rows(CombinedMay, CombinedJul, CombinedSep, CombinedMayTEX)
 
 write.csv(CombinedDataSegments, "data/CombinedDataSegments")
+
