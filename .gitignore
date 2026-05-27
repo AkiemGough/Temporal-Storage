@@ -4,3 +4,6 @@
 .Rhistory
 .positai
 .Rhistory
+all_grow_sampling.rds
+all_grow_sampling_ppt.rds
+all_grow_sampling_temp.rds
