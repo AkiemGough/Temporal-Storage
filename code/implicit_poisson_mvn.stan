@@ -1,34 +1,51 @@
 data {
   int<lower=0> n_obs;
-  array[n_obs] int<lower=0> y;  //GEMINI: Removed upper=1 constraint; y can now be any non-negative integer
+  int<lower=0> y[n_obs];                     // 1. CHANGED: removed <upper=1> since y is now counts
   int<lower=0> n_yrs;
   int<lower=0> n_plots;
   int<lower=0> n_endo;
   int<lower=0> n_spp;
-  array[n_obs] int<lower=0,upper=1> endo_01;
-  array[n_obs] int<lower=0,upper=1> original;
-  array[n_obs] real size;
-  array[n_obs] int<lower=1> year_index;
-  array[n_obs] int<lower=1> plot;
-  array[n_obs] int<lower=1> species;
+  int<lower=0,upper=1> endo_01[n_obs];
+  int<lower=0,upper=1> original[n_obs];
+  real size[n_obs];
+  int<lower=1> year_index[n_obs];
+  int<lower=1> plot[n_obs];
+  int<lower=1> species[n_obs];
 }
 
 parameters {
-  real beta_0[n_spp, n_endo, n_yrs]; 
-  real tau_plot[n_plots];            
-  real beta_size[n_spp];             
-  real beta_size_endo[n_spp];        
-  real meanflow[n_spp, n_endo];
-  real beta_orig;                    
+  // Non-centered primitive components
+  matrix[n_endo, n_yrs] beta_0_raw[n_spp]; 
+  vector[n_plots] tau_plot_raw;            
+  vector[n_spp] beta_size;                 
+  vector[n_spp] beta_size_endo;            
+  vector[n_endo] meanflow[n_spp];
+  real beta_orig;                                        
   vector<lower=0>[n_endo] sigma_year[n_spp]; 
   real<lower=0> sigma_plot;          
-  array[n_spp] corr_matrix[n_endo] Omega; 
+  cholesky_factor_corr[n_endo] L_Omega[n_spp]; // Cholesky factor for stability
 }
 
 transformed parameters {
-  real log_lambda[n_obs]; //GEMINI: Renamed 'p' to 'log_lambda' for clarity (representing log-expected counts)
+  vector[n_endo] beta_0[n_spp, n_yrs];
+  vector[n_plots] tau_plot;
+  real p[n_obs]; // Note: you might want to rename this to 'log_lambda' for clarity, but keeping 'p' means fewer changes.
+
+  // 1. Non-center the plot random effects
+  tau_plot = tau_plot_raw * sigma_plot;
+
+  // 2. Non-center the Multivariate Year effects via Cholesky factor
+  for (i in 1:n_spp) {
+    matrix[n_endo, n_endo] L_Sigma_i = diag_pre_multiply(sigma_year[i], L_Omega[i]);
+    for (t in 1:n_yrs) {
+      beta_0[i, t] = meanflow[i] + L_Sigma_i * col(beta_0_raw[i], t);
+    }
+  }
+
+  // 3. Compute the linear predictor (now on the log-scale)
+  vector[n_obs] log_lambda; 
   for(i in 1:n_obs){
-    log_lambda[i] = beta_0[species[i], (endo_01[i] + 1), year_index[i]] 
+    log_lambda[i] = beta_0[species[i], year_index[i]][endo_01[i] + 1] 
     + beta_size[species[i]] * size[i] 
     + beta_size_endo[species[i]] * size[i] * endo_01[i]
     + beta_orig * original[i]
@@ -37,47 +54,45 @@ transformed parameters {
 }
 
 model {
-  // Priors
-  for (i in 1:n_spp) {
-    Omega[i] ~ lkj_corr(2);            
-    sigma_year[i] ~ exponential(1);    
-  }
-  
-  for (i in 1:n_spp) {
-    matrix[n_endo, n_endo] Sigma_i = quad_form_diag(Omega[i], sigma_year[i]);
-    for (t in 1:n_yrs) {
-      vector[n_endo] b;
-      vector[n_endo] mu_meanflow;
-      for (k in 1:n_endo) {
-        b[k] = beta_0[i, k, t];
-        mu_meanflow[k] = meanflow[i, k]; 
-      }
-      b ~ multi_normal(mu_meanflow, Sigma_i);
-    }
-  }
-
-  tau_plot ~ normal(0, sigma_plot);
+  // Priors for Non-centered parameters (Standard Normals)
+  tau_plot_raw ~ normal(0, 1);
   sigma_plot ~ exponential(1);
 
-  beta_size ~ normal(1, 10); 
-  beta_size_endo ~ normal(0, 10);
-  beta_orig ~ normal(1, 10); 
-
   for (i in 1:n_spp) {
-    for (j in 1:n_endo) {
-      meanflow[i, j] ~ normal(0, 5);
-    }
+    L_Omega[i] ~ lkj_corr_cholesky(2); 
+    sigma_year[i] ~ exponential(1);    
+    meanflow[i] ~ normal(0, 2);             // 4. ADJUSTED: Tightened from normal(0,5) because log-scale changes fast
+    to_vector(beta_0_raw[i]) ~ normal(0, 1); 
   }
 
-  // 3. Changed likelihood from bernoulli_logit to poisson_log
-  y ~ poisson_log(log_lambda);
+  // Fixed effects priors (Adjusted SDs from 10 to 2 or 3 for log scale stability)
+  beta_size ~ normal(0, 2); 
+  beta_size_endo ~ normal(0, 2);
+  beta_orig ~ normal(0, 2); 
+
+  // Likelihood
+  y ~ poisson_log(log_lambda);                     
 }
 
 generated quantities {
-  array[n_spp, n_yrs] real endo_effect; 
+  int y_rep[n_obs]; 
+  matrix[n_endo, n_endo] Omega[n_spp]; 
+  matrix[n_spp, n_yrs] endo_effect;
+
+  // 1. Recover original correlation matrices
+  for(i in 1:n_spp) {
+    Omega[i] = multiply_lower_tri_self_transpose(L_Omega[i]);
+  }
+
+  // 2. Generate posterior predictive distributions
+  for(i in 1:n_obs){
+    y_rep[i] = poisson_log_rng(log_lambda[i]);     
+  }
+
+  // 3. Calculate endo effects
   for (i in 1:n_spp) {
     for (j in 1:n_yrs) {
-      endo_effect[i, j] = beta_0[i, 2, j] - beta_0[i, 1, j];
+      endo_effect[i, j] = beta_0[i, j][2] - beta_0[i, j][1];
     }
   }
 }

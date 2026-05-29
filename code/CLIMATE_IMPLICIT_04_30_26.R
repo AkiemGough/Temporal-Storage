@@ -19,7 +19,8 @@ gras <- read.csv("data/ltreb_allspp_2007_2025.csv")
 
 ##cleaning up data frame
 #removing rows with untrusted data
-gras <- gras[!(gras$id=="79 1164 4"),] 
+
+gras %>% filter(size_t>0) -> gras
 
 #finding what years of LOAR data are missing, not sure how to exclude them from figures
 gras %>% filter(species == "LOAR") %>% distinct(year_t)
@@ -60,7 +61,7 @@ all_flow_dat <- list(n_obs=nrow(all_flow),
                      species=all_flow$spec,
                      original=all_flow$original)
 
-all_flow_model = stan_model(file="code/flowering_mvn.stan")
+all_flow_model = stan_model(file="code/implicit_binomial_mvn.stan")
 all_flow_sampling<-sampling(all_flow_model,
                             data=all_flow_dat,
                             chains = 3,thin=5,
@@ -68,10 +69,10 @@ all_flow_sampling<-sampling(all_flow_model,
                             warmup = 1000,
                             pars=c("beta_0","beta_size","beta_size_endo",
                                    "meanflow","beta_orig","sigma_year",
-                                   "sigma_plot","Omega","endo_effect"),
+                                   "sigma_plot","Omega","endo_effect","y_rep"),
                             save_warmup=F)
 
-#saveRDS(all_flow_sampling,"all_flow_sampling.rds")
+saveRDS(all_flow_sampling,"all_flow_sampling.rds")
 all_flow_sampling<-readRDS("all_flow_sampling.rds")
 
 mcmc_trace(all_flow_sampling,par=c('endo_effect[1,5]'))
@@ -80,8 +81,8 @@ mcmc_dens(all_flow_sampling,par=c('Omega[2,1,2]'))
 
 
 ##posterior predictive check
-y_rep<-extract(all_flow_sampling_ppt,pars="y_rep")
-ppc_dens_overlay(all_flow_dat_ppt$y,y_rep$y_rep[1:500,])
+y_rep<-extract(all_flow_sampling,pars="y_rep")
+ppc_dens_overlay(all_flow_dat$y,y_rep$y_rep[1:500,])
 
 #extracting parameters
 params_all_f<-rstan::extract(all_flow_sampling,pars=c('beta_0','endo_effect','Omega'))
@@ -462,7 +463,7 @@ all_infl_dat <- list(
   original    = as.integer(all_infl$original)
 )
 
-all_infl_model = stan_model(file="code/imp_poisson_gem.stan")
+all_infl_model = stan_model(file="code/implicit_poisson_mvn.stan")
 all_infl_sampling <- sampling(
   all_infl_model,
   data = all_infl_dat,
@@ -471,16 +472,16 @@ all_infl_sampling <- sampling(
   iter = 5000,
   warmup = 1000,
   # CRITICAL UPDATE: Updated to track "beta_0_vec" instead of "beta_0"
-  pars = c("beta_0_vec", "beta_size", "beta_size_endo",
+  pars = c("beta_0", "beta_size", "beta_size_endo",
            "meanflow", "beta_orig", "sigma_year",
-           "sigma_plot", "Omega", "endo_effect"),
+           "sigma_plot", "Omega", "endo_effect","y_rep"),
   save_warmup = FALSE,
   # SAFETY OPTION: bound random initialization tightly around 0 to avoid large exponential blowups
   init = "0" 
 )
 
-#saveRDS(all_infl_sampling,"all_infl_sampling.rds")
-all_infl_sampling<-readRDS("all_infl_sampling.rds")
+saveRDS(all_infl_sampling,"all_infl_sampling.rds")
+#all_infl_sampling<-readRDS("all_infl_sampling.rds")
 
 mcmc_trace(all_infl_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_infl_sampling,par=c('Omega[1,1,2]'))
@@ -488,8 +489,8 @@ mcmc_dens(all_infl_sampling,par=c('Omega[2,1,2]'))
 
 
 ##posterior predictive check
-y_rep<-extract(all_infl_sampling_ppt,pars="y_rep")
-ppc_dens_overlay(all_infl_dat_ppt$y,y_rep$y_rep[1:500,])
+y_rep<-extract(all_infl_sampling,pars="y_rep")
+ppc_dens_overlay(all_infl_dat$y,y_rep$y_rep[1:500,])
 
 #extracting parameters
 params_all_i<-rstan::extract(all_infl_sampling,pars=c('beta_0','endo_effect','Omega'))
