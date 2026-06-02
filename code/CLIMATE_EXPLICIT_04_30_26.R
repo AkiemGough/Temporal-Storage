@@ -6,6 +6,7 @@
 
 #Important packages
 library(tidyverse)
+library(tidybayes)
 library(lme4)
 library(scales)
 library(rstan)
@@ -738,6 +739,66 @@ ggplot() +
        title = "Population Growth Rate with 90% Credible Intervals") +
   theme_minimal()
 
+##PLOTTING EFFECTS
+
+#take a random subset of posterior draws for the slope / beta_clim / climate effect (AS SUGGESTED BY GEMINI)
+all_betaclim_postg_ppt<-params_all_g_ppt$beta_clim[sample(dim(params_all_g_ppt$beta_clim)[1],size=1000),,]
+dim(all_betaclim_postg_ppt)
+
+long_df_all_betaclimg_ppt <- as.data.frame.table(all_betaclim_postg_ppt,
+                                                 responseName = "estimate")
+str(long_df_all_betaclimg_ppt)
+
+# Convert to long data frame
+long_df_all_betaclimg_ppt <- as.data.frame.table(all_betaclim_postg_ppt,
+                                                 responseName = "slope_val") %>%
+  rename(draw = iterations, species = Var2, endo = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_betaclimg_ppt$spec <- case_when(long_df_all_betaclimg_ppt$species == 8 ~ "AGPE",
+                                            long_df_all_betaclimg_ppt$species == 2 ~ "ELRI",
+                                            long_df_all_betaclimg_ppt$species == 3 ~ "ELVI",
+                                            long_df_all_betaclimg_ppt$species == 4 ~ "FESU",
+                                            long_df_all_betaclimg_ppt$species == 5 ~ "LOAR",
+                                            long_df_all_betaclimg_ppt$species == 6 ~ "POAL",
+                                            long_df_all_betaclimg_ppt$species == 7 ~ "POAU",
+                                            long_df_all_betaclimg_ppt$species == 1 ~ "POSY")
+
+# 1. Process your extracted long dataframe
+plot_data <- long_df_all_betaclimg_ppt %>%
+  mutate(
+    # Ensure endo is treated properly (Var3 becomes a factor by default in as.data.frame.table)
+    # Map index 1 to Negative (0) and index 2 to Positive (1)
+    endo_index = as.integer(endo), 
+    endo_label = ifelse(endo_index == 1, "E-", "E+"),
+  )
+
+# 2. Build the structured interval plot
+ggplot(plot_data, aes(x = slope_val, y = spec, color = endo_label)) +
+  # Draw the 50% and 95% intervals + median dot (mimicking mcmc_intervals)
+  stat_pointinterval(.width = c(0.5, 0.95), 
+                     position = position_dodge(width = 0.4)) +
+  
+  # Add a vertical reference line at 0
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  
+  # Set the specific colors you requested
+  scale_color_manual(values = c("E-" = "deeppink", 
+                                "E+" = "cornflowerblue")) +
+  
+  # Clean up formatting
+  labs(
+    x = "Posterior Climate Coefficient (beta_clim)",
+    y = "Species",
+    color = "Endophyte Status",
+    title = "Climate Effects on Growth by Species and Endophyte Status"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
 
 ##PLOTTING Ws
 #take a random subset of posterior draws for the w 

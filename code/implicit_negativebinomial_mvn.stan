@@ -1,6 +1,6 @@
 data {
   int<lower=0> n_obs;
-  int<lower=0, upper=1> y[n_obs];
+  int<lower=0> y[n_obs];
   int<lower=0> n_yrs;
   int<lower=0> n_plots;
   int<lower=0> n_endo;
@@ -23,13 +23,14 @@ parameters {
   real beta_orig;                                        
   vector<lower=0>[n_endo] sigma_year[n_spp]; 
   real<lower=0> sigma_plot;          
-  cholesky_factor_corr[n_endo] L_Omega[n_spp]; // Cholesky factor for stability
+  cholesky_factor_corr[n_endo] L_Omega[n_spp]; 
+  real<lower=0> phi; // GEMINI Added overdispersion parameter for Negative Binomial
 }
-
-transformed parameters {
+  
+  transformed parameters {
   vector[n_endo] beta_0[n_spp, n_yrs];
   vector[n_plots] tau_plot;
-  real p[n_obs];
+  vector[n_obs] log_lambda; // 1. Declared here at the top (keep this)
 
   // 1. Non-center the plot random effects
   tau_plot = tau_plot_raw * sigma_plot;
@@ -42,10 +43,9 @@ transformed parameters {
     }
   }
 
-  // 3. Compute the linear predictor
-  real p[n_obs];
+  // 3. Compute the linear predictor (Removed the duplicate declaration line from here)
   for(i in 1:n_obs){
-    p[i] = beta_0[species[i], year_index[i]][endo_01[i] + 1] 
+    log_lambda[i] = beta_0[species[i], year_index[i]][endo_01[i] + 1] 
     + beta_size[species[i]] * size[i] 
     + beta_size_endo[species[i]] * size[i] * endo_01[i]
     + beta_orig * original[i]
@@ -71,7 +71,7 @@ model {
   beta_orig ~ normal(1, 10); 
 
   // Likelihood
-  y ~ bernoulli_logit(p);
+  y ~ neg_binomial_2_log(log_lambda, phi);
 }
 
 generated quantities {
@@ -86,7 +86,7 @@ generated quantities {
 
   // 2. Generate posterior predictive distributions
   for(i in 1:n_obs){
-    y_rep[i] = bernoulli_logit_rng(p[i]);
+    y_rep[i] = neg_binomial_2_log_rng(log_lambda[i], phi);
   }
 
   // 3. Calculate endo effects

@@ -463,11 +463,11 @@ all_infl_dat <- list(
   original    = as.integer(all_infl$original)
 )
 
-all_infl_model = stan_model(file="code/implicit_poisson_mvn.stan")
+all_infl_model = stan_model(file="code/implicit_negativebinomial_mvn.stan")
 all_infl_sampling <- sampling(
   all_infl_model,
   data = all_infl_dat,
-  chains = 1, 
+  chains = 3, 
   thin = 5,
   iter = 5000,
   warmup = 1000,
@@ -481,7 +481,7 @@ all_infl_sampling <- sampling(
 )
 
 saveRDS(all_infl_sampling,"all_infl_sampling.rds")
-#all_infl_sampling<-readRDS("all_infl_sampling.rds")
+all_infl_sampling<-readRDS("all_infl_sampling.rds")
 
 mcmc_trace(all_infl_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_infl_sampling,par=c('Omega[1,1,2]'))
@@ -490,7 +490,8 @@ mcmc_dens(all_infl_sampling,par=c('Omega[2,1,2]'))
 
 ##posterior predictive check
 y_rep<-extract(all_infl_sampling,pars="y_rep")
-ppc_dens_overlay(all_infl_dat$y,y_rep$y_rep[1:500,])
+ppc_dens_overlay(all_infl_dat$y,y_rep$y_rep[1:500,])+xlim(0,5)
+#try a negative binomial and if see if it fits better
 
 #extracting parameters
 params_all_i<-rstan::extract(all_infl_sampling,pars=c('beta_0','endo_effect','Omega'))
@@ -509,7 +510,7 @@ str(long_df_all_beta0i)
 # Convert to long data frame 
 long_df_all_beta0i <- as.data.frame.table(all_beta0_posti,
                                           responseName = "estimate") %>%
-  rename(draw = iterations, species = Var2, endo = Var3, year = Var4, estimate = estimate) %>%
+  rename(draw = iterations, species = Var2, year = Var3, endo = Var4, estimate = estimate) %>%
   mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
 
 long_df_all_beta0i$spec <- case_when(long_df_all_beta0i$species == 8 ~ "AGPE",
@@ -592,7 +593,7 @@ ggplot(long_df_all_corri)+
   geom_vline(data = summary_df_all_corri,
              aes(xintercept = mean),
              colour = "mediumpurple4",
-             size=0.75,
+             linewidth=0.75,
              linetype = "dashed")
 
 #finding the mean correlation coefficients
