@@ -57,7 +57,6 @@ model {
 generated quantities {
   real y_rep[n_obs];
   for(i in 1:n_obs){
-    //y_rep[i] = normal_rng(mu[i], sigma);
     y_rep[i] = student_t_rng(nu, mu[i], sigma);
   }
 }
