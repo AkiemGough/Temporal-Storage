@@ -19,7 +19,7 @@ grasclim <-read.csv("data/CombinedDataSegments")
 
 ##cleaning up data frame
 #removing rows with untrusted data
-grasclim <- grasclim[!(grasclim$id=="79 1164 4"),] 
+grasclim %>% filter(size_t>0) -> grasclim
 
 ##Making integers for species
 grasclim$spec <- as.integer (case_when(grasclim$species == "POSY" ~ 1,
@@ -104,8 +104,8 @@ all_flow_dat_ppt<-list(n_obs=nrow(all_flow_ppt),
 all_flow_model_ppt = stan_model(file="code/climatedemoSAM.stan")
 all_flow_sampling_ppt <- sampling(all_flow_model_ppt,
                                   data = all_flow_dat_ppt,
-                                  chains = 1, 
-                                  iter = 5000, 
+                                  chains = 3, 
+                                  iter = 8000, 
                                   warmup  = 1000,
                                   pars=c("beta_0","beta_clim","sigma_year",
                                          "sigma_plot", "w", "y_rep"),
@@ -125,10 +125,10 @@ ppc_dens_overlay(all_flow_dat_ppt$y,y_rep$y_rep[1:500,])
 summary(all_flow_sampling_ppt)
 
 #extracting parameters
-params_all_g_ppt<-rstan::extract(all_flow_sampling_ppt,pars=c('beta_0','beta_clim','w'))
-dim(params_all_g_ppt$beta_0)
-dim(params_all_g_ppt$beta_clim)
-dim(params_all_g_ppt$w)
+params_all_f_ppt<-rstan::extract(all_flow_sampling_ppt,pars=c('beta_0','beta_clim','w'))
+dim(params_all_f_ppt$beta_0)
+dim(params_all_f_ppt$beta_clim)
+dim(params_all_f_ppt$w)
 
 ##trace plots of beta clim and w
 mcmc_trace(all_flow_sampling_ppt,regex_pars = "beta_clim")
@@ -137,30 +137,30 @@ mcmc_trace(all_flow_sampling_ppt,regex_pars = "w")
 ##PLOTTING EFFECTS
 
 #take a random subset of posterior draws for the slope / beta_clim / climate effect (AS SUGGESTED BY GEMINI)
-all_betaclim_postg_ppt<-params_all_g_ppt$beta_clim[sample(dim(params_all_g_ppt$beta_clim)[1],size=1000),,]
-dim(all_betaclim_postg_ppt)
+all_betaclim_postf_ppt<-params_all_f_ppt$beta_clim[sample(dim(params_all_f_ppt$beta_clim)[1],size=1000),,]
+dim(all_betaclim_postf_ppt)
 
-long_df_all_betaclimg_ppt <- as.data.frame.table(all_betaclim_postg_ppt,
+long_df_all_betaclimf_ppt <- as.data.frame.table(all_betaclim_postf_ppt,
                                                  responseName = "estimate")
-str(long_df_all_betaclimg_ppt)
+str(long_df_all_betaclimf_ppt)
 
 # Convert to long data frame
-long_df_all_betaclimg_ppt <- as.data.frame.table(all_betaclim_postg_ppt,
+long_df_all_betaclimf_ppt <- as.data.frame.table(all_betaclim_postf_ppt,
                                                  responseName = "slope_val") %>%
   rename(draw = iterations, species = Var2, endo = Var3) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
-long_df_all_betaclimg_ppt$spec <- case_when(long_df_all_betaclimg_ppt$species == 8 ~ "AGPE",
-                                            long_df_all_betaclimg_ppt$species == 2 ~ "ELRI",
-                                            long_df_all_betaclimg_ppt$species == 3 ~ "ELVI",
-                                            long_df_all_betaclimg_ppt$species == 4 ~ "FESU",
-                                            long_df_all_betaclimg_ppt$species == 5 ~ "LOAR",
-                                            long_df_all_betaclimg_ppt$species == 6 ~ "POAL",
-                                            long_df_all_betaclimg_ppt$species == 7 ~ "POAU",
-                                            long_df_all_betaclimg_ppt$species == 1 ~ "POSY")
+long_df_all_betaclimf_ppt$spec <- case_when(long_df_all_betaclimf_ppt$species == 8 ~ "AGPE",
+                                            long_df_all_betaclimf_ppt$species == 2 ~ "ELRI",
+                                            long_df_all_betaclimf_ppt$species == 3 ~ "ELVI",
+                                            long_df_all_betaclimf_ppt$species == 4 ~ "FESU",
+                                            long_df_all_betaclimf_ppt$species == 5 ~ "LOAR",
+                                            long_df_all_betaclimf_ppt$species == 6 ~ "POAL",
+                                            long_df_all_betaclimf_ppt$species == 7 ~ "POAU",
+                                            long_df_all_betaclimf_ppt$species == 1 ~ "POSY")
 
 # 1. Process your extracted long dataframe
-plot_data <- long_df_all_betaclimg_ppt %>%
+plot_data <- long_df_all_betaclimf_ppt %>%
   mutate(
     # Ensure endo is treated properly (Var3 becomes a factor by default in as.data.frame.table)
     # Map index 1 to Negative (0) and index 2 to Positive (1)
@@ -197,41 +197,41 @@ ggplot(plot_data, aes(x = slope_val, y = spec, color = endo_label)) +
 
 ##PLOTTING Ws
 #take a random subset of posterior draws for the w 
-all_w_postg_ppt<-params_all_g_ppt$w[sample(dim(params_all_g_ppt$w)[1],size=1000),,]
-dim(all_w_postg_ppt)
+all_w_postf_ppt<-params_all_f_ppt$w[sample(dim(params_all_f_ppt$w)[1],size=1000),,]
+dim(all_w_postf_ppt)
 
-long_df_all_wg_ppt <- as.data.frame.table(all_w_postg_ppt,
+long_df_all_wf_ppt <- as.data.frame.table(all_w_postf_ppt,
                                           responseName = "estimate")
-str(long_df_all_wg_ppt)
+str(long_df_all_wf_ppt)
 
 # Convert to long data frame
-long_df_all_wg_ppt <- as.data.frame.table(all_w_postg_ppt,
+long_df_all_wf_ppt <- as.data.frame.table(all_w_postf_ppt,
                                           responseName = "weight") %>%
   rename(draw = iterations, species = Var2, threemonth = Var3) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
-long_df_all_wg_ppt$spec <- case_when(long_df_all_wg_ppt$species == 8 ~ "AGPE",
-                                     long_df_all_wg_ppt$species == 2 ~ "ELRI",
-                                     long_df_all_wg_ppt$species == 3 ~ "ELVI",
-                                     long_df_all_wg_ppt$species == 4 ~ "FESU",
-                                     long_df_all_wg_ppt$species == 5 ~ "LOAR",
-                                     long_df_all_wg_ppt$species == 6 ~ "POAL",
-                                     long_df_all_wg_ppt$species == 7 ~ "POAU",
-                                     long_df_all_wg_ppt$species == 1 ~ "POSY")
+long_df_all_wf_ppt$spec <- case_when(long_df_all_wf_ppt$species == 8 ~ "AGPE",
+                                     long_df_all_wf_ppt$species == 2 ~ "ELRI",
+                                     long_df_all_wf_ppt$species == 3 ~ "ELVI",
+                                     long_df_all_wf_ppt$species == 4 ~ "FESU",
+                                     long_df_all_wf_ppt$species == 5 ~ "LOAR",
+                                     long_df_all_wf_ppt$species == 6 ~ "POAL",
+                                     long_df_all_wf_ppt$species == 7 ~ "POAU",
+                                     long_df_all_wf_ppt$species == 1 ~ "POSY")
 
-long_df_all_wg_ppt$monthsprior <- case_when(long_df_all_wg_ppt$threemonth == "A" ~ "1-3",
-                                            long_df_all_wg_ppt$threemonth == "B" ~ "4-6",
-                                            long_df_all_wg_ppt$threemonth == "C" ~ "7-9",
-                                            long_df_all_wg_ppt$threemonth == "D" ~ "10-12",
-                                            long_df_all_wg_ppt$threemonth == "E" ~ "13-15",
-                                            long_df_all_wg_ppt$threemonth == "F" ~ "16-18",
-                                            long_df_all_wg_ppt$threemonth == "G" ~ "19-21",
-                                            long_df_all_wg_ppt$threemonth == "H" ~ "22-24")
+long_df_all_wf_ppt$monthsprior <- case_when(long_df_all_wf_ppt$threemonth == "A" ~ "1-3",
+                                            long_df_all_wf_ppt$threemonth == "B" ~ "4-6",
+                                            long_df_all_wf_ppt$threemonth == "C" ~ "7-9",
+                                            long_df_all_wf_ppt$threemonth == "D" ~ "10-12",
+                                            long_df_all_wf_ppt$threemonth == "E" ~ "13-15",
+                                            long_df_all_wf_ppt$threemonth == "F" ~ "16-18",
+                                            long_df_all_wf_ppt$threemonth == "G" ~ "19-21",
+                                            long_df_all_wf_ppt$threemonth == "H" ~ "22-24")
 
-long_df_all_wg_ppt$monthsprior <- factor(long_df_all_wg_ppt$monthsprior,
+long_df_all_wf_ppt$monthsprior <- factor(long_df_all_wf_ppt$monthsprior,
                                          levels=c("1-3","4-6","7-9","10-12","13-15","16-18","19-21","22-24"))
 
-summary_df_all_wg_ppt <- long_df_all_wg_ppt %>%
+summary_df_all_wf_ppt <- long_df_all_wf_ppt %>%
   group_by(spec,monthsprior) %>% 
   summarize(
     median_weight = median(weight),
@@ -239,9 +239,9 @@ summary_df_all_wg_ppt <- long_df_all_wg_ppt %>%
     upper_weight = quantile(weight, 0.95),
     .groups = "drop")
 
-#ggplot(summary_df_all_wg_ppt)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
+#ggplot(summary_df_all_wf_ppt)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
 
-ggplot(data = summary_df_all_wg_ppt, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
+ggplot(data = summary_df_all_wf_ppt, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
   geom_point() + geom_line() +
   scale_color_manual(
     values = c(
@@ -263,74 +263,69 @@ ggplot(data = summary_df_all_wg_ppt, aes(x = monthsprior, y = median_weight, col
 
 ##prep data for total precipitation, dropping NAs
 grasclim %>% 
-  select(surv_t1,endo_01,spec,log_tillers_centered,ppt_tot_scaled,plot,year_t,original) %>% 
+  select(surv_t1,endo_01,spec,log_tillers_centered,
+         firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt,
+         fifththreeback_ppt,sixththreeback_ppt,sevenththreeback_ppt,eighththreeback_ppt,
+         plot,year_t,original) %>% 
   drop_na() -> all_surv_ppt
 
+# Safety conversion to continuous sequential factor integers 
+all_surv_ppt$plot    <- as.integer(as.factor(all_surv_ppt$plot))
+all_surv_ppt$spec    <- as.integer(as.factor(all_surv_ppt$spec))
+all_surv_ppt$year_t  <- as.integer(as.factor(all_surv_ppt$year_t))
+
 all_surv_dat_ppt<-list(n_obs=nrow(all_surv_ppt),
-                       y=all_surv_ppt$surv_t1,
-                       n_yrs = length(unique(all_surv_ppt$year_t))+1,
-                       n_plots = max(all_surv_ppt$plot),
+                       y=as.integer(all_surv_ppt$surv_t1),
+                       n_yrs = length(unique(all_surv_ppt$year_t)),
+                       n_plots = length(unique(all_surv_ppt$plot)),
                        n_endo = 2,
                        n_spp = length(unique(all_surv_ppt$spec)),
-                       endo_01=all_surv_ppt$endo_01,
-                       size=all_surv_ppt$log_tillers_centered,
-                       year_index=all_surv_ppt$year_t-2006,
-                       climate=all_surv_ppt$ppt_tot_scaled,
+                       endo_01= as.integer(all_surv_ppt$endo_01),
+                       size=as.numeric(all_surv_ppt$log_tillers_centered),
+                       K = 8,
+                       climate = as.matrix(scale(all_surv_ppt[, c("firstthreeback_ppt","secondthreeback_ppt",
+                                                                  "thirdthreeback_ppt","fourththreeback_ppt",
+                                                                  "fifththreeback_ppt","sixththreeback_ppt",
+                                                                  "sevenththreeback_ppt","eighththreeback_ppt")])),
+                       year_index = all_surv_ppt$year_t,
                        plot=all_surv_ppt$plot,
                        species=all_surv_ppt$spec,
-                       original=all_surv_ppt$original)
+                       original= as.integer(all_surv_ppt$original))
 
-all_surv_model_ppt = stan_model(file="code/climatedemo.stan")
-all_surv_sampling_ppt<-sampling(all_surv_model_ppt,
-                                data=all_surv_dat_ppt,
-                                chains = 3,
-                                iter = 5000, 
-                                warmup = 1000)
+all_surv_model_ppt = stan_model(file="code/climatedemoSAM.stan")
+all_surv_sampling_ppt <- sampling(all_surv_model_ppt,
+                                  data = all_surv_dat_ppt,
+                                  chains = 3, 
+                                  iter = 8000, 
+                                  warmup  = 1000,
+                                  pars=c("beta_0","beta_clim","sigma_year",
+                                         "sigma_plot", "w", "y_rep"),
+                                  include = TRUE)
 
-#saveRDS(all_surv_sampling_ppt,"all_surv_sampling_ppt.rds")
+
+saveRDS(all_surv_sampling_ppt,"all_surv_sampling_ppt.rds")
 #all_surv_sampling_ppt<-readRDS("all_surv_sampling_ppt.rds")
+
+mcmc_intervals(all_surv_sampling_ppt,regex_pars = "beta_clim",cols=c("red","blue"))
+#note to self - make the E+ E- pairs close to each other and distinguished by color
+
+##posterior predictive check
+y_rep<-extract(all_surv_sampling_ppt,pars="y_rep")
+ppc_dens_overlay(all_surv_dat_ppt$y,y_rep$y_rep[1:500,])
 
 summary(all_surv_sampling_ppt)
 
 #extracting parameters
-params_all_s_ppt<-rstan::extract(all_surv_sampling_ppt,pars=c('beta_0','beta_clim','beta_size_clim'))
+params_all_s_ppt<-rstan::extract(all_surv_sampling_ppt,pars=c('beta_0','beta_clim','w'))
 dim(params_all_s_ppt$beta_0)
 dim(params_all_s_ppt$beta_clim)
-dim(params_all_s_ppt$beta_size_clim)
+dim(params_all_s_ppt$w)
 
+##trace plots of beta clim and w
+mcmc_trace(all_surv_sampling_ppt,regex_pars = "beta_clim")
+mcmc_trace(all_surv_sampling_ppt,regex_pars = "w")
 
-##PLOTTING ENDO ESTIMATES
-#take a random subset of posterior draws for beta_0
-all_beta0_posts_ppt<-params_all_s_ppt$beta_0[sample(dim(params_all_s_ppt$beta_0)[1],size=1000,replace=F),,]
-dim(all_beta0_posts_ppt)
-
-long_df_all_beta0s_ppt <- as.data.frame.table(all_beta0_posts_ppt,
-                                              responseName = "estimate")
-str(long_df_all_beta0s_ppt)
-
-# Convert to long data frame for endo effect
-long_df_all_beta0s_ppt <- as.data.frame.table(all_beta0_posts_ppt,
-                                              responseName = "estimate") %>%
-  rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
-  mutate(draw = as.integer(draw), species=as.integer(species))
-
-long_df_all_beta0s_ppt$spec <- case_when(long_df_all_beta0s_ppt$species == 8 ~ "AGPE",
-                                         long_df_all_beta0s_ppt$species == 2 ~ "ELRI",
-                                         long_df_all_beta0s_ppt$species == 3 ~ "ELVI",
-                                         long_df_all_beta0s_ppt$species == 4 ~ "FESU",
-                                         long_df_all_beta0s_ppt$species == 5 ~ "LOAR",
-                                         long_df_all_beta0s_ppt$species == 6 ~ "POAL",
-                                         long_df_all_beta0s_ppt$species == 7 ~ "POAU",
-                                         long_df_all_beta0s_ppt$species == 1 ~ "POSY")
-
-summary_df_all_beta0s_ppt <- long_df_all_beta0s_ppt %>%
-  group_by(spec,endo) %>% 
-  summarize(
-    median = median(estimate),
-    lower = quantile(estimate, 0.05),
-    upper = quantile(estimate, 0.95),
-    probgzero = mean(estimate>0),
-    .groups = "drop")
+##PLOTTING EFFECTS
 
 #take a random subset of posterior draws for the slope / beta_clim / climate effect (AS SUGGESTED BY GEMINI)
 all_betaclim_posts_ppt<-params_all_s_ppt$beta_clim[sample(dim(params_all_s_ppt$beta_clim)[1],size=1000),,]
@@ -340,7 +335,7 @@ long_df_all_betaclims_ppt <- as.data.frame.table(all_betaclim_posts_ppt,
                                                  responseName = "estimate")
 str(long_df_all_betaclims_ppt)
 
-# Convert to long data frame for endo effect
+# Convert to long data frame
 long_df_all_betaclims_ppt <- as.data.frame.table(all_betaclim_posts_ppt,
                                                  responseName = "slope_val") %>%
   rename(draw = iterations, species = Var2, endo = Var3) %>%
@@ -355,69 +350,103 @@ long_df_all_betaclims_ppt$spec <- case_when(long_df_all_betaclims_ppt$species ==
                                             long_df_all_betaclims_ppt$species == 7 ~ "POAU",
                                             long_df_all_betaclims_ppt$species == 1 ~ "POSY")
 
-summary_df_all_betaclims_ppt <- long_df_all_betaclims_ppt %>%
-  group_by(spec,endo) %>% 
-  summarize(
-    median_slope = median(slope_val),
-    lower_slope = quantile(slope_val, 0.05),
-    upper_slope = quantile(slope_val, 0.95),
-    .groups = "drop")
-
-#creating a "grid" of all combinations to be predicted (AS SUGGESTED BY GEMINI)
-plot_data <- expand.grid(
-  ppt_tot_scaled = seq(min(all_surv_ppt$ppt_tot_scaled, na.rm=T), 
-                       max(all_surv_ppt$ppt_tot_scaled, na.rm=T), 
-                       length.out = 100),
-  spec = unique(long_df_all_beta0s_ppt$spec),
-  endo = unique(long_df_all_beta0s_ppt$endo)
-)
-
-plot_data <- plot_data %>%
-  left_join(summary_df_all_beta0s_ppt, by = c("spec", "endo")) %>% # Brings in 'median' (intercept)
-  left_join(summary_df_all_betaclims_ppt, by = c("spec", "endo")) %>% # Brings in 'median_slope'
+# 1. Process your extracted long dataframe
+plot_data <- long_df_all_betaclims_ppt %>%
   mutate(
-    # plogis(intercept + slope * x)
-    prob_survival = plogis(median + (median_slope * ppt_tot_scaled)),
-    # Calculate ribbon bounds
-    prob_lower = plogis(lower + (lower_slope * ppt_tot_scaled)),
-    prob_upper = plogis(upper + (upper_slope * ppt_tot_scaled))
+    # Ensure endo is treated properly (Var3 becomes a factor by default in as.data.frame.table)
+    # Map index 1 to Negative (0) and index 2 to Positive (1)
+    endo_index = as.integer(endo), 
+    endo_label = ifelse(endo_index == 1, "E-", "E+"),
   )
 
-all_surv_ppt$spec <- case_when(
-  all_surv_ppt$spec == 8 ~ "AGPE",
-  all_surv_ppt$spec == 2 ~ "ELRI",
-  all_surv_ppt$spec == 3 ~ "ELVI",
-  all_surv_ppt$spec == 4 ~ "FESU",
-  all_surv_ppt$spec == 5 ~ "LOAR",
-  all_surv_ppt$spec == 6 ~ "POAL",
-  all_surv_ppt$spec == 7 ~ "POAU",
-  all_surv_ppt$spec == 1 ~ "POSY"
-)
+# 2. Build the structured interval plot
+ggplot(plot_data, aes(x = slope_val, y = spec, color = endo_label)) +
+  # Draw the 50% and 95% intervals + median dot (mimicking mcmc_intervals)
+  stat_pointinterval(.width = c(0.5, 0.95), 
+                     position = position_dodge(width = 0.4)) +
+  
+  # Add a vertical reference line at 0
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  
+  # Set the specific colors you requested
+  scale_color_manual(values = c("E-" = "deeppink", 
+                                "E+" = "cornflowerblue")) +
+  
+  # Clean up formatting
+  labs(
+    x = "Posterior Climate Coefficient (precipitation)",
+    y = "Species",
+    color = "Endophyte Status",
+    title = "Precipitation Effects on Survival"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
 
-#The actual plot
-ggplot() +
-  # 1. The Ribbon (Uncertainty)
-  geom_ribbon(data = plot_data, 
-              aes(x = ppt_tot_scaled, ymin = prob_lower, ymax = prob_upper, fill = endo), 
-              alpha = 0.2) + 
-  # 2. The Prediction Lines
-  geom_line(data = plot_data, 
-            aes(x = ppt_tot_scaled, y = prob_survival, color = endo), 
-            linewidth = 1) +
-  # 3. The Raw Points
-  geom_point(data = all_surv_ppt, 
-             aes(x = ppt_tot_scaled, y = surv_t1), 
-             alpha = 0.2, color = "purple") + 
-  facet_wrap(~spec) +
-  
-  # Make sure to set scale_fill_manual to match your colors!
-  scale_color_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
-  scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
-  
-  labs(x = "Precipitation (Scaled)", 
-       y = "Probability of Survival",
-       title = "Survival with 90% Credible Intervals") +
-  theme_minimal()
+##PLOTTING Ws
+#take a random subset of posterior draws for the w 
+all_w_posts_ppt<-params_all_s_ppt$w[sample(dim(params_all_s_ppt$w)[1],size=1000),,]
+dim(all_w_posts_ppt)
+
+long_df_all_ws_ppt <- as.data.frame.table(all_w_posts_ppt,
+                                          responseName = "estimate")
+str(long_df_all_wf_ppt)
+
+# Convert to long data frame
+long_df_all_ws_ppt <- as.data.frame.table(all_w_posts_ppt,
+                                          responseName = "weight") %>%
+  rename(draw = iterations, species = Var2, threemonth = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_ws_ppt$spec <- case_when(long_df_all_ws_ppt$species == 8 ~ "AGPE",
+                                     long_df_all_ws_ppt$species == 2 ~ "ELRI",
+                                     long_df_all_ws_ppt$species == 3 ~ "ELVI",
+                                     long_df_all_ws_ppt$species == 4 ~ "FESU",
+                                     long_df_all_ws_ppt$species == 5 ~ "LOAR",
+                                     long_df_all_ws_ppt$species == 6 ~ "POAL",
+                                     long_df_all_ws_ppt$species == 7 ~ "POAU",
+                                     long_df_all_ws_ppt$species == 1 ~ "POSY")
+
+long_df_all_ws_ppt$monthsprior <- case_when(long_df_all_ws_ppt$threemonth == "A" ~ "1-3",
+                                            long_df_all_ws_ppt$threemonth == "B" ~ "4-6",
+                                            long_df_all_ws_ppt$threemonth == "C" ~ "7-9",
+                                            long_df_all_ws_ppt$threemonth == "D" ~ "10-12",
+                                            long_df_all_ws_ppt$threemonth == "E" ~ "13-15",
+                                            long_df_all_ws_ppt$threemonth == "F" ~ "16-18",
+                                            long_df_all_ws_ppt$threemonth == "G" ~ "19-21",
+                                            long_df_all_ws_ppt$threemonth == "H" ~ "22-24")
+
+long_df_all_ws_ppt$monthsprior <- factor(long_df_all_ws_ppt$monthsprior,
+                                         levels=c("1-3","4-6","7-9","10-12","13-15","16-18","19-21","22-24"))
+
+summary_df_all_ws_ppt <- long_df_all_ws_ppt %>%
+  group_by(spec,monthsprior) %>% 
+  summarize(
+    median_weight = median(weight),
+    lower_weight = quantile(weight, 0.05),
+    upper_weight = quantile(weight, 0.95),
+    .groups = "drop")
+
+#ggplot(summary_df_all_wf_ppt)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
+
+ggplot(data = summary_df_all_ws_ppt, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
+  geom_point() + geom_line() +
+  scale_color_manual(
+    values = c(
+      "AGPE" = "olivedrab",
+      "ELRI" = "goldenrod",
+      "ELVI" = "darkorange",
+      "FESU" = "tomato",
+      "LOAR" = "deeppink",
+      "POAL" = "purple",
+      "POAU" = "slateblue",
+      "POSY" = "cornflowerblue")) +
+  labs(x = "months prior", 
+       y = "weight",
+       title = "Weights of Precipitation in Each Time Scale on Survival")
 
 
 
@@ -425,74 +454,68 @@ ggplot() +
 
 ##prep data for total precipitation, dropping NAs
 grasclim %>% 
-  select(flw_count_t1,endo_01,spec,log_tillers_centered,ppt_tot_scaled,plot,year_t,original) %>% 
+  select(flw_count_t1,endo_01,spec,log_tillers_centered,
+         firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt,
+         fifththreeback_ppt,sixththreeback_ppt,sevenththreeback_ppt,eighththreeback_ppt,
+         plot,year_t,original) %>% 
   drop_na() -> all_infl_ppt
 
-all_infl_dat_ppt<-list(n_obs=nrow(all_inf_ppt),
-                       y=all_infl_ppt$flw_count_t1,
-                       n_yrs = length(unique(all_infl_ppt$year_t))+1,
-                       n_plots = max(all_infl_ppt$plot),
+# Safety conversion to continuous sequential factor integers 
+all_infl_ppt$plot    <- as.integer(as.factor(all_infl_ppt$plot))
+all_infl_ppt$spec    <- as.integer(as.factor(all_infl_ppt$spec))
+all_infl_ppt$year_t  <- as.integer(as.factor(all_infl_ppt$year_t))
+
+all_infl_dat_ppt<-list(n_obs=nrow(all_infl_ppt),
+                       y=as.integer(all_infl_ppt$flw_count_t1),
+                       n_yrs = length(unique(all_infl_ppt$year_t)),
+                       n_plots = length(unique(all_infl_ppt$plot)),
                        n_endo = 2,
                        n_spp = length(unique(all_infl_ppt$spec)),
-                       endo_01=all_infl_ppt$endo_01,
-                       size=all_infl_ppt$log_tillers_centered,
-                       year_index=all_infl_ppt$year_t-2006,
-                       climate=all_infl_ppt$ppt_tot_scaled,
+                       endo_01= as.integer(all_infl_ppt$endo_01),
+                       size=as.numeric(all_infl_ppt$log_tillers_centered),
+                       K = 8,
+                       climate = as.matrix(scale(all_infl_ppt[, c("firstthreeback_ppt","secondthreeback_ppt",
+                                                                  "thirdthreeback_ppt","fourththreeback_ppt",
+                                                                  "fifththreeback_ppt","sixththreeback_ppt",
+                                                                  "sevenththreeback_ppt","eighththreeback_ppt")])),
+                       year_index = all_infl_ppt$year_t,
                        plot=all_infl_ppt$plot,
                        species=all_infl_ppt$spec,
-                       original=all_infl_ppt$original)
+                       original= as.integer(all_infl_ppt$original))
 
-all_infl_model_ppt = stan_model(file="code/explicit_poisson_mvn.stan")
-all_infl_sampling_ppt<-sampling(all_infl_model_ppt,
-                                data=all_infl_dat_ppt,
-                                chains = 3,
-                                iter = 5000,
-                                warmup = 1000)
+all_infl_model_ppt = stan_model(file="code/climatedemoinfloSAM.stan")
+all_infl_sampling_ppt<-sampling(data=all_infl_dat_ppt,
+                                chains = 3, 
+                                iter = 8000, 
+                                warmup  = 1000,
+                                pars=c("beta_0","beta_clim","sigma_year",
+                                       "sigma_plot", "w", "y_rep"),
+                                include = TRUE)
 
-#saveRDS(all_infl_sampling_ppt,"all_infl_sampling_ppt.rds")
+saveRDS(all_infl_sampling_ppt,"all_infl_sampling_ppt.rds")
 #all_infl_sampling_ppt<-readRDS("all_infl_sampling_ppt.rds")
+
+
+mcmc_intervals(all_infl_sampling_ppt,regex_pars = "beta_clim",cols=c("red","blue"))
+#note to self - make the E+ E- pairs close to each other and distinguished by color
+
+##posterior predictive check
+y_rep<-extract(all_infl_sampling_ppt,pars="y_rep")
+ppc_dens_overlay(all_infl_dat_ppt$y,y_rep$y_rep[1:500,])+xlim(0,5)
 
 summary(all_infl_sampling_ppt)
 
 #extracting parameters
-params_all_i_ppt<-rstan::extract(all_infl_sampling_ppt,pars=c('beta_0','beta_clim','beta_size_clim'))
+params_all_i_ppt<-rstan::extract(all_infl_sampling_ppt,pars=c('beta_0','beta_clim','w'))
 dim(params_all_i_ppt$beta_0)
 dim(params_all_i_ppt$beta_clim)
-dim(params_all_i_ppt$beta_size_clim)
+dim(params_all_i_ppt$w)
 
+##trace plots of beta clim and w
+mcmc_trace(all_infl_sampling_ppt,regex_pars = "beta_clim")
+mcmc_trace(all_infl_sampling_ppt,regex_pars = "w")
 
-##PLOTTING ENDO ESTIMATES
-#take a random subset of posterior draws for beta_0
-all_beta0_posti_ppt<-params_all_i_ppt$beta_0[sample(dim(params_all_i_ppt$beta_0)[1],size=1000,replace=F),,]
-dim(all_beta0_posti_ppt)
-
-long_df_all_beta0i_ppt <- as.data.frame.table(all_beta0_posti_ppt,
-                                              responseName = "estimate")
-str(long_df_all_beta0i_ppt)
-
-# Convert to long data frame
-long_df_all_beta0i_ppt <- as.data.frame.table(all_beta0_posti_ppt,
-                                              responseName = "estimate") %>%
-  rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
-  mutate(draw = as.integer(draw), species=as.integer(species))
-
-long_df_all_beta0i_ppt$spec <- case_when(long_df_all_beta0i_ppt$species == 8 ~ "AGPE",
-                                         long_df_all_beta0i_ppt$species == 2 ~ "ELRI",
-                                         long_df_all_beta0i_ppt$species == 3 ~ "ELVI",
-                                         long_df_all_beta0i_ppt$species == 4 ~ "FESU",
-                                         long_df_all_beta0i_ppt$species == 5 ~ "LOAR",
-                                         long_df_all_beta0i_ppt$species == 6 ~ "POAL",
-                                         long_df_all_beta0i_ppt$species == 7 ~ "POAU",
-                                         long_df_all_beta0i_ppt$species == 1 ~ "POSY")
-
-summary_df_all_beta0i_ppt <- long_df_all_beta0i_ppt %>%
-  group_by(spec,endo) %>% 
-  summarize(
-    median = median(estimate),
-    lower = quantile(estimate, 0.05),
-    upper = quantile(estimate, 0.95),
-    probgzero = mean(estimate>0),
-    .groups = "drop")
+##PLOTTING EFFECTS
 
 #take a random subset of posterior draws for the slope / beta_clim / climate effect (AS SUGGESTED BY GEMINI)
 all_betaclim_posti_ppt<-params_all_i_ppt$beta_clim[sample(dim(params_all_i_ppt$beta_clim)[1],size=1000),,]
@@ -502,7 +525,7 @@ long_df_all_betaclimi_ppt <- as.data.frame.table(all_betaclim_posti_ppt,
                                                  responseName = "estimate")
 str(long_df_all_betaclimi_ppt)
 
-# Convert to long data frame for endo effect
+# Convert to long data frame
 long_df_all_betaclimi_ppt <- as.data.frame.table(all_betaclim_posti_ppt,
                                                  responseName = "slope_val") %>%
   rename(draw = iterations, species = Var2, endo = Var3) %>%
@@ -517,71 +540,103 @@ long_df_all_betaclimi_ppt$spec <- case_when(long_df_all_betaclimi_ppt$species ==
                                             long_df_all_betaclimi_ppt$species == 7 ~ "POAU",
                                             long_df_all_betaclimi_ppt$species == 1 ~ "POSY")
 
-
-summary_df_all_betaclimi_ppt <- long_df_all_betaclimi_ppt %>%
-  group_by(spec,endo) %>% 
-  summarize(
-    median_slope = median(slope_val),
-    lower_slope = quantile(slope_val, 0.05),
-    upper_slope = quantile(slope_val, 0.95),
-    .groups = "drop")
-
-
-#creating a "grid" of all combinations to be predicted (AS SUGGESTED BY GEMINI)
-plot_data <- expand.grid(
-  ppt_tot_scaled = seq(min(all_infl_ppt$ppt_tot_scaled, na.rm=T), 
-                       max(all_infl_ppt$ppt_tot_scaled, na.rm=T), 
-                       length.out = 100),
-  spec = unique(long_df_all_beta0i_ppt$spec),
-  endo = unique(long_df_all_beta0i_ppt$endo)
-)
-
-plot_data <- plot_data %>%
-  left_join(summary_df_all_beta0i_ppt, by = c("spec", "endo")) %>% # Brings in 'median' (intercept)
-  left_join(summary_df_all_betaclimi_ppt, by = c("spec", "endo")) %>% # Brings in 'median_slope'
+# 1. Process your extracted long dataframe
+plot_data <- long_df_all_betaclimi_ppt %>%
   mutate(
-    # plogis(intercept + slope * x)
-    flowering = plogis(median + (median_slope * ppt_tot_scaled)),
-    # Calculate ribbon bounds
-    prob_lower = plogis(lower + (lower_slope * ppt_tot_scaled)),
-    prob_upper = plogis(upper + (upper_slope * ppt_tot_scaled))
+    # Ensure endo is treated properly (Var3 becomes a factor by default in as.data.frame.table)
+    # Map index 1 to Negative (0) and index 2 to Positive (1)
+    endo_index = as.integer(endo), 
+    endo_label = ifelse(endo_index == 1, "E-", "E+"),
   )
 
-all_infl_ppt$spec <- case_when(
-  all_infl_ppt$spec == 8 ~ "AGPE",
-  all_infl_ppt$spec == 2 ~ "ELRI",
-  all_infl_ppt$spec == 3 ~ "ELVI",
-  all_infl_ppt$spec == 4 ~ "FESU",
-  all_infl_ppt$spec == 5 ~ "LOAR",
-  all_infl_ppt$spec == 6 ~ "POAL",
-  all_infl_ppt$spec == 7 ~ "POAU",
-  all_infl_ppt$spec == 1 ~ "POSY"
-)
+# 2. Build the structured interval plot
+ggplot(plot_data, aes(x = slope_val, y = spec, color = endo_label)) +
+  # Draw the 50% and 95% intervals + median dot (mimicking mcmc_intervals)
+  stat_pointinterval(.width = c(0.5, 0.95), 
+                     position = position_dodge(width = 0.4)) +
+  
+  # Add a vertical reference line at 0
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  
+  # Set the specific colors you requested
+  scale_color_manual(values = c("E-" = "deeppink", 
+                                "E+" = "cornflowerblue")) +
+  
+  # Clean up formatting
+  labs(
+    x = "Posterior Climate Coefficient (precipitation)",
+    y = "Species",
+    color = "Endophyte Status",
+    title = "Precipitation Effects on Inflorescence Count"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
 
-#The actual plot
-ggplot() +
-  # 1. The Ribbon (Uncertainty)
-  geom_ribbon(data = plot_data, 
-              aes(x = ppt_tot_scaled, ymin = prob_lower, ymax = prob_upper, fill = endo), 
-              alpha = 0.2) + 
-  # 2. The Prediction Lines
-  geom_line(data = plot_data, 
-            aes(x = ppt_tot_scaled, y = flowering, color = endo), 
-            linewidth = 1) +
-  # 3. The Raw Points
-  geom_point(data = all_infl_ppt, 
-             aes(x = ppt_tot_scaled, y = as.numeric(flw_count_t > 1)), 
-             alpha = 0.2, color = "purple") + 
-  facet_wrap(~spec) +
-  
-  # Make sure to set scale_fill_manual to match your colors!
-  scale_color_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
-  scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
-  
-  labs(x = "Precipitation (Scaled)", 
-       y = "Inflorescence Count",
-       title = "Inflorescence Count with 90% Credible Intervals") +
-  theme_minimal()
+##PLOTTING Ws
+#take a random subset of posterior draws for the w 
+all_w_posti_ppt<-params_all_i_ppt$w[sample(dim(params_all_i_ppt$w)[1],size=1000),,]
+dim(all_w_posti_ppt)
+
+long_df_all_wi_ppt <- as.data.frame.table(all_w_posti_ppt,
+                                          responseName = "estimate")
+str(long_df_all_wi_ppt)
+
+# Convert to long data frame
+long_df_all_wi_ppt <- as.data.frame.table(all_w_posti_ppt,
+                                          responseName = "weight") %>%
+  rename(draw = iterations, species = Var2, threemonth = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_wi_ppt$spec <- case_when(long_df_all_wi_ppt$species == 8 ~ "AGPE",
+                                     long_df_all_wi_ppt$species == 2 ~ "ELRI",
+                                     long_df_all_wi_ppt$species == 3 ~ "ELVI",
+                                     long_df_all_wi_ppt$species == 4 ~ "FESU",
+                                     long_df_all_wi_ppt$species == 5 ~ "LOAR",
+                                     long_df_all_wi_ppt$species == 6 ~ "POAL",
+                                     long_df_all_wi_ppt$species == 7 ~ "POAU",
+                                     long_df_all_wi_ppt$species == 1 ~ "POSY")
+
+long_df_all_wi_ppt$monthsprior <- case_when(long_df_all_wi_ppt$threemonth == "A" ~ "1-3",
+                                            long_df_all_wi_ppt$threemonth == "B" ~ "4-6",
+                                            long_df_all_wi_ppt$threemonth == "C" ~ "7-9",
+                                            long_df_all_wi_ppt$threemonth == "D" ~ "10-12",
+                                            long_df_all_wi_ppt$threemonth == "E" ~ "13-15",
+                                            long_df_all_wi_ppt$threemonth == "F" ~ "16-18",
+                                            long_df_all_wi_ppt$threemonth == "G" ~ "19-21",
+                                            long_df_all_wi_ppt$threemonth == "H" ~ "22-24")
+
+long_df_all_wi_ppt$monthsprior <- factor(long_df_all_wi_ppt$monthsprior,
+                                         levels=c("1-3","4-6","7-9","10-12","13-15","16-18","19-21","22-24"))
+
+summary_df_all_wi_ppt <- long_df_all_wi_ppt %>%
+  group_by(spec,monthsprior) %>% 
+  summarize(
+    median_weight = median(weight),
+    lower_weight = quantile(weight, 0.05),
+    upper_weight = quantile(weight, 0.95),
+    .groups = "drop")
+
+#ggplot(summary_df_all_wf_ppt)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
+
+ggplot(data = summary_df_all_wi_ppt, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
+  geom_point() + geom_line() +
+  scale_color_manual(
+    values = c(
+      "AGPE" = "olivedrab",
+      "ELRI" = "goldenrod",
+      "ELVI" = "darkorange",
+      "FESU" = "tomato",
+      "LOAR" = "deeppink",
+      "POAL" = "purple",
+      "POAU" = "slateblue",
+      "POSY" = "cornflowerblue")) +
+  labs(x = "months prior", 
+       y = "weight",
+       title = "Weights of Precipitation in Each Time Scale on Inflorescence Count")
 
 
 
@@ -615,7 +670,7 @@ all_grow_model_ppt = stan_model(file="code/climatedemogrowthSAM.stan")
 all_grow_sampling_ppt <- sampling(all_grow_model_ppt,
                                   data = all_grow_dat_ppt,
                                   chains = 3, 
-                                  iter = 5000, 
+                                  iter = 8000, 
                                   warmup  = 1000,
                                   pars=c("beta_0","beta_clim","sigma_year",
                                          "sigma_plot","sigma", "w", "y_rep"),
@@ -777,165 +832,196 @@ ggplot(data = summary_df_all_wg_ppt, aes(x = monthsprior, y = median_weight, col
 
 ##prep data for total precipitation, dropping NAs
 grasclim %>% 
-  select(flw_count_t,endo_01,spec,log_tillers_centered,tmean_mean,plot,year_t,original) %>% 
+  select(flw_count_t,endo_01,spec,log_tillers_centered,
+         firstthreeback_tmean,secondthreeback_tmean,thirdthreeback_tmean,fourththreeback_tmean,
+         fifththreeback_tmean,sixththreeback_tmean,sevenththreeback_tmean,eighththreeback_tmean,
+         plot,year_t,original) %>% 
   drop_na() -> all_flow_temp
 
+# Safety conversion to continuous sequential factor integers 
+all_flow_temp$plot    <- as.integer(as.factor(all_flow_temp$plot))
+all_flow_temp$spec    <- as.integer(as.factor(all_flow_temp$spec))
+all_flow_temp$year_t  <- as.integer(as.factor(all_flow_temp$year_t))
+
 all_flow_dat_temp<-list(n_obs=nrow(all_flow_temp),
-                        y=all_flow_temp$flw_count_t>0,
-                        n_yrs = length(unique(all_flow_temp$year_t))+1,
-                        n_plots = max(all_flow_temp$plot),
-                        n_endo = 2,
-                        n_spp = length(unique(all_flow_temp$spec)),
-                        endo_01=all_flow_temp$endo_01,
-                        size=all_flow_temp$log_tillers_centered,
-                        year_index=all_flow_temp$year_t-2006,
-                        climate=all_flow_temp$tmean_mean,
-                        plot=all_flow_temp$plot,
-                        species=all_flow_temp$spec,
-                        original=all_flow_temp$original)
+                       y=as.integer(all_flow_temp$flw_count_t > 0),
+                       n_yrs = length(unique(all_flow_temp$year_t)),
+                       n_plots = length(unique(all_flow_temp$plot)),
+                       n_endo = 2,
+                       n_spp = length(unique(all_flow_temp$spec)),
+                       endo_01= as.integer(all_flow_temp$endo_01),
+                       size=as.numeric(all_flow_temp$log_tillers_centered),
+                       K = 8,
+                       climate = as.matrix(scale(all_flow_temp[, c("firstthreeback_tmean","secondthreeback_tmean",
+                                                                  "thirdthreeback_tmean","fourththreeback_tmean",
+                                                                  "fifththreeback_tmean","sixththreeback_tmean",
+                                                                  "sevenththreeback_tmean","eighththreeback_tmean")])),
+                       year_index = all_flow_temp$year_t,
+                       plot=all_flow_temp$plot,
+                       species=all_flow_temp$spec,
+                       original= as.integer(all_flow_temp$original))
 
-all_flow_model_temp = stan_model(file="code/climatedemo.stan")
-all_flow_sampling_temp<-sampling(all_flow_model_temp,
-                                 data=all_flow_dat_temp,
-                                 chains = 3,
-                                 iter = 5000,
-                                 warmup = 1000)
+all_flow_model_temp = stan_model(file="code/climatedemoSAM.stan")
+all_flow_sampling_temp <- sampling(all_flow_model_temp,
+                                  data = all_flow_dat_temp,
+                                  chains = 3, 
+                                  iter = 8000, 
+                                  warmup  = 1000,
+                                  pars=c("beta_0","beta_clim","sigma_year",
+                                         "sigma_plot", "w", "y_rep"),
+                                  include = TRUE)
 
-#saveRDS(all_flow_sampling_temp,"all_flow_sampling_temp.rds")
+
+saveRDS(all_flow_sampling_temp,"all_flow_sampling_temp.rds")
 #all_flow_sampling_temp<-readRDS("all_flow_sampling_temp.rds")
+
+mcmc_intervals(all_flow_sampling_temp,regex_pars = "beta_clim",cols=c("red","blue"))
+#note to self - make the E+ E- pairs close to each other and distinguished by color
+
+##posterior predictive check
+y_rep<-extract(all_flow_sampling_temp,pars="y_rep")
+ppc_dens_overlay(all_flow_dat_temp$y,y_rep$y_rep[1:500,])
 
 summary(all_flow_sampling_temp)
 
 #extracting parameters
-params_all_f_temp<-rstan::extract(all_flow_sampling_temp,pars=c('beta_0','beta_clim','beta_size_clim'))
+params_all_f_temp<-rstan::extract(all_flow_sampling_temp,pars=c('beta_0','beta_clim','w'))
 dim(params_all_f_temp$beta_0)
 dim(params_all_f_temp$beta_clim)
-dim(params_all_f_temp$beta_size_clim)
+dim(params_all_f_temp$w)
 
+##trace plots of beta clim and w
+mcmc_trace(all_flow_sampling_temp,regex_pars = "beta_clim")
+mcmc_trace(all_flow_sampling_temp,regex_pars = "w")
 
-##PLOTTING ENDO ESTIMATES
-#take a random subset of posterior draws for beta_0
-all_beta0_postf_temp<-params_all_f_temp$beta_0[sample(dim(params_all_f_temp$beta_0)[1],size=1000,replace=F),,]
-dim(all_beta0_postf_temp)
-
-long_df_all_beta0f_temp <- as.data.frame.table(all_beta0_postf_temp,
-                                               responseName = "estimate")
-str(long_df_all_beta0f_temp)
-
-# Convert to long data frame for endo effect
-long_df_all_beta0f_temp <- as.data.frame.table(all_beta0_postf_temp,
-                                               responseName = "estimate") %>%
-  rename(draw = iterations, species = Var2, endo = Var3, estimate = estimate) %>%
-  mutate(draw = as.integer(draw), species=as.integer(species))
-
-long_df_all_beta0f_temp$spec <- case_when(long_df_all_beta0f_temp$species == 8 ~ "AGPE",
-                                          long_df_all_beta0f_temp$species == 2 ~ "ELRI",
-                                          long_df_all_beta0f_temp$species == 3 ~ "ELVI",
-                                          long_df_all_beta0f_temp$species == 4 ~ "FESU",
-                                          long_df_all_beta0f_temp$species == 5 ~ "LOAR",
-                                          long_df_all_beta0f_temp$species == 6 ~ "POAL",
-                                          long_df_all_beta0f_temp$species == 7 ~ "POAU",
-                                          long_df_all_beta0f_temp$species == 1 ~ "POSY")
-
-summary_df_all_beta0f_temp <- long_df_all_beta0f_temp %>%
-  group_by(spec,endo) %>% 
-  summarize(
-    median = median(estimate),
-    lower = quantile(estimate, 0.05),
-    upper = quantile(estimate, 0.95),
-    probgzero = mean(estimate>0),
-    .groups = "drop")
+##PLOTTING EFFECTS
 
 #take a random subset of posterior draws for the slope / beta_clim / climate effect (AS SUGGESTED BY GEMINI)
 all_betaclim_postf_temp<-params_all_f_temp$beta_clim[sample(dim(params_all_f_temp$beta_clim)[1],size=1000),,]
 dim(all_betaclim_postf_temp)
 
 long_df_all_betaclimf_temp <- as.data.frame.table(all_betaclim_postf_temp,
-                                                  responseName = "estimate")
+                                                 responseName = "estimate")
 str(long_df_all_betaclimf_temp)
 
-# Convert to long data frame for endo effect
+# Convert to long data frame
 long_df_all_betaclimf_temp <- as.data.frame.table(all_betaclim_postf_temp,
-                                                  responseName = "slope_val") %>%
+                                                 responseName = "slope_val") %>%
   rename(draw = iterations, species = Var2, endo = Var3) %>%
   mutate(draw = as.integer(draw), species=as.integer(species))
 
 long_df_all_betaclimf_temp$spec <- case_when(long_df_all_betaclimf_temp$species == 8 ~ "AGPE",
-                                             long_df_all_betaclimf_temp$species == 2 ~ "ELRI",
-                                             long_df_all_betaclimf_temp$species == 3 ~ "ELVI",
-                                             long_df_all_betaclimf_temp$species == 4 ~ "FESU",
-                                             long_df_all_betaclimf_temp$species == 5 ~ "LOAR",
-                                             long_df_all_betaclimf_temp$species == 6 ~ "POAL",
-                                             long_df_all_betaclimf_temp$species == 7 ~ "POAU",
-                                             long_df_all_betaclimf_temp$species == 1 ~ "POSY")
+                                            long_df_all_betaclimf_temp$species == 2 ~ "ELRI",
+                                            long_df_all_betaclimf_temp$species == 3 ~ "ELVI",
+                                            long_df_all_betaclimf_temp$species == 4 ~ "FESU",
+                                            long_df_all_betaclimf_temp$species == 5 ~ "LOAR",
+                                            long_df_all_betaclimf_temp$species == 6 ~ "POAL",
+                                            long_df_all_betaclimf_temp$species == 7 ~ "POAU",
+                                            long_df_all_betaclimf_temp$species == 1 ~ "POSY")
 
-summary_df_all_betaclimf_temp <- long_df_all_betaclimf_temp %>%
-  group_by(spec,endo) %>% 
-  summarize(
-    median_slope = median(slope_val),
-    lower_slope = quantile(slope_val, 0.05),
-    upper_slope = quantile(slope_val, 0.95),
-    .groups = "drop")
-
-#creating a "grid" of all combinations to be predicted (AS SUGGESTED BY GEMINI)
-plot_data_tempf <- expand.grid(
-  tmean_mean = seq(min(all_flow_temp$tmean_mean, na.rm=T), 
-                   max(all_flow_temp$tmean_mean, na.rm=T), 
-                   length.out = 100),
-  spec = unique(long_df_all_beta0f_temp$spec),
-  endo = unique(long_df_all_beta0f_temp$endo)
-)
-
-plot_data_tempf <- plot_data_tempf %>%
-  left_join(summary_df_all_beta0f_temp, by = c("spec", "endo")) %>% # Brings in 'median' (intercept)
-  left_join(summary_df_all_betaclimf_temp, by = c("spec", "endo")) %>% # Brings in 'median_slope'
+# 1. Process your extracted long dataframe
+plot_data <- long_df_all_betaclimf_temp %>%
   mutate(
-    # plogis(intercept + slope * x)
-    prob_flowering = plogis(median + (median_slope * tmean_mean)),
-    # Calculate ribbon bounds
-    prob_lower = plogis(lower + (lower_slope * tmean_mean)),
-    prob_upper = plogis(upper + (upper_slope * tmean_mean))
+    # Ensure endo is treated properly (Var3 becomes a factor by default in as.data.frame.table)
+    # Map index 1 to Negative (0) and index 2 to Positive (1)
+    endo_index = as.integer(endo), 
+    endo_label = ifelse(endo_index == 1, "E-", "E+"),
   )
 
-all_flow_temp$spec <- case_when(
-  all_flow_temp$spec == 8 ~ "AGPE",
-  all_flow_temp$spec == 2 ~ "ELRI",
-  all_flow_temp$spec == 3 ~ "ELVI",
-  all_flow_temp$spec == 4 ~ "FESU",
-  all_flow_temp$spec == 5 ~ "LOAR",
-  all_flow_temp$spec == 6 ~ "POAL",
-  all_flow_temp$spec == 7 ~ "POAU",
-  all_flow_temp$spec == 1 ~ "POSY"
-)
+# 2. Build the structured interval plot
+ggplot(plot_data, aes(x = slope_val, y = spec, color = endo_label)) +
+  # Draw the 50% and 95% intervals + median dot (mimicking mcmc_intervals)
+  stat_pointinterval(.width = c(0.5, 0.95), 
+                     position = position_dodge(width = 0.4)) +
+  
+  # Add a vertical reference line at 0
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  
+  # Set the specific colors you requested
+  scale_color_manual(values = c("E-" = "deeppink", 
+                                "E+" = "cornflowerblue")) +
+  
+  # Clean up formatting
+  labs(
+    x = "Posterior Climate Coefficient (precipitation)",
+    y = "Species",
+    color = "Endophyte Status",
+    title = "Temperature Effects on Probability of Flowering"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
 
-#The actual plot
-ggplot() +
-  # 1. The Ribbon (Uncertainty)
-  geom_ribbon(data = plot_data_tempf, 
-              aes(x = tmean_mean, ymin = prob_lower, ymax = prob_upper, fill = endo), 
-              alpha = 0.2) + 
-  # 2. The Prediction Lines
-  geom_line(data = plot_data_tempf, 
-            aes(x = tmean_mean, y = prob_flowering, color = endo), 
-            linewidth = 1) +
-  # 3. The Raw Points
-  geom_point(data = all_flow_temp, 
-             aes(x = tmean_mean, y = as.numeric(flw_count_t > 1)), 
-             alpha = 0.2, color = "purple") + 
-  facet_wrap(~spec) +
-  
-  # Make sure to set scale_fill_manual to match your colors!
-  scale_color_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
-  scale_fill_manual(values = c("A" = "deeppink1", "B" = "cornflowerblue")) + 
-  
-  labs(x = "Temperature", 
-       y = "Probability of Flowering",
-       title = "Flowering Probability with 90% Credible Intervals") +
-  theme_minimal()
+##PLOTTING Ws
+#take a random subset of posterior draws for the w 
+all_w_postf_temp<-params_all_f_temp$w[sample(dim(params_all_f_temp$w)[1],size=1000),,]
+dim(all_w_postf_temp)
+
+long_df_all_wf_temp <- as.data.frame.table(all_w_postf_temp,
+                                          responseName = "estimate")
+str(long_df_all_wf_temp)
+
+# Convert to long data frame
+long_df_all_wf_temp <- as.data.frame.table(all_w_postf_temp,
+                                          responseName = "weight") %>%
+  rename(draw = iterations, species = Var2, threemonth = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_wf_temp$spec <- case_when(long_df_all_wf_temp$species == 8 ~ "AGPE",
+                                     long_df_all_wf_temp$species == 2 ~ "ELRI",
+                                     long_df_all_wf_temp$species == 3 ~ "ELVI",
+                                     long_df_all_wf_temp$species == 4 ~ "FESU",
+                                     long_df_all_wf_temp$species == 5 ~ "LOAR",
+                                     long_df_all_wf_temp$species == 6 ~ "POAL",
+                                     long_df_all_wf_temp$species == 7 ~ "POAU",
+                                     long_df_all_wf_temp$species == 1 ~ "POSY")
+
+long_df_all_wf_temp$monthsprior <- case_when(long_df_all_wf_temp$threemonth == "A" ~ "1-3",
+                                            long_df_all_wf_temp$threemonth == "B" ~ "4-6",
+                                            long_df_all_wf_temp$threemonth == "C" ~ "7-9",
+                                            long_df_all_wf_temp$threemonth == "D" ~ "10-12",
+                                            long_df_all_wf_temp$threemonth == "E" ~ "13-15",
+                                            long_df_all_wf_temp$threemonth == "F" ~ "16-18",
+                                            long_df_all_wf_temp$threemonth == "G" ~ "19-21",
+                                            long_df_all_wf_temp$threemonth == "H" ~ "22-24")
+
+long_df_all_wf_temp$monthsprior <- factor(long_df_all_wf_temp$monthsprior,
+                                         levels=c("1-3","4-6","7-9","10-12","13-15","16-18","19-21","22-24"))
+
+summary_df_all_wf_temp <- long_df_all_wf_temp %>%
+  group_by(spec,monthsprior) %>% 
+  summarize(
+    median_weight = median(weight),
+    lower_weight = quantile(weight, 0.05),
+    upper_weight = quantile(weight, 0.95),
+    .groups = "drop")
+
+#ggplot(summary_df_all_wf_temp)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
+
+ggplot(data = summary_df_all_wf_temp, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
+  geom_point() + geom_line() +
+  scale_color_manual(
+    values = c(
+      "AGPE" = "olivedrab",
+      "ELRI" = "goldenrod",
+      "ELVI" = "darkorange",
+      "FESU" = "tomato",
+      "LOAR" = "deeppink",
+      "POAL" = "purple",
+      "POAU" = "slateblue",
+      "POSY" = "cornflowerblue")) +
+  labs(x = "months prior", 
+       y = "weight",
+       title = "Weights of Temperature in Each Time Scale on Probability of Flowering")
 
 
 
 ##MODEL ST: SURVIVAL AS RESPONSE TO TEMPERATURE___________________
+
+
 
 ##prep data for total precipitation, dropping NAs
 grasclim %>% 
@@ -1127,7 +1213,7 @@ all_grow_model_temp = stan_model(file="code/climatedemogrowthSAM.stan")
 all_grow_sampling_temp <- sampling(all_grow_model_temp,
                                    data = all_grow_dat_temp,
                                    chains = 3, 
-                                   iter = 5000, 
+                                   iter = 8000, 
                                    warmup  = 1000,
                                    pars=c("beta_0","beta_clim","sigma_year",
                                           "sigma_plot","sigma", "w", "y_rep"),
@@ -1431,7 +1517,7 @@ all_flow_model_vpdx = stan_model(file="code/climatedemo.stan")
 all_flow_sampling_vpdx<-sampling(all_flow_model_vpdx,
                                  data=all_flow_dat_vpdx,
                                  chains = 3,
-                                 iter = 5000,
+                                 iter = 8000,
                                  warmup = 1000)
 
 #saveRDS(all_flow_sampling_vpdx,"all_flow_sampling_vpdx.rds")
@@ -1572,6 +1658,195 @@ ggplot() +
 
 ##prep data for total precipitation, dropping NAs
 grasclim %>% 
+  select(surv_t1,endo_01,spec,log_tillers_centered,
+         firstthreeback_tmean,secondthreeback_tmean,thirdthreeback_tmean,fourththreeback_tmean,
+         fifththreeback_tmean,sixththreeback_tmean,sevenththreeback_tmean,eighththreeback_tmean,
+         plot,year_t,original) %>% 
+  drop_na() -> all_surv_temp
+
+# Safety conversion to continuous sequential factor integers 
+all_surv_temp$plot    <- as.integer(as.factor(all_surv_temp$plot))
+all_surv_temp$spec    <- as.integer(as.factor(all_surv_temp$spec))
+all_surv_temp$year_t  <- as.integer(as.factor(all_surv_temp$year_t))
+
+all_surv_dat_temp<-list(n_obs=nrow(all_surv_temp),
+                       y=as.integer(all_surv_temp$surv_t1),
+                       n_yrs = length(unique(all_surv_temp$year_t)),
+                       n_plots = length(unique(all_surv_temp$plot)),
+                       n_endo = 2,
+                       n_spp = length(unique(all_surv_temp$spec)),
+                       endo_01= as.integer(all_surv_temp$endo_01),
+                       size=as.numeric(all_surv_temp$log_tillers_centered),
+                       K = 8,
+                       climate = as.matrix(scale(all_surv_temp[, c("firstthreeback_tmean","secondthreeback_tmean",
+                                                                  "thirdthreeback_tmean","fourththreeback_tmean",
+                                                                  "fifththreeback_tmean","sixththreeback_tmean",
+                                                                  "sevenththreeback_tmean","eighththreeback_tmean")])),
+                       year_index = all_surv_temp$year_t,
+                       plot=all_surv_temp$plot,
+                       species=all_surv_temp$spec,
+                       original= as.integer(all_surv_temp$original))
+
+all_surv_model_temp = stan_model(file="code/climatedemoSAM.stan")
+all_surv_sampling_temp <- sampling(all_surv_model_temp,
+                                  data = all_surv_dat_temp,
+                                  chains = 3, 
+                                  iter = 8000, 
+                                  warmup  = 1000,
+                                  pars=c("beta_0","beta_clim","sigma_year",
+                                         "sigma_plot", "w", "y_rep"),
+                                  include = TRUE)
+
+saveRDS(all_surv_sampling_temp,"all_surv_sampling_temp.rds")
+#all_surv_sampling_temp<-readRDS("all_surv_sampling_temp.rds")
+
+mcmc_intervals(all_surv_sampling_temp,regex_pars = "beta_clim",cols=c("red","blue"))
+#note to self - make the E+ E- pairs close to each other and distinguished by color
+
+##posterior predictive check
+y_rep<-extract(all_surv_sampling_temp,pars="y_rep")
+ppc_dens_overlay(all_surv_dat_temp$y,y_rep$y_rep[1:500,])
+
+summary(all_surv_sampling_temp)
+
+#extracting parameters
+params_all_s_temp<-rstan::extract(all_surv_sampling_temp,pars=c('beta_0','beta_clim','w'))
+dim(params_all_s_temp$beta_0)
+dim(params_all_s_temp$beta_clim)
+dim(params_all_s_temp$w)
+
+##trace plots of beta clim and w
+mcmc_trace(all_surv_sampling_temp,regex_pars = "beta_clim")
+mcmc_trace(all_surv_sampling_temp,regex_pars = "w")
+
+##PLOTTING EFFECTS
+
+#take a random subset of posterior draws for the slope / beta_clim / climate effect (AS SUGGESTED BY GEMINI)
+all_betaclim_posts_temp<-params_all_s_temp$beta_clim[sample(dim(params_all_s_temp$beta_clim)[1],size=1000),,]
+dim(all_betaclim_posts_temp)
+
+long_df_all_betaclims_temp <- as.data.frame.table(all_betaclim_posts_temp,
+                                                 responseName = "estimate")
+str(long_df_all_betaclims_temp)
+
+# Convert to long data frame
+long_df_all_betaclims_temp <- as.data.frame.table(all_betaclim_posts_temp,
+                                                 responseName = "slope_val") %>%
+  rename(draw = iterations, species = Var2, endo = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_betaclims_temp$spec <- case_when(long_df_all_betaclims_temp$species == 8 ~ "AGPE",
+                                            long_df_all_betaclims_temp$species == 2 ~ "ELRI",
+                                            long_df_all_betaclims_temp$species == 3 ~ "ELVI",
+                                            long_df_all_betaclims_temp$species == 4 ~ "FESU",
+                                            long_df_all_betaclims_temp$species == 5 ~ "LOAR",
+                                            long_df_all_betaclims_temp$species == 6 ~ "POAL",
+                                            long_df_all_betaclims_temp$species == 7 ~ "POAU",
+                                            long_df_all_betaclims_temp$species == 1 ~ "POSY")
+
+# 1. Process your extracted long dataframe
+plot_data <- long_df_all_betaclims_temp %>%
+  mutate(
+    # Ensure endo is treated properly (Var3 becomes a factor by default in as.data.frame.table)
+    # Map index 1 to Negative (0) and index 2 to Positive (1)
+    endo_index = as.integer(endo), 
+    endo_label = ifelse(endo_index == 1, "E-", "E+"),
+  )
+
+# 2. Build the structured interval plot
+ggplot(plot_data, aes(x = slope_val, y = spec, color = endo_label)) +
+  # Draw the 50% and 95% intervals + median dot (mimicking mcmc_intervals)
+  stat_pointinterval(.width = c(0.5, 0.95), 
+                     position = position_dodge(width = 0.4)) +
+  
+  # Add a vertical reference line at 0
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  
+  # Set the specific colors you requested
+  scale_color_manual(values = c("E-" = "deeppink", 
+                                "E+" = "cornflowerblue")) +
+  
+  # Clean up formatting
+  labs(
+    x = "Posterior Climate Coefficient (precipitation)",
+    y = "Species",
+    color = "Endophyte Status",
+    title = "Temperature Effects on Survival"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+##PLOTTING Ws
+#take a random subset of posterior draws for the w 
+all_w_posts_temp<-params_all_s_temp$w[sample(dim(params_all_s_temp$w)[1],size=1000),,]
+dim(all_w_posts_temp)
+
+long_df_all_ws_temp <- as.data.frame.table(all_w_posts_temp,
+                                          responseName = "estimate")
+str(long_df_all_wf_temp)
+
+# Convert to long data frame
+long_df_all_ws_temp <- as.data.frame.table(all_w_posts_temp,
+                                          responseName = "weight") %>%
+  rename(draw = iterations, species = Var2, threemonth = Var3) %>%
+  mutate(draw = as.integer(draw), species=as.integer(species))
+
+long_df_all_ws_temp$spec <- case_when(long_df_all_ws_temp$species == 8 ~ "AGPE",
+                                     long_df_all_ws_temp$species == 2 ~ "ELRI",
+                                     long_df_all_ws_temp$species == 3 ~ "ELVI",
+                                     long_df_all_ws_temp$species == 4 ~ "FESU",
+                                     long_df_all_ws_temp$species == 5 ~ "LOAR",
+                                     long_df_all_ws_temp$species == 6 ~ "POAL",
+                                     long_df_all_ws_temp$species == 7 ~ "POAU",
+                                     long_df_all_ws_temp$species == 1 ~ "POSY")
+
+long_df_all_ws_temp$monthsprior <- case_when(long_df_all_ws_temp$threemonth == "A" ~ "1-3",
+                                            long_df_all_ws_temp$threemonth == "B" ~ "4-6",
+                                            long_df_all_ws_temp$threemonth == "C" ~ "7-9",
+                                            long_df_all_ws_temp$threemonth == "D" ~ "10-12",
+                                            long_df_all_ws_temp$threemonth == "E" ~ "13-15",
+                                            long_df_all_ws_temp$threemonth == "F" ~ "16-18",
+                                            long_df_all_ws_temp$threemonth == "G" ~ "19-21",
+                                            long_df_all_ws_temp$threemonth == "H" ~ "22-24")
+
+long_df_all_ws_temp$monthsprior <- factor(long_df_all_ws_temp$monthsprior,
+                                         levels=c("1-3","4-6","7-9","10-12","13-15","16-18","19-21","22-24"))
+
+summary_df_all_ws_temp <- long_df_all_ws_temp %>%
+  group_by(spec,monthsprior) %>% 
+  summarize(
+    median_weight = median(weight),
+    lower_weight = quantile(weight, 0.05),
+    upper_weight = quantile(weight, 0.95),
+    .groups = "drop")
+
+#ggplot(summary_df_all_wf_temp)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
+
+ggplot(data = summary_df_all_ws_temp, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
+  geom_point() + geom_line() +
+  scale_color_manual(
+    values = c(
+      "AGPE" = "olivedrab",
+      "ELRI" = "goldenrod",
+      "ELVI" = "darkorange",
+      "FESU" = "tomato",
+      "LOAR" = "deeppink",
+      "POAL" = "purple",
+      "POAU" = "slateblue",
+      "POSY" = "cornflowerblue")) +
+  labs(x = "months prior", 
+       y = "weight",
+       title = "Weights of Temperature in Each Time Scale on Survival")
+
+
+
+
+##prep data for total precipitation, dropping NAs
+grasclim %>% 
   select(surv_t1,endo_01,spec,log_tillers_centered,vpdmax,plot,year_t,original) %>% 
   drop_na() -> all_surv_vpdx
 
@@ -1593,7 +1868,7 @@ all_surv_model_vpdx = stan_model(file="code/climatedemo.stan")
 all_surv_sampling_vpdx<-sampling(all_surv_model_vpdx,
                                  data=all_surv_dat_vpdx,
                                  chains = 3,
-                                 iter = 5000, 
+                                 iter = 8000, 
                                  warmup = 1000)
 
 #saveRDS(all_surv_sampling_vpdx,"all_surv_sampling_vpdx.rds")
@@ -1753,7 +2028,7 @@ all_grow_model_vpdx = stan_model(file="code/climatedemogrowth.stan")
 all_grow_sampling_vpdx <- sampling(all_grow_model_vpdx,
                                    data = all_grow_dat_vpdx,
                                    chains = 3, 
-                                   iter = 5000, 
+                                   iter = 8000, 
                                    warmup  = 1000,
                                    include = TRUE)
 
