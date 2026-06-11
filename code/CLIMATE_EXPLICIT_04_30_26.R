@@ -101,7 +101,7 @@ all_flow_dat_ppt<-list(n_obs=nrow(all_flow_ppt),
                        species=all_flow_ppt$spec,
                        original= as.integer(all_flow_ppt$original))
 
-all_flow_model_ppt = stan_model(file="code/climatedemoSAM.stan")
+all_flow_model_ppt = stan_model(file="code/climatedemoSAMnoncen.stan")
 all_flow_sampling_ppt <- sampling(all_flow_model_ppt,
                                   data = all_flow_dat_ppt,
                                   chains = 3, 
@@ -114,6 +114,9 @@ all_flow_sampling_ppt <- sampling(all_flow_model_ppt,
 
 saveRDS(all_flow_sampling_ppt,"all_flow_sampling_ppt.rds")
 all_flow_sampling_ppt<-readRDS("all_flow_sampling_ppt.rds")
+
+saveRDS(all_flow_sampling_ppt,"all_flow_sampling_ppt2.rds")
+all_flow_sampling_ppt2<-readRDS("all_flow_sampling_ppt2.rds")
 
 mcmc_intervals(all_flow_sampling_ppt,regex_pars = "beta_clim",cols=c("red","blue"))
 #note to self - make the E+ E- pairs close to each other and distinguished by color
@@ -515,6 +518,7 @@ dim(params_all_i_ppt$beta_clim)
 dim(params_all_i_ppt$w)
 
 ##trace plots of beta clim and w
+mcmc_trace(all_infl_sampling_ppt,regex_pars = "beta_0")
 mcmc_trace(all_infl_sampling_ppt,regex_pars = "beta_clim")
 mcmc_trace(all_infl_sampling_ppt,regex_pars = "w")
 
