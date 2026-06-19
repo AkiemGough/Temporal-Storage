@@ -95,10 +95,15 @@ dim(params_all_f$Omega)
 all_beta0_postf<-params_all_f$beta_0[sample(dim(params_all_f$beta_0)[1],size=1000,replace=F),,,]
 dim(all_beta0_postf)
 
+long_df_all_beta0f <- as.data.frame.table(all_beta0_postf,
+                                             responseName = "estimate")
+str(long_df_all_beta0f)
+
+
 # Convert to long data frame
 long_df_all_beta0f <- as.data.frame.table(all_beta0_postf,
                                           responseName = "estimate") %>%
-  rename(draw = iterations, species = Var2, endo = Var3, year = Var4, estimate = estimate) %>%
+  rename(draw = iterations, species = Var2, year = Var3, endo = Var4, estimate = estimate) %>%
   mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
 
 long_df_all_beta0f$spec <- case_when(long_df_all_beta0f$species == 8 ~ "AGPE",
@@ -257,7 +262,7 @@ all_surv_dat <- list(n_obs=nrow(all_surv),
                      species=all_surv$spec,
                      original=all_surv$original)
 
-all_surv_model = stan_model(file = "code/flowering_mvn.stan")
+all_surv_model = stan_model(file = "code/implicit_binomial_mvn.stan")
 all_surv_sampling<-sampling(all_surv_model,
                             data = all_surv_dat,
                             chains = 3,thin = 5,
@@ -268,7 +273,7 @@ all_surv_sampling<-sampling(all_surv_model,
                                    "sigma_plot","Omega","endo_effect","y_rep"),
                             save_warmup=F)
 
-#saveRDS(all_surv_sampling,"all_surv_sampling.rds")
+saveRDS(all_surv_sampling,"all_surv_sampling.rds")
 #all_surv_sampling<-readRDS("all_surv_sampling.rds")
 
 mcmc_trace(all_surv_sampling,par=c('endo_effect[1,5]'))
@@ -276,8 +281,8 @@ mcmc_trace(all_surv_sampling,par=c('Omega[1,1,2]'))
 mcmc_dens(all_surv_sampling,par=c('Omega[2,1,2]'))
 
 ##posterior predictive check
-y_rep<-extract(all_surv_sampling_ppt,pars="y_rep")
-ppc_dens_overlay(all_surv_dat_ppt$y,y_rep$y_rep[1:500,])
+y_rep<-extract(all_surv_sampling,pars="y_rep")
+ppc_dens_overlay(all_surv_dat$y,y_rep$y_rep[1:500,])
 
 #mcmc_trace(surv_sampling,pars='tau_plot[111]')
 
@@ -292,10 +297,14 @@ dim(params_all_s$Omega)
 all_beta0_posts<-params_all_s$beta_0[sample(dim(params_all_s$beta_0)[1],size=1000,replace=F),,,]
 dim(all_beta0_posts)
 
+long_df_all_beta0s <- as.data.frame.table(all_beta0_posts,
+                                          responseName = "estimate")
+str(long_df_all_beta0s)
+
 # Convert to long data frame
 long_df_all_beta0s <- as.data.frame.table(all_beta0_posts,
                                           responseName = "estimate") %>%
-  rename(draw = iterations, species = Var2, endo = Var3, year = Var4, estimate = estimate) %>%
+  rename(draw = iterations, species = Var2, year = Var3, endo = Var4, estimate = estimate) %>%
   mutate(draw = as.integer(draw), year = as.integer(year)+2006, species=as.integer(species))
 
 long_df_all_beta0s$spec <- case_when(long_df_all_beta0s$species == 8 ~ "AGPE",
@@ -345,6 +354,10 @@ ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = en
 #take a random subset of posterior draws for correlation coefficients
 all_corr_posts<-params_all_s$Omega[sample(dim(params_all_s$Omega)[1],size=1000,replace=F),,1,2]
 dim(all_corr_posts)
+
+long_df_all_corrs <- as.data.frame.table(all_corr_posts,
+                                          responseName = "estimate")
+str(long_df_all_corrs)
 
 ## Convert to long data frame for correlation coefficients
 long_df_all_corrs <- as.data.frame.table(all_corr_posts,

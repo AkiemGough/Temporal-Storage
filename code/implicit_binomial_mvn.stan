@@ -43,7 +43,6 @@ transformed parameters {
   }
 
   // 3. Compute the linear predictor
-  real p[n_obs];
   for(i in 1:n_obs){
     p[i] = beta_0[species[i], year_index[i]][endo_01[i] + 1] 
     + beta_size[species[i]] * size[i] 
