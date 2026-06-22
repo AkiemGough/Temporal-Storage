@@ -64,7 +64,7 @@ pop_growth_df <- grasclim %>%
 
 
 
-##MODEL FPT: PROBAILITY OF FLOWERING AS RESPONSE TO PREICIPITATION AND TEMPERATURE___________________
+##MODEL FPT: PROBABILITY OF FLOWERING AS RESPONSE TO PREICIPITATION AND TEMPERATURE___________________
 
 ##prep data for total precipitation, dropping NAs
 grasclim %>% 
@@ -399,7 +399,7 @@ ggplot(data = summary_df_all_wf_temp, aes(x = monthsprior, y = median_weight, co
 #temperature effects for most species seems explainable by cumulative temperature over 2 years
 #4 for 4 of the species tho, further back time lags of temperature are most impactful
 
-##MODEL SPT: PROBAILITY OF SURVIVAL AS RESPONSE TO PREICIPITATION AND TEMPERATURE
+##MODEL SPT: PROBABILITY OF SURVIVAL AS RESPONSE TO PREICIPITATION AND TEMPERATURE
 
 ##prep data for total precipitation, dropping NAs
 grasclim %>% 
@@ -865,7 +865,7 @@ ggplot(plot_data_ip, aes(x = slope_val, y = spec, color = endo_label)) +
     x = "Posterior Climate Coefficient (precipitation)",
     y = "Species",
     color = "Endophyte Status",
-    title = "Precipitation Effects on Probability of Infloresecence Count"
+    title = "Precipitation Effects on Infloresecence Count"
   ) +
   theme_minimal() +
   theme(
@@ -930,7 +930,7 @@ ggplot(plot_data_it, aes(x = slope_val, y = spec, color = endo_label)) +
     x = "Posterior Climate Coefficient (temperature)",
     y = "Species",
     color = "Endophyte Status",
-    title = "Temperature Effects on Probability of Inflorescence Count"
+    title = "Temperature Effects on Inflorescence Count"
   ) +
   theme_minimal() +
   theme(
