@@ -1,0 +1,513 @@
+### Direct causal effect of $S$ on $W$
+
+Let's return to our causal model:
+
+```{r}
+#| out-width: 80%
+
+plot(dag1)
+```
+
+To estimate the direct causal effect of $S$ on $W$, we need to "block" the association through $H$. This means we need to *stratify* by (or *condition on*) $H$. In simpler terms, for a given height we can look at men and women and ask how different their weights are.
+
+Let's build a statistical model based on our causal model:
+
+$$W_i \sim \text{Normal}(\mu_i, \sigma)$$
+
+$$\mu_i = \alpha_{S[i]} + \beta_{S[i]} (H_i - \bar{H})$$
+
+$$\alpha_j \sim \text{Normal}(60, 10)$$
+
+$$\beta_j \sim \text{Uniform}(0, 1)$$
+
+$$\sigma \sim \text{Uniform}(0, 10)$$
+
+where both intercept $\alpha$ and slope $\beta$ are stratified by (or interact with) sex. That is, men and women are allowed to have entirely different relationships between weight and height. Also note that height has been centered for convenience.
+
+```{r}
+dat <- list(
+  W = d$weight,
+  H = d$height,
+  Hbar = mean(d$height),
+  S = d$male + 1
+)
+
+set.seed(152)
+m_SHW <- quap(
+  alist(
+    W ~ dnorm(mu, sigma),
+    mu <- a[S] + b[S] * (H - Hbar),
+    a[S] ~ dnorm(60, 10),
+    b[S] ~ dunif(0, 1),
+    sigma ~ dunif(0, 10)
+  ),
+  data = dat
+)
+
+precis(m_SHW, depth = 2)
+```
+
+Plot expected relationships:
+
+```{r}
+xseq <- seq(from = 130, to = 190, len = 50)
+muF <- link(m_SHW, data = list(S = rep(1, 50), H = xseq, Hbar = mean(d$height)))
+muM <- link(m_SHW, data = list(S = rep(2, 50), H = xseq, Hbar = mean(d$height)))
+
+plot(W ~ H, dat, type = "n")
+points(dat$H[dat$S == 1], dat$W[dat$S == 1], col = 2, lwd = 3)
+points(dat$H[dat$S == 2], dat$W[dat$S == 2], col = 4, lwd = 3)
+lines(xseq, apply(muF, 2, mean), lwd = 3, col = 2)
+lines(xseq, apply(muM, 2, mean), lwd = 3, col = 4)
+```
+
+Plot contrasts at each height:
+
+```{r}
+mu_contrast <- muF - muM
+
+plot(
+  NULL,
+  xlim = range(xseq),
+  ylim = c(-6, 8),
+  xlab = "height (cm)",
+  ylab = "posterior mean weight contrast (female - male) (kg)"
+)
+
+abline(h = 0, lty = 2)
+for (p in c(0.5, 0.6, 0.7, 0.8, 0.9, 0.99)) {
+  shade(apply(mu_contrast, 2, PI, prob = p), xseq)
+}
+```
+
+These results show that nearly all of the causal effect of $S$ acts through $H$ in this population, although there might be very slight body composition differences people get taller.
+
+More generally, these examples reveal that causal models are central to developing statistical models and interpreting their outputs. That is not to say that you must know causal models with certainty - if there is uncertainty, you can compare and contrast alternative causal models. It is helpful to know whether your conclusions are robust/sensitive to scientifically reasonable alternative causal models.
+
+## Elemental confounds
+
+It is not unusual for things to be (strongly) correlated in observational samples, but correlation alone is not solid evidence of causation. Then, it is our job to go beyond correlational evidence to establish causal evidence.
+
+Statistical inference must defend against **confounding**, or features of the sample that mislead us about causal relationships (confounds can be both omitted or included variables). We will make transparent causal assumptions and use logic to derive their consequences to build an estimator.
+
+**Directed acyclic graphs (DAGs)** abstractly denote causal relationships with minimal assumptions. Structural equation models (SEMs) are in essence DAGs with distributional assumptions, etc.
+
+Below, we will learn the rules of **d-separation** (directional separation of information) with respect to the four (and only) fundamental forms of confounding.
+
+### The fork
+
+```{r}
+#| out-width: 80%
+
+dag_fork <- dagitty("dag{
+  X <- Z -> Y
+}")
+
+coordinates(dag_fork) <- list(
+  x = c(X = -1, Y = 1, Z = 0),
+  y = c(X = 1, Y = 1, Z = 1)
+)
+
+plot(dag_fork)
+```
+
+$X$ and $Y$ are associated by a common cause $Z$, but have no association once stratified by $Z$. That is, once we know the value of $Z$, $X$ does not tell us anything about $Y$ (or vice versa) because all there is to know about their relationship is already known through $Z$.
+
+Simulate an association between binary variables $X$ and $Y$ via a shared cause $Z$:
+
+```{r}
+n <- 1000
+Z <- rbern(n, 0.5)
+X <- rbern(n, (1 - Z) * 0.1 + Z * 0.9)
+Y <- rbern(n, (1 - Z) * 0.1 + Z * 0.9)
+cor(X, Y)
+```
+
+Now stratify by $Z$:
+
+```{r}
+# Z = 0
+cor(X[Z == 0], Y[Z == 0])
+
+# Z = 1
+cor(X[Z == 1], Y[Z == 1])
+```
+
+Here, $X$ and $Y$ are independent once stratified by their common cause $Z$. Note that we are using correlation here for ease of interpretation, but associations need not be correlations.
+
+Similarly, simulate an association between continuous variables $X$ and $Y$ via a shared cause $Z$:
+
+```{r}
+N <- 300
+Z <- rbern(N)
+X <- rnorm(N, 2 * Z - 1)
+Y <- rnorm(N, 2 * Z - 1)
+
+par(mfrow = c(1, 2))
+cols <- c(4, 2)
+
+plot(X, Y, col = col.alpha("darkgray", 0.5), lwd = 3)
+abline(lm(Y ~ X), lwd = 3)
+
+plot(X, Y, type = "n")
+points(X[Z == 0] , Y[Z == 0], col = col.alpha(cols[1], 0.5), lwd = 3)
+points(X[Z == 1] , Y[Z == 1], col = col.alpha(cols[2], 0.5), lwd = 3)
+abline(lm(Y[Z == 0] ~ X[Z == 0]), col = cols[1], lwd = 3)
+abline(lm(Y[Z == 1] ~ X[Z == 1]), col = cols[2], lwd = 3)
+
+legend(
+  "topleft",
+  legend = c("Z = 0", "Z = 1"),
+  text.col = cols,
+  x.intersp = 0
+)
+```
+
+Here, we can see that the means of $X$ and $Y$ are influenced by $Z$, and that the relationship between $X$ and $Y$ is driven entirely by their respective relationships with $Z$.
+
+#### Example: divorce rates in the USA
+
+Why do regions of the USA with higher rates of marriage also have higher rates of divorce?
+
+```{r}
+library(rethinking)
+data(WaffleDivorce)
+
+cols <- c(4, 2)
+
+plot(
+  Divorce ~ Marriage,
+  WaffleDivorce,
+  col = cols[WaffleDivorce$South + 1],
+  lwd = 3
+)
+
+legend(
+  "topleft",
+  legend = "Southern states",
+  col = cols[2],
+  pch = 1,
+  pt.lwd = 3,
+  text.col = cols[2]
+)
+```
+
+Our estimand can be written as: $\text{p(D|do(M))}$, or what is the distribution of divorce rate ($D$) when we intervene on marriage rate ($M$)?
+
+If we assume that age of marriage ($A$) influences both divorce rate and marriage rate, we can establish the following DAG:
+
+```{r}
+#| out.width: 80%
+
+dag2 <- dagitty("dag{
+  M -> D
+  M <- A -> D
+}")
+
+coordinates(dag2) <- list(
+  x = c(M = 0, A = 1, D = 2),
+  y = c(M = 0, A = 1, D = 0)
+)
+
+plot(dag2)
+```
+
+which implies that we must stratify by $A$ to estimate the causal effect of $M$ on $D$:
+
+```{r}
+adjustmentSets(dag2, exposure = "M", outcome = "D")
+```
+
+See also conditional independencies implied by the DAG---these are testable implications of the causal model that describe which variables should be associated with one another (or not) when we condition on some other set of variables:
+
+```{r}
+impliedConditionalIndependencies(dag2)
+```
+
+Here, there are actually no *conditional independencies* implied by the causal model. In other words, all variables are assumed to be directly assocaited with one another (this is itself a testable implication). This is in contrast, for example, to the simplest fork from above:
+
+```{r}
+impliedConditionalIndependencies(dag_fork)
+```
+
+where $X$ and $Y$ are implied to be independent of one another when conditioned on $Z$.
+
+Rather, in this example, $A$ is a confounder that creates a *backdoor path* between $M$ and $D$ that must be *adjusted* for. Because $A$ is a continuous variable (which can be viewed as having an infinite number of sub-populations), we *parametrically* stratify by including the variable in the linear model following some functional relationship (here we assume additive):
+
+$$D_i \sim \text{Normal}(\mu_i, \sigma)$$
+
+$$\mu_i = \alpha + \beta_M M_i + \beta_A A_i$$
+
+The intuition behind stratification is to think of the effect of any given $A$ as part of the intercept (i.e., locate the average response within that sub-population), such that every value of $A$ produces a different relationship between $D$ and $M$:
+
+$$\mu_i = (\alpha + \beta_M A_i) + \beta_A M_i$$
+
+This also means that the effect of $M$ on $D$ is conditional on $A$. More generally, multiple regression measures the remaining association of each predictor with the outcome, after already knowing the other predictors.
+
+Let's fit this model by standardizing the data (i.e., subtracting the mean and dividing by the standard deviation), converting them to z-scores. This not only improves computation but also makes it easier to choose sensible priors (e.g., by removing units). Once data are standardized, so-called 'flat' priors become largely nonsensical because 95% of z-scores are \[-2, 2\]:
+
+$$\alpha \sim \text{Normal}(0, 10)$$
+
+$$\beta_M \sim \text{Normal}(0, 10)$$
+
+$$\beta_A \sim \text{Normal}(0, 10)$$
+
+$$\sigma \sim \text{Exponential}(1)$$
+
+```{r}
+n <- 20
+a <- rnorm(n, 0, 10)
+bM <- rnorm(n, 0, 10)
+bA <- rnorm(n, 0, 10)
+
+plot(
+  NULL,
+  xlim = c(-2, 2),
+  ylim = c(-2, 2),
+  xlab = "median age of marriage (standardized)",
+  ylab = "divorce rate (standardized)"
+)
+
+Aseq <- seq(-2, 2, len = 30)
+for (i in 1:length(Aseq)) {
+  mu <- a[i] + bA[i] * Aseq
+  lines(Aseq, mu, lwd = 2, col = 2)
+}
+```
+
+Most of these slopes are implausibly strong. Rather, we want to define priors that imply relationships that are plausible in the outcome space. For example:
+
+$$\alpha \sim \text{Normal}(0, 0.2)$$
+
+$$\beta_M \sim \text{Normal}(0, 0.5)$$
+
+$$\beta_A \sim \text{Normal}(0, 0.5)$$
+
+$$\sigma \sim \text{Exponential}(1)$$
+
+```{r}
+n <- 20
+a <- rnorm(n, 0, 0.2)
+bM <- rnorm(n, 0, 0.5)
+bA <- rnorm(n, 0, 0.5)
+
+plot(
+  NULL,
+  xlim = c(-2, 2),
+  ylim = c(-2, 2),
+  xlab = "median age of marriage (standardized)",
+  ylab = "divorce rate (standardized)"
+)
+
+Aseq <- seq(-2, 2, len = 30)
+for (i in 1:length(Aseq)) {
+  mu <- a[i] + bA[i] * Aseq
+  lines(Aseq, mu, lwd = 2, col = 2)
+}
+```
+
+Here, we are implying with our priors that a state with an average age of marriage has about an average divorce rate, with modest effects of marriage rate on divorce rate. That is, these priors *weakly regularize* our parameter estimates by nudging them to stay within scientifically plausible ranges. These are reasonable default priors for standardized data.
+
+Important note: as you add more predictors to a model, the prior standard deviations for slope coefficients should get smaller because we don't expect to explain more variance a priori just by adding more predictors.
+
+We can now fit the model:
+
+```{r}
+d <- WaffleDivorce
+dat <- list(
+  D = standardize(d$Divorce),
+  M = standardize(d$Marriage),
+  A = standardize(d$MedianAgeMarriage)
+)
+
+m_DMA <- quap(
+  alist(
+    D ~ dnorm(mu, sigma),
+    mu <- a + bM * M + bA * A,
+    a ~ dnorm(0, 0.2),
+    bM ~ dnorm(0, 0.5),
+    bA ~ dnorm(0, 0.5),
+    sigma ~ dexp(1)
+  ),
+  data = dat
+)
+
+precis(m_DMA)
+plot(m_DMA)
+```
+
+What's the causal effect of $M$ on $D$? Here, in our simple additive model, we can interpret this effect in terms of the coefficient $\beta_M$, but more generally (e.g., with generalized linear models) we must compute the contrast between interventions.
+
+**A causal effect is a manipulation of (intervention on) the generative model.** Here, this means deleting all arrows into $M$ (the *exposure*) and simulating $D$ (the *outcome*), such that we entirely control the value of $M$ (even though it would naturally be influenced by $A$). This is the same logic that makes experimental inference possible.
+
+Simulate the causal effect following logical manipulation of the DAG:
+
+```{r}
+post <- extract.samples(m_DMA)
+n <- 1e3
+
+# sample A from data
+As <- sample(dat$A, size = n, replace = TRUE)
+
+# simulate D for M = 0 (sample mean)
+DM0 <- with(
+  post,
+  rnorm(n, a + bM * 0 + bA * As, sigma)
+)
+
+# simulate D for M = 1 (one standard deviation above average)
+DM1 <- with(
+  post,
+  rnorm(n, a + bM * 1 + bA * As, sigma)
+)
+
+# compute contrast
+M10_contrast <- DM1 - DM0
+dens(M10_contrast, lwd = 4, col = 2, xlab = "effect of 1 SD increase in M")
+```
+
+Such simulations and resulting plots are *counterfactual* in the sense that they use any values of the predictor variables, even unobserved combinations. Here, there is no evidence that marriage rate influences divorce rate. As such, we interpret the apparent relationship between marriage rate and divorce rate as driven entirely by their common cause, the age of marriage.
+
+**Table 2 fallacy**: Not all coefficients are causal effects. Statistical models designed to identify $X \rightarrow Y$ may not also identify effects of control variables. Therefore, Table 2 is misleading. In the above example, $\beta_M$ denotes the total effect of $M$, but $\beta_A$ denotes only the direct effect of $A$. That is, the parameter estimates are not directly comparable.
+
+### The pipe
+
+```{r}
+#| out.width: 80%
+
+dag_pipe <- dagitty("dag{
+  X -> Z -> Y
+}")
+
+coordinates(dag_pipe) <- list(
+  x = c(X = 0, Y = 2, Z = 1),
+  y = c(X = 0, Y = 0, Z = 0)
+)
+
+plot(dag_pipe)
+```
+
+$X$ and $Y$ are associated, with the influence of $X$ on $Y$ transmitted entirely through $Z$. Once stratified by $Z$, there is no association because $X$ provides no additional information beyond $Z$.
+
+Simulate:
+
+```{r}
+n <- 1000
+X <- rbern(n, 0.5)
+Z <- rbern(n, (1 - X) * 0.1 + X * 0.9)
+Y <- rbern(n, (1 - Z) * 0.1 + Z * 0.9)
+cor(X, Y)
+```
+
+Now stratify by $Z$:
+
+```{r}
+# Z = 0
+cor(X[Z == 0], Y[Z == 0])
+
+# Z = 1
+cor(X[Z == 1], Y[Z == 1])
+```
+
+Once again, $X$ and $Y$ are independent once conditioned on $Z$. This is the same result as for the fork but with a different causal underpinning. Similarly, for continuous variables:
+
+```{r}
+N <- 300
+Z <- rbern(N)
+X <- rnorm(N, 2 * Z - 1)
+Y <- rnorm(N, 2 * Z - 1)
+
+par(mfrow = c(1, 2))
+cols <- c(4, 2)
+
+plot(X, Y, col = col.alpha("darkgray", 0.5), lwd = 3)
+abline(lm(Y ~ X), lwd = 3)
+
+plot(X, Y, type = "n")
+points(X[Z == 0] , Y[Z == 0], col = col.alpha(cols[1], 0.5), lwd = 3)
+points(X[Z == 1] , Y[Z == 1], col = col.alpha(cols[2], 0.5), lwd = 3)
+abline(lm(Y[Z == 0] ~ X[Z == 0]), col = cols[1], lwd = 3)
+abline(lm(Y[Z == 1] ~ X[Z == 1]), col = cols[2], lwd = 3)
+
+legend(
+  "topleft",
+  legend = c("Z = 0", "Z = 1"),
+  text.col = cols,
+  x.intersp = 0
+)
+```
+
+The similarities between the fork and the pipe mean that, in the data alone, we cannot discern the 'true' causal relationship. To do so, we must rely on (scientific) assumptions or external data.
+
+#### Example
+
+Returning to the marriage-divorce example: if we want to know the total causal effect of $A$ on $D$, we must *not* condition on $M$, which acts as a 'pipe' (or post-treatment variable) that mediates the causal effect of $A$ on $D$.
+
+```{r}
+m_DA <- quap(
+  alist(
+    D ~ dnorm(mu, sigma),
+    mu <- a + bA * A,
+    a ~ dnorm(0, 0.2),
+    bA ~ dnorm(0, 0.5),
+    sigma ~ dexp(1)
+  ),
+  data = dat
+)
+
+precis(m_DA)
+plot(m_DA)
+```
+
+Here, $\beta_A$ represents the total causal effect of $A$ on $D$. Notice how this estimate is similar to the one estimated in `m_DMA`---this is because $M$ has little direct effect on $D$, such that the total and direct effects of $A$ on $D$ are effectively the same.
+
+We can also counterfactually simulate the causal effect of $A$ on $D$:
+
+```{r}
+n <- 1e4
+post <- extract.samples(m_DA, n)
+DA0 <- with(post, rnorm(n, a + bA * 0, sigma))
+DA1 <- with(post, rnorm(n, a + bA * 1, sigma))
+M10_contrast <- DA1 - DA0
+dens(M10_contrast, lwd = 4, col = 2, xlab = "effect of 1 SD increase in A")
+mean(M10_contrast < 0)
+```
+
+Alternatively, we could simulate the causal effect of $A$ on $D$ by implementing a model that represents the full causal structure of our DAG:
+
+```{r}
+m5.3_A <- quap(
+  alist(
+    # A -> D <- M
+    D ~ dnorm(mu, sigma),
+    mu <- a + bM * M + bA * A,
+    a ~ dnorm(0, 0.2),
+    bM ~ dnorm(0, 0.5),
+    bA ~ dnorm(0, 0.5),
+    sigma ~ dexp(1),
+    # A -> M
+    M ~ dnorm(mu_M, sigma_M),
+    mu_M <- aM + bAM * A,
+    aM ~ dnorm(0, 0.2),
+    bAM ~ dnorm(0, 0.5),
+    sigma_M ~ dexp(1)
+  ),
+  data = dat
+)
+
+precis(m5.3_A)
+plot(m5.3_A)
+
+# working around issues with sim(..., vars = c("M", "D"))
+n <- 1e4
+post <- extract.samples(m5.3_A, n)
+MA0 <- with(post, rnorm(n, aM + bAM * 0, sigma_M))
+DA0 <- with(post, rnorm(n, a + bM * MA0 + bA * 0, sigma))
+MA1 <- with(post, rnorm(n, aM + bAM * 1, sigma_M))
+DA1 <- with(post, rnorm(n, a + bM * MA1 + bA * 1, sigma))
+M10_contrast <- DA1 - DA0
+dens(M10_contrast, lwd = 4, col = 2, xlab = "effect of 1 SD increase in A")
+mean(M10_contrast < 0)
+```
+
+Collectively, we are confident that increasing age of marriage decreases the expected divorce rate, for example with about a 65--70% chance that just a 1 SD (or `r round(sd(d$MedianAgeMarriage), 2)` years) increase in age of marriage decreases observed (simulated) divorce rate.

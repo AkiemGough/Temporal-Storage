@@ -146,7 +146,7 @@ ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = en
        title = "Change in probability of E+ and E- flowering with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
-  facet_wrap(~spec, scales = "free_y")
+  facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
 
 ##PLOTTING CORRELATION COEFFICENTS
@@ -240,7 +240,7 @@ ggplot(summary_df_all_f, aes(x = year, y = median)) +
        title = "Difference of E+ and E- flowering with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
-  facet_wrap(~spec, scales = "free_y")
+  facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
 
 ##MODEL SI: SURVIVAL AS RESPONSE, CLIMATE IMPLICIT___________________
@@ -348,7 +348,7 @@ ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = en
        title = "Change in probability of E+ and E- survival with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
-  facet_wrap(~spec, scales = "free_y")
+  facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
 ##PLOTTING CORRELATION COEFFICENTS
 #take a random subset of posterior draws for correlation coefficients
@@ -445,7 +445,7 @@ ggplot(summary_df_all_s, aes(x = year, y = median)) +
        title = "Difference of E+ and E- survival with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
-  facet_wrap(~spec, scales = "free_y")
+  facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
 
 
@@ -567,7 +567,7 @@ ggplot(summary_df_all_beta0i, aes(x = year, y = median, colour = endo, fill = en
        title = "Change in inflorescence count of E+ and E- with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
-  facet_wrap(~spec, scales = "free_y")
+  facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
 ##PLOTTING CORRELATION COEFFICENTS
 #take a random subset of posterior draws for correlation coefficients
@@ -660,7 +660,7 @@ ggplot(summary_df_all_i, aes(x = year, y = median)) +
        title = "Difference of E+ and E- inflorescence count with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
-  facet_wrap(~spec, scales = "free_y")
+  facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
 
 
@@ -708,7 +708,7 @@ all_grow_sampling <- sampling(all_grow_model,
                               pars=c('beta_0','endo_effect','Omega','y_rep'))
 
 #saveRDS(all_grow_sampling,"all_grow_sampling.rds")
-#all_grow_sampling<-readRDS("all_grow_sampling.rds")
+all_grow_sampling<-readRDS("all_grow_sampling.rds")
 
 ##posterior predictive check
 y_rep<-extract(all_grow_sampling,pars="y_rep")
@@ -777,7 +777,7 @@ ggplot(summary_df_all_beta0g, aes(x = year, y = median, colour = endo, fill = en
        title = "Growth rate of E+ and E- with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
-  facet_wrap(~spec, scales = "free_y")
+  facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
 
 ##PLOTTING CORRELATION COEFFICIENTS
@@ -874,5 +874,5 @@ ggplot(summary_df_all_g, aes(x = year, y = median)) +
        title = "Difference of E+ and E- growth rates with year") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
-  facet_wrap(~spec, scales = "free_y")
+  facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
