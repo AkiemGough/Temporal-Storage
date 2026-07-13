@@ -451,6 +451,9 @@ all_surv_sampling_exp <- sampling(all_surv_model_exp,
 saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp.rds")
 all_surv_sampling_exp<-readRDS("all_surv_sampling_exp.rds")
 
+saveRDS(all_surv_sampling_exp1,"all_surv_sampling_exp.rds")#newest priors
+all_surv_sampling_exp<-readRDS("all_surv_sampling_exp1.rds")#newest priors
+
 mcmc_intervals(all_surv_sampling_exp,regex_pars = "beta_prec")
 mcmc_intervals(all_surv_sampling_exp,regex_pars = "beta_temp")
 #note to self - make the E+ E- pairs close to each other and distinguished by color
@@ -774,8 +777,8 @@ all_infl_dat_exp<-list(n_obs=nrow(all_infl_exp),
                        species=all_infl_exp$spec,
                        original= as.integer(all_infl_exp$original))
 
-all_infl_model_exp = stan_model(file="code/explicit_negativebinomial_SAM.stan")
-all_infl_sampling_exp <- sampling(all_infl_model_exp,
+all_infl_model_exp = stan_model(file="code/explicit_negativebinomial_SAM_prior1.stan")
+all_infl_sampling_exp1 <- sampling(all_infl_model_exp,
                                   data = all_infl_dat_exp,
                                   chains = 3, 
                                   iter = 10000, 
@@ -787,9 +790,43 @@ all_infl_sampling_exp <- sampling(all_infl_model_exp,
 saveRDS(all_infl_sampling_exp,"all_infl_sampling_exp.rds")
 all_infl_sampling_exp<-readRDS("all_infl_sampling_exp.rds")
 
+saveRDS(all_infl_sampling_exp1,"all_infl_sampling_exp1.rds")
+all_infl_sampling_exp<-readRDS("all_infl_sampling_exp1.rds")
+
+#WARNINGS: Warning messages:
+#1: The largest R-hat is 2.13, indicating chains have not mixed.
+#Running the chains for more iterations may help. See
+#https://mc-stan.org/misc/warnings.html#r-hat 
+#2: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#Running the chains for more iterations may help. See
+#https://mc-stan.org/misc/warnings.html#bulk-ess 
+#3: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#Running the chains for more iterations may help. See
+#https://mc-stan.org/misc/warnings.html#tail-ess 
+
+##trace plots of beta clim and w (priors 0,2 for beta0 and 0,0.2 betaprec & betatemp)
+mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_0")
+mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_prec") # 2 looks weird
+mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_temp") 
+mcmc_trace(all_infl_sampling_exp,regex_pars = "w_prec")
+mcmc_trace(all_infl_sampling_exp,regex_pars = "w_temp")
+
+mcmc_trace(all_infl_sampling_exp,pars = "beta_prec[6,2]")
+mcmc_trace(all_infl_sampling_exp,pars = "w_temp[5,2]")
+
+##trace plots of beta clim and w (priors 0,1 for beta0, betaprec & betatemp)
+mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_0") #1 or 2 looks weird
+mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_prec") #all of them look weird
+mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_temp") # 5 or 6 looks weird
+mcmc_trace(all_infl_sampling_exp,regex_pars = "w_prec")
+mcmc_trace(all_infl_sampling_exp,regex_pars = "w_temp")
+
+mcmc_trace(all_infl_sampling_exp,pars = "w_temp[5,2]")
+
+
+
 mcmc_intervals(all_infl_sampling_exp,regex_pars = "beta_prec")
 mcmc_intervals(all_infl_sampling_exp,regex_pars = "beta_temp")
-#note to self - make the E+ E- pairs close to each other and distinguished by color
 
 ##posterior predictive check
 y_rep<-extract(all_infl_sampling_exp,pars="y_rep")
@@ -805,12 +842,7 @@ dim(params_all_i_exp$beta_temp)
 dim(params_all_i_exp$w_prec)
 dim(params_all_i_exp$w_temp)
 
-##trace plots of beta clim and w
-mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_0")
-mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_prec") #looks weird
-mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_temp") 
-mcmc_trace(all_infl_sampling_exp,regex_pars = "w_prec")
-mcmc_trace(all_infl_sampling_exp,regex_pars = "w_temp")
+
 
 
 ##PLOTTING PREC EFFECTS
@@ -1076,7 +1108,7 @@ ggplot(data = summary_df_all_wi_temp, aes(x = monthsprior, y = median_weight, co
 #for the other species temperature effects were sufficiently accounted for by cumulative temperature
 #over a 2 year period
 
-##MODEL GPT: GROWTH RATE AS RESPONSE TO PREICIPITATION and TEMPERATURE___________________
+##`MODEL G`PT: GROWTH RATE AS RESPONSE TO PREICIPITATION and TEMPERATURE___________________
 
 ##prep data for total precipitation, dropping NAs
 pop_growth_df %>% 

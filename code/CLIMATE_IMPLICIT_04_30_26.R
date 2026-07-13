@@ -22,8 +22,9 @@ gras <- read.csv("data/ltreb_allspp_2007_2025.csv")
 
 gras %>% filter(size_t>0) -> gras
 
-#finding what years of LOAR data are missing, not sure how to exclude them from figures
+#finding what years of LOAR data are missing
 gras %>% filter(species == "LOAR") %>% distinct(year_t)
+last_loar_year<-max(gras$year_t[gras$species=="LOAR"])
 
 ##Making integers for species
 gras$spec <- as.integer (case_when(gras$species == "AGPE" ~ 8,
@@ -124,6 +125,10 @@ summary_df_all_beta0f <- long_df_all_beta0f %>%
     probgzero = mean(estimate>0),
     .groups = "drop")
 
+summary_df_all_beta0f$median[summary_df_all_beta0f$spec=="LOAR" & summary_df_all_beta0f$year>last_loar_year]<-NA
+summary_df_all_beta0f$lower[summary_df_all_beta0f$spec=="LOAR" & summary_df_all_beta0f$year>last_loar_year]<-NA
+summary_df_all_beta0f$upper[summary_df_all_beta0f$spec=="LOAR" & summary_df_all_beta0f$year>last_loar_year]<-NA
+
 #plotting endo estimates stacked
 ggplot(summary_df_all_beta0f, aes(x = year, y = median, colour = endo, fill = endo)) +
   scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
@@ -180,6 +185,10 @@ summary_df_all_corrf <- long_df_all_corrf %>%
     probgzero = mean(corr>0),
     .groups = "drop")
 
+summary_df_all_corrf$median[summary_df_all_corrf$spec=="LOAR" & summary_df_all_corrf$year>last_loar_year]<-NA
+summary_df_all_corrf$lower[summary_df_all_corrf$spec=="LOAR" & summary_df_all_corrf$year>last_loar_year]<-NA
+summary_df_all_corrf$upper[summary_df_all_corrf$spec=="LOAR" & summary_df_all_corrf$year>last_loar_year]<-NA
+
 ggplot(long_df_all_corrf)+
   geom_histogram(aes (x=corr), fill="mediumpurple",binwidth = 0.02)+
   facet_grid("spec")+xlim(-0.5,1) +
@@ -221,6 +230,10 @@ summary_df_all_f <- long_df_all_f %>%
     upper = quantile(endo_effect, 0.95),
     probgzero = mean(endo_effect>0),
     .groups = "drop")
+
+summary_df_all_f$median[summary_df_all_f$spec=="LOAR" & summary_df_all_f$year>last_loar_year]<-NA
+summary_df_all_f$lower[summary_df_all_f$spec=="LOAR" & summary_df_all_f$year>last_loar_year]<-NA
+summary_df_all_f$upper[summary_df_all_f$spec=="LOAR" & summary_df_all_f$year>last_loar_year]<-NA
 
 #plotting endo effect stacked
 ggplot(summary_df_all_f, aes(x = year, y = median)) +
@@ -274,7 +287,7 @@ all_surv_sampling<-sampling(all_surv_model,
                             save_warmup=F)
 
 saveRDS(all_surv_sampling,"all_surv_sampling.rds")
-#all_surv_sampling<-readRDS("all_surv_sampling.rds")
+all_surv_sampling<-readRDS("all_surv_sampling.rds")
 
 mcmc_trace(all_surv_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_surv_sampling,par=c('Omega[1,1,2]'))
@@ -325,6 +338,10 @@ summary_df_all_beta0s <- long_df_all_beta0s %>%
     upper = quantile(estimate, 0.95),
     probgzero = mean(estimate>0),
     .groups = "drop")
+
+summary_df_all_beta0s$median[summary_df_all_beta0s$spec=="LOAR" & summary_df_all_beta0s$year>last_loar_year]<-NA
+summary_df_all_beta0s$lower[summary_df_all_beta0s$spec=="LOAR" & summary_df_all_beta0s$year>last_loar_year]<-NA
+summary_df_all_beta0s$upper[summary_df_all_beta0s$spec=="LOAR" & summary_df_all_beta0s$year>last_loar_year]<-NA
 
 #plotting endo effect stacked
 ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = endo)) +
@@ -427,6 +444,10 @@ summary_df_all_s <- long_df_all_s %>%
     probgzero = mean(endo_effect>0),
     .groups = "drop")
 
+summary_df_all_s$median[summary_df_all_s$spec=="LOAR" & summary_df_all_s$year>last_loar_year]<-NA
+summary_df_all_s$lower[summary_df_all_s$spec=="LOAR" & summary_df_all_s$year>last_loar_year]<-NA
+summary_df_all_s$upper[summary_df_all_s$spec=="LOAR" & summary_df_all_s$year>last_loar_year]<-NA
+
 #plotting endo effect stacked
 ggplot(summary_df_all_s, aes(x = year, y = median)) +
   geom_line(linewidth = 0.5, col = "mediumpurple3") +
@@ -461,20 +482,18 @@ all_infl$plot    <- as.integer(as.factor(all_infl$plot))
 all_infl$spec    <- as.integer(as.factor(all_infl$spec))
 all_infl$year_t  <- as.integer(as.factor(all_infl$year_t))
 
-all_infl_dat <- list(
-  n_obs       = nrow(all_infl),
-  y           = as.integer(all_infl$flw_count_t1), 
-  n_yrs       = length(unique(all_infl$year_t)),   
-  n_plots     = length(unique(all_infl$plot)),
-  n_endo      = 2,
-  n_spp       = length(unique(all_infl$spec)),
-  endo_01     = as.integer(all_infl$endo_01),
-  size        = as.numeric(all_infl$log_tillers_centered),
-  year_index  = all_infl$year_t,
-  plot        = all_infl$plot,
-  species     = all_infl$spec,
-  original    = as.integer(all_infl$original)
-)
+all_infl_dat <- list(n_obs = nrow(all_infl),
+                     y = as.integer(all_infl$flw_count_t1), 
+                     n_yrs = length(unique(all_infl$year_t)),   
+                     n_plots = length(unique(all_infl$plot)),
+                     n_endo = 2,
+                     n_spp = length(unique(all_infl$spec)),
+                     endo_01 = as.integer(all_infl$endo_01),
+                     size = as.numeric(all_infl$log_tillers_centered),
+                     year_index  = all_infl$year_t,
+                     plot = all_infl$plot,
+                     species = all_infl$spec,
+                     original = as.integer(all_infl$original))
 
 all_infl_model = stan_model(file="code/implicit_negativebinomial_mvn.stan")
 all_infl_sampling <- sampling(
@@ -544,6 +563,10 @@ summary_df_all_beta0i <- long_df_all_beta0i %>%
     upper = quantile(estimate, 0.95),
     probgzero = mean(estimate>0),
     .groups = "drop")
+
+summary_df_all_beta0i$median[summary_df_all_beta0i$spec=="LOAR" & summary_df_all_beta0i$year>last_loar_year]<-NA
+summary_df_all_beta0i$lower[summary_df_all_beta0i$spec=="LOAR" & summary_df_all_beta0i$year>last_loar_year]<-NA
+summary_df_all_beta0i$upper[summary_df_all_beta0i$spec=="LOAR" & summary_df_all_beta0i$year>last_loar_year]<-NA
 
 #plotting endo estimates stacked
 ggplot(summary_df_all_beta0i, aes(x = year, y = median, colour = endo, fill = endo)) +
@@ -641,6 +664,10 @@ summary_df_all_i <- long_df_all_i %>%
     upper = quantile(endo_effect, 0.95),
     probgzero = mean(endo_effect>0),
     .groups = "drop")
+
+summary_df_all_i$median[summary_df_all_i$spec=="LOAR" & summary_df_all_i$year>last_loar_year]<-NA
+summary_df_all_i$lower[summary_df_all_i$spec=="LOAR" & summary_df_all_i$year>last_loar_year]<-NA
+summary_df_all_i$upper[summary_df_all_i$spec=="LOAR" & summary_df_all_i$year>last_loar_year]<-NA
 
 #plotting endo effect stacked
 ggplot(summary_df_all_i, aes(x = year, y = median)) +
@@ -755,6 +782,10 @@ summary_df_all_beta0g <- long_df_all_beta0g %>%
     probgzero = mean(estimate>0),
     .groups = "drop")
 
+summary_df_all_beta0g$median[summary_df_all_beta0g$spec=="LOAR" & summary_df_all_beta0g$year>last_loar_year]<-NA
+summary_df_all_beta0g$lower[summary_df_all_beta0g$spec=="LOAR" & summary_df_all_beta0g$year>last_loar_year]<-NA
+summary_df_all_beta0g$upper[summary_df_all_beta0g$spec=="LOAR" & summary_df_all_beta0g$year>last_loar_year]<-NA
+
 #plotting endo estimates stacked
 ggplot(summary_df_all_beta0g, aes(x = year, y = median, colour = endo, fill = endo)) +
   scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
@@ -855,6 +886,10 @@ summary_df_all_g <- long_df_all_g %>%
     upper = quantile(endo_effect, 0.95),
     probgzero = mean(endo_effect>0),
     .groups = "drop")
+
+summary_df_all_g$median[summary_df_all_g$spec=="LOAR" & summary_df_all_g$year>last_loar_year]<-NA
+summary_df_all_g$lower[summary_df_all_g$spec=="LOAR" & summary_df_all_g$year>last_loar_year]<-NA
+summary_df_all_g$upper[summary_df_all_g$spec=="LOAR" & summary_df_all_g$year>last_loar_year]<-NA
 
 #plotting endo effect stacked
 ggplot(summary_df_all_g, aes(x = year, y = median)) +
