@@ -454,6 +454,9 @@ all_surv_sampling_exp<-readRDS("all_surv_sampling_exp.rds")
 saveRDS(all_surv_sampling_exp1,"all_surv_sampling_exp.rds")#newest priors
 all_surv_sampling_exp<-readRDS("all_surv_sampling_exp1.rds")#newest priors
 
+saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp2.rds")#endo size interaction removed, priors 0 1
+all_surv_sampling_exp<-readRDS("all_surv_sampling_exp2.rds")#endo size interaction removed, priors 0 1
+
 mcmc_intervals(all_surv_sampling_exp,regex_pars = "beta_prec")
 mcmc_intervals(all_surv_sampling_exp,regex_pars = "beta_temp")
 #note to self - make the E+ E- pairs close to each other and distinguished by color

@@ -68,13 +68,13 @@ all_flow_sampling<-sampling(all_flow_model,
                             chains = 3,thin=5,
                             iter = 5000,
                             warmup = 1000,
-                            pars=c("beta_0","beta_size","beta_size_endo",
-                                   "meanflow","beta_orig","sigma_year",
-                                   "sigma_plot","Omega","endo_effect","y_rep"),
+                            pars=c("beta_0","beta_size","meanflow",
+                                   "beta_orig","sigma_year","sigma_plot",
+                                   "Omega","endo_effect","y_rep"),
                             save_warmup=F)
 
-saveRDS(all_flow_sampling,"all_flow_sampling.rds")
-all_flow_sampling<-readRDS("all_flow_sampling.rds")
+saveRDS(all_flow_sampling,"all_flow_sampling2.rds")
+all_flow_sampling<-readRDS("all_flow_sampling2.rds")
 
 mcmc_trace(all_flow_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_flow_sampling,par=c('Omega[1,1,2]'))

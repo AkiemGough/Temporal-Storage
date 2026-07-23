@@ -17,8 +17,7 @@ parameters {
   // Non-centered primitive components
   matrix[n_endo, n_yrs] beta_0_raw[n_spp]; 
   vector[n_plots] tau_plot_raw;            
-  vector[n_spp] beta_size;                 
-  vector[n_spp] beta_size_endo;            
+  vector[n_spp] beta_size;                           
   vector[n_endo] meanflow[n_spp];
   real beta_orig;                                        
   vector<lower=0>[n_endo] sigma_year[n_spp]; 
@@ -46,7 +45,6 @@ transformed parameters {
   for(i in 1:n_obs){
     p[i] = beta_0[species[i], year_index[i]][endo_01[i] + 1] 
     + beta_size[species[i]] * size[i] 
-    + beta_size_endo[species[i]] * size[i] * endo_01[i]
     + beta_orig * original[i]
     + tau_plot[plot[i]];
   }
@@ -65,9 +63,8 @@ model {
   }
 
   // Fixed effects priors
-  beta_size ~ normal(1, 10); 
-  beta_size_endo ~ normal(0, 10);
-  beta_orig ~ normal(1, 10); 
+  beta_size ~ normal(0, 1); 
+  beta_orig ~ normal(0, 1); 
 
   // Likelihood
   y ~ bernoulli_logit(p);

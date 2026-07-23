@@ -25,7 +25,7 @@ transformed data {
 
 parameters {
   matrix [n_spp,n_endo] beta_0;//species random effects unique to E+ and E-
-  matrix [n_spp,n_endo] beta_size;//size
+  vector [n_spp] beta_size;//size
   matrix [n_spp, n_endo] beta_prec;       // precipitation main effect
   matrix [n_spp, n_endo] beta_temp;       // temperature main effect
   real beta_orig; 
@@ -55,7 +55,7 @@ transformed parameters{
 
   for(i in 1:n_obs){
   log_lambda[i] = beta_0[species[i],(endo_01[i]+1)] 
-  + beta_size[species[i],(endo_01[i]+1)]*size[i] 
+  + beta_size[species[i]]*size[i] 
   + beta_prec[species[i], endo_idx[i]] * weighted_prec[i] 
   + beta_temp[species[i], endo_idx[i]] * weighted_temp[i]
   + beta_orig * original[i]
