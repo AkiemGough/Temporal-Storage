@@ -438,7 +438,7 @@ all_surv_dat_exp<-list(n_obs=nrow(all_surv_exp),
                        species=all_surv_exp$spec,
                        original= as.integer(all_surv_exp$original))
 
-all_surv_model_exp = stan_model(file="code/explicit_binomial_SAM.stan")
+all_surv_model_exp = stan_model(file="code/explicit_binomial_SAM_prior1.stan")
 all_surv_sampling_exp <- sampling(all_surv_model_exp,
                                   data = all_surv_dat_exp,
                                   chains = 3, 
@@ -454,17 +454,20 @@ all_surv_sampling_exp<-readRDS("all_surv_sampling_exp.rds")
 saveRDS(all_surv_sampling_exp1,"all_surv_sampling_exp.rds")#newest priors
 all_surv_sampling_exp<-readRDS("all_surv_sampling_exp1.rds")#newest priors
 
-saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp2.rds")#endo size interaction removed, priors 0 1
-all_surv_sampling_exp<-readRDS("all_surv_sampling_exp2.rds")#endo size interaction removed, priors 0 1
+saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp2.rds")#endo size interaction removed
+all_surv_sampling_exp<-readRDS("all_surv_sampling_exp2.rds")#endo size interaction removed
+
+saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp3.rds")#endo size interaction removed, priors 0 1
+all_surv_sampling_exp<-readRDS("all_surv_sampling_exp3.rds")#endo size interaction removed, priors 0 1 
 
 mcmc_intervals(all_surv_sampling_exp,regex_pars = "beta_prec")
 mcmc_intervals(all_surv_sampling_exp,regex_pars = "beta_temp")
 #note to self - make the E+ E- pairs close to each other and distinguished by color
 
 ##trace plots of beta clim and w
-mcmc_trace(all_surv_sampling_exp,regex_pars = "beta_0") #a few look kinda weird
-mcmc_trace(all_surv_sampling_exp,regex_pars = "beta_prec") #looks bad
-mcmc_trace(all_surv_sampling_exp,regex_pars = "beta_temp") # looks bad
+mcmc_trace(all_surv_sampling_exp,regex_pars = "beta_0") #a few look kinda weird with exp2 #looks so good with exp3
+mcmc_trace(all_surv_sampling_exp,regex_pars = "beta_prec") #they all look bad with exp2 #most of them still look weird but much better with exp3
+mcmc_trace(all_surv_sampling_exp,regex_pars = "beta_temp") #most look bad with exp2 #2-3 of them look a little weird with exp3
 mcmc_trace(all_surv_sampling_exp,regex_pars = "w_prec")
 mcmc_trace(all_surv_sampling_exp,regex_pars = "w_temp")
 
@@ -796,6 +799,12 @@ all_infl_sampling_exp<-readRDS("all_infl_sampling_exp.rds")
 saveRDS(all_infl_sampling_exp1,"all_infl_sampling_exp1.rds")
 all_infl_sampling_exp<-readRDS("all_infl_sampling_exp1.rds")
 
+saveRDS(all_infl_sampling_exp,"all_infl_sampling_exp2.rds") #endo size interaction removed
+all_infl_sampling_exp<-readRDS("all_infl_sampling_exp2.rds") #endo size interaction removed
+
+saveRDS(all_infl_sampling_exp1,"all_infl_sampling_exp3.rds")#endo size interaction removed, priors 0 1
+all_infl_sampling_exp<-readRDS("all_infl_sampling_exp3.rds")#endo size interaction removed, priors 0 1
+
 #WARNINGS: Warning messages:
 #1: The largest R-hat is 2.13, indicating chains have not mixed.
 #Running the chains for more iterations may help. See
@@ -809,8 +818,8 @@ all_infl_sampling_exp<-readRDS("all_infl_sampling_exp1.rds")
 
 ##trace plots of beta clim and w (priors 0,2 for beta0 and 0,0.2 betaprec & betatemp)
 mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_0")
-mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_prec") # 2 looks weird
-mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_temp") 
+mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_prec") #2 looks weird #most of them look weord with exp3
+mcmc_trace(all_infl_sampling_exp,regex_pars = "beta_temp") #5 0r 6 of them look weird with exp3
 mcmc_trace(all_infl_sampling_exp,regex_pars = "w_prec")
 mcmc_trace(all_infl_sampling_exp,regex_pars = "w_temp")
 

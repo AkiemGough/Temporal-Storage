@@ -281,13 +281,13 @@ all_surv_sampling<-sampling(all_surv_model,
                             chains = 3,thin = 5,
                             iter = 5000,
                             warmup = 1000,
-                            pars=c("beta_0","beta_size","beta_size_endo",
+                            pars=c("beta_0","beta_size",
                                    "meanflow","beta_orig","sigma_year",
                                    "sigma_plot","Omega","endo_effect","y_rep"),
                             save_warmup=F)
 
-saveRDS(all_surv_sampling,"all_surv_sampling.rds")
-all_surv_sampling<-readRDS("all_surv_sampling.rds")
+saveRDS(all_surv_sampling,"all_surv_sampling2.rds")
+all_surv_sampling<-readRDS("all_surv_sampling2.rds")
 
 mcmc_trace(all_surv_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_surv_sampling,par=c('Omega[1,1,2]'))
@@ -504,7 +504,7 @@ all_infl_sampling <- sampling(
   iter = 5000,
   warmup = 1000,
   # CRITICAL UPDATE: Updated to track "beta_0_vec" instead of "beta_0"
-  pars = c("beta_0", "beta_size", "beta_size_endo",
+  pars = c("beta_0", "beta_size",
            "meanflow", "beta_orig", "sigma_year",
            "sigma_plot", "Omega", "endo_effect","y_rep"),
   save_warmup = FALSE,
@@ -514,6 +514,9 @@ all_infl_sampling <- sampling(
 
 saveRDS(all_infl_sampling,"all_infl_sampling.rds")
 all_infl_sampling<-readRDS("all_infl_sampling.rds")
+
+saveRDS(all_infl_sampling,"all_infl_sampling2.rds")
+all_infl_sampling<-readRDS("all_infl_sampling2.rds")
 
 mcmc_trace(all_infl_sampling,par=c('endo_effect[1,5]'))
 mcmc_trace(all_infl_sampling,par=c('Omega[1,1,2]'))
