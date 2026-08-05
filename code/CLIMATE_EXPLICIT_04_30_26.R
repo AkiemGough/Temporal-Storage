@@ -784,7 +784,7 @@ all_infl_dat_exp<-list(n_obs=nrow(all_infl_exp),
                        original= as.integer(all_infl_exp$original))
 
 all_infl_model_exp = stan_model(file="code/explicit_negativebinomial_SAM_prior1.stan")
-all_infl_sampling_exp1 <- sampling(all_infl_model_exp,
+all_infl_sampling_exp <- sampling(all_infl_model_exp,
                                   data = all_infl_dat_exp,
                                   chains = 3, 
                                   iter = 10000, 
@@ -796,13 +796,13 @@ all_infl_sampling_exp1 <- sampling(all_infl_model_exp,
 saveRDS(all_infl_sampling_exp,"all_infl_sampling_exp.rds")
 all_infl_sampling_exp<-readRDS("all_infl_sampling_exp.rds")
 
-saveRDS(all_infl_sampling_exp1,"all_infl_sampling_exp1.rds")
+saveRDS(all_infl_sampling_exp,"all_infl_sampling_exp1.rds")
 all_infl_sampling_exp<-readRDS("all_infl_sampling_exp1.rds")
 
 saveRDS(all_infl_sampling_exp,"all_infl_sampling_exp2.rds") #endo size interaction removed
 all_infl_sampling_exp<-readRDS("all_infl_sampling_exp2.rds") #endo size interaction removed
 
-saveRDS(all_infl_sampling_exp1,"all_infl_sampling_exp3.rds")#endo size interaction removed, priors 0 1
+saveRDS(all_infl_sampling_exp,"all_infl_sampling_exp3.rds")#endo size interaction removed, priors 0 1
 all_infl_sampling_exp<-readRDS("all_infl_sampling_exp3.rds")#endo size interaction removed, priors 0 1
 
 #WARNINGS: Warning messages:
@@ -1120,7 +1120,7 @@ ggplot(data = summary_df_all_wi_temp, aes(x = monthsprior, y = median_weight, co
 #for the other species temperature effects were sufficiently accounted for by cumulative temperature
 #over a 2 year period
 
-##`MODEL G`PT: GROWTH RATE AS RESPONSE TO PREICIPITATION and TEMPERATURE___________________
+##`MODEL GPT: GROWTH RATE AS RESPONSE TO PREICIPITATION and TEMPERATURE___________________
 
 ##prep data for total precipitation, dropping NAs
 pop_growth_df %>% 
