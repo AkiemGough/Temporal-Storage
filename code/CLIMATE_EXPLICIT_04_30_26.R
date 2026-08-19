@@ -451,14 +451,14 @@ all_surv_sampling_exp <- sampling(all_surv_model_exp,
 saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp.rds")
 all_surv_sampling_exp<-readRDS("all_surv_sampling_exp.rds")
 
-saveRDS(all_surv_sampling_exp1,"all_surv_sampling_exp.rds")#newest priors
-all_surv_sampling_exp<-readRDS("all_surv_sampling_exp1.rds")#newest priors
+saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp1.rds")#priors 0,1
+all_surv_sampling_exp<-readRDS("all_surv_sampling_exp1.rds")#priors 0,1
 
 saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp2.rds")#endo size interaction removed
 all_surv_sampling_exp<-readRDS("all_surv_sampling_exp2.rds")#endo size interaction removed
 
-saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp3.rds")#endo size interaction removed, priors 0 1
-all_surv_sampling_exp<-readRDS("all_surv_sampling_exp3.rds")#endo size interaction removed, priors 0 1 
+saveRDS(all_surv_sampling_exp,"all_surv_sampling_exp3.rds")#endo size interaction removed, priors 0,1
+all_surv_sampling_exp<-readRDS("all_surv_sampling_exp3.rds")#endo size interaction removed, priors 0,1 
 
 mcmc_intervals(all_surv_sampling_exp,regex_pars = "beta_prec")
 mcmc_intervals(all_surv_sampling_exp,regex_pars = "beta_temp")
