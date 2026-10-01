@@ -8,7 +8,7 @@ data {
   int<lower=0> n_spp;
   int<lower=0,upper=1> endo_01[n_obs];
   int<lower=1> K; //monthly lags
-  matrix[n_obs, K] temper; //standardized temperature lags
+  matrix[n_obs, K] climate; //standardized climate lags
   int<lower=1> year_index[n_obs];
   int<lower=1> plot[n_obs];
   int<lower=1> species[n_obs];
@@ -23,7 +23,7 @@ transformed data {
 
 parameters {
   matrix [n_spp, n_endo] beta_0;          // unique to E+ and E-
-  matrix [n_spp, n_endo] beta_temp;       // temperature main effect
+  matrix [n_spp, n_endo] beta_clim;       // climate main effect
   
   vector [n_plots] tau_plot_raw;
   vector [n_yrs] gamma_year_raw;
@@ -32,7 +32,7 @@ parameters {
   real<lower=0> sigma; //residual variance
   
   // Split into separate weight simplexes for each climate variable
-  array[n_spp] simplex[K] w_temp;         // Temperature lag weights
+  array[n_spp] simplex[K] w_clim;         // climate lag weights
   real<lower=2> nu; //student's t df, variance undefined for nu<2
 }
 
@@ -41,17 +41,17 @@ transformed parameters {
   vector[n_yrs] gamma_year = gamma_year_raw * sigma_year;
   
   vector[n_obs] mu;
-  vector[n_obs] weighted_temp;
+  vector[n_obs] weighted_clim;
 
   // Calculate separate weighted environmental indexes per observation
   for(i in 1:n_obs) {
-    weighted_temp[i] = temper[i, ] * w_temp[species[i]];
+    weighted_clim[i] = climate[i, ] * w_clim[species[i]];
   }
 
   // Linear predictor using the independent weights
   for(i in 1:n_obs) {
     mu[i] = beta_0[species[i], endo_idx[i]] 
-         + beta_temp[species[i], endo_idx[i]] * weighted_temp[i]
+         + beta_clim[species[i], endo_idx[i]] * weighted_clim[i] 
          + tau_plot[plot[i]] 
          + gamma_year[year_index[i]];
   }
@@ -69,12 +69,12 @@ model {
   // Separate Dirichlet priors for each environmental variable
   // Using 2.0 concentration to keep chains stable amidst collinearity
   for (i in 1:n_spp) {
-    w_temp[i] ~ dirichlet(rep_vector(2.0, K)); 
+    w_clim[i] ~ dirichlet(rep_vector(2.0, K)); 
   }
   
   // Vectorized matrix priors
   to_vector(beta_0) ~ normal(0, 1);  
-  to_vector(beta_temp) ~ normal(0, 0.5);
+  to_vector(beta_clim) ~ normal(0, 0.5);
   
   y ~  student_t(nu, mu, sigma);
 }
@@ -83,6 +83,12 @@ generated quantities {
   real y_rep[n_obs];
   for(i in 1:n_obs){
     y_rep[i] = student_t_rng(nu, mu[i], sigma);
+  }
+  
+  //add log likelihood to output
+  vector[n_obs] log_lik;
+  for(i in 1:n_obs){
+    log_lik[i] = student_t_lpdf(y[i] | nu, mu[i], sigma);
   }
 }
 

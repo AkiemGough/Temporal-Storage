@@ -13,6 +13,8 @@ library(rstan)
 library(bayesplot)
 options(mc.cores = parallel::detectCores())
 library(dplyr)
+library(rstanarm)
+library(loo)
 
 #reading in the data file with demographic and climate data
 grasclim <-read.csv("data/CombinedDataSegments")
@@ -398,6 +400,118 @@ ggplot(data = summary_df_all_wf_temp, aes(x = monthsprior, y = median_weight, co
 
 #temperature effects for most species seems explainable by cumulative temperature over 2 years
 #4 for 4 of the species tho, further back time lags of temperature are most impactful
+
+
+
+
+
+#STAAAAAAAAAAAARRRRRRRRRRSSTARS
+##MODEL SPT: PROBABILITY OF SURVIVAL AS RESPONSE TO PREICIPITATION AND TEMPERATURE
+
+##prep data, dropping NAs
+grasclim %>% 
+  select(surv_t1,endo_01,spec,log_tillers_centered,
+         firstthreeback_ppt,secondthreeback_ppt,thirdthreeback_ppt,fourththreeback_ppt,
+         fifththreeback_ppt,sixththreeback_ppt,sevenththreeback_ppt,eighththreeback_ppt,
+         firstthreeback_tmean,secondthreeback_tmean,thirdthreeback_tmean,fourththreeback_tmean,
+         fifththreeback_tmean,sixththreeback_tmean,sevenththreeback_tmean,eighththreeback_tmean,
+         plot,year_t,original) %>% 
+  drop_na() -> all_surv_exp
+
+# Safety conversion to continuous sequential factor integers 
+all_surv_exp$plot    <- as.integer(as.factor(all_surv_exp$plot))
+all_surv_exp$spec    <- as.integer(as.factor(all_surv_exp$spec))
+all_surv_exp$year_t  <- as.integer(as.factor(all_surv_exp$year_t))
+
+#precipiation modeling
+all_surv_dat_prec<-list(n_obs=nrow(all_surv_exp),
+                       y=as.integer(all_surv_exp$surv_t1),
+                       n_yrs = length(unique(all_surv_exp$year_t)),
+                       n_plots = length(unique(all_surv_exp$plot)),
+                       n_endo = 2,
+                       n_spp = length(unique(all_surv_exp$spec)),
+                       endo_01= as.integer(all_surv_exp$endo_01),
+                       size=as.numeric(all_surv_exp$log_tillers_centered),
+                       K = 8,
+                       climate = as.matrix(scale(all_surv_exp[, c("firstthreeback_ppt","secondthreeback_ppt",
+                                                                 "thirdthreeback_ppt","fourththreeback_ppt",
+                                                                 "fifththreeback_ppt","sixththreeback_ppt",
+                                                                 "sevenththreeback_ppt","eighththreeback_ppt")])),
+                       year_index = all_surv_exp$year_t,
+                       plot=all_surv_exp$plot,
+                       species=all_surv_exp$spec,
+                       original= as.integer(all_surv_exp$original))
+
+all_surv_model_prec = stan_model(file="code/climate_binomial.stan")
+all_surv_sampling_prec <- sampling(all_surv_model_prec,
+                                  data = all_surv_dat_prec,
+                                  chains = 3, 
+                                  iter = 10000, 
+                                  warmup  = 1000,
+                                  pars=c("beta_0","beta_clim","sigma_year",
+                                         "sigma_plot", "w_clim","y_rep","log_lik"),
+                                  include = TRUE)
+
+saveRDS(all_surv_sampling_prec,"all_surv_sampling_prec.rds")
+all_surv_sampling_prec<-readRDS("all_surv_sampling_prec.rds")
+
+
+#temperature modeling
+all_surv_dat_temp<-list(n_obs=nrow(all_surv_exp),
+                        y=as.integer(all_surv_exp$surv_t1),
+                        n_yrs = length(unique(all_surv_exp$year_t)),
+                        n_plots = length(unique(all_surv_exp$plot)),
+                        n_endo = 2,
+                        n_spp = length(unique(all_surv_exp$spec)),
+                        endo_01= as.integer(all_surv_exp$endo_01),
+                        size=as.numeric(all_surv_exp$log_tillers_centered),
+                        K = 8,
+                        climate = as.matrix(scale(all_surv_exp[, c("firstthreeback_tmean","secondthreeback_tmean",
+                                                                   "thirdthreeback_tmean","fourththreeback_tmean",
+                                                                   "fifththreeback_tmean","sixththreeback_tmean",
+                                                                   "sevenththreeback_tmean","eighththreeback_tmean")])),
+                        year_index = all_surv_exp$year_t,
+                        plot=all_surv_exp$plot,
+                        species=all_surv_exp$spec,
+                        original= as.integer(all_surv_exp$original))
+
+all_surv_model_temp = stan_model(file="code/climate_binomial.stan")
+all_surv_sampling_temp <- sampling(all_surv_model_temp,
+                                   data = all_surv_dat_temp,
+                                   chains = 3, 
+                                   iter = 10000, 
+                                   warmup  = 1000,
+                                   pars=c("beta_0","beta_clim","sigma_year",
+                                          "sigma_plot", "w_clim","y_rep","log_lik"),
+                                   include = TRUE)
+
+saveRDS(all_surv_sampling_temp,"all_surv_sampling_temp.rds")
+all_surv_sampling_temp<-readRDS("all_surv_sampling_temp.rds")
+
+#comparing models
+looprec <- loo(all_surv_sampling_prec, save_psis = TRUE)
+print(looprec)
+plot(looprec)
+yrep <- posterior_predict(all_surv_sampling_prec)
+ppc_loo_pit_qq(y = roaches$y,
+               yrep = yrep,
+               lw = weights(looprec$psis_object))
+
+
+lootemp <- loo(all_surv_sampling_temp, save_psis = TRUE)
+print(lootemp)
+plot(lootemp)
+yrep <- posterior_predict(all_surv_sampling_temp)
+ppc_loo_pit_qq(y = roaches$y,
+               yrep = yrep,
+               lw = weights(lootemp$psis_object))
+
+loo_compare(looprec, lootemp)
+
+
+
+
+
 
 ##MODEL SPT: PROBABILITY OF SURVIVAL AS RESPONSE TO PREICIPITATION AND TEMPERATURE
 

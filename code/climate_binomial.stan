@@ -1,14 +1,15 @@
-//climate demo growth
 data {
   int<lower=0> n_obs;
-  real y[n_obs];
+  int<lower=0, upper=1> y[n_obs];
   int<lower=0> n_yrs;
   int<lower=0> n_plots;
   int<lower=0> n_endo;
   int<lower=0> n_spp;
   int<lower=0,upper=1> endo_01[n_obs];
+  int<lower=0,upper=1> original[n_obs];
+  real size[n_obs];
   int<lower=1> K; //monthly lags
-  matrix[n_obs, K] precip; //standardized precipitation lags
+  matrix[n_obs, K] climate; //standardized climate lags
   int<lower=1> year_index[n_obs];
   int<lower=1> plot[n_obs];
   int<lower=1> species[n_obs];
@@ -23,35 +24,37 @@ transformed data {
 
 parameters {
   matrix [n_spp, n_endo] beta_0;          // unique to E+ and E-
-  matrix [n_spp, n_endo] beta_prec;       // precipitation main effect
+  vector [n_spp] beta_size;               // size
+  matrix [n_spp, n_endo] beta_clim;       // climate main effect
+  real beta_orig; 
   
   vector [n_plots] tau_plot_raw;
   vector [n_yrs] gamma_year_raw;
   real<lower=0> sigma_plot;
   real<lower=0> sigma_year;
-  real<lower=0> sigma; //residual variance
   
   // Split into separate weight simplexes for each climate variable
-  array[n_spp] simplex[K] w_prec;         // Precipitation lag weights
-  real<lower=2> nu; //student's t df, variance undefined for nu<2
+  array[n_spp] simplex[K] w_clim;         // Climate lag weights
 }
 
 transformed parameters {
   vector[n_plots] tau_plot = tau_plot_raw * sigma_plot;
   vector[n_yrs] gamma_year = gamma_year_raw * sigma_year;
   
-  vector[n_obs] mu;
-  vector[n_obs] weighted_prec;
+  vector[n_obs] p;
+  vector[n_obs] weighted_clim;
 
   // Calculate separate weighted environmental indexes per observation
   for(i in 1:n_obs) {
-    weighted_prec[i] = precip[i, ] * w_prec[species[i]];
+    weighted_clim[i] = climate[i, ] * w_clim[species[i]];
   }
 
   // Linear predictor using the independent weights
   for(i in 1:n_obs) {
-    mu[i] = beta_0[species[i], endo_idx[i]] 
-         + beta_prec[species[i], endo_idx[i]] * weighted_prec[i] 
+    p[i] = beta_0[species[i], endo_idx[i]] 
+         + beta_size[species[i]] * size[i] 
+         + beta_clim[species[i], endo_idx[i]] * weighted_clim[i] 
+         + beta_orig * original[i]
          + tau_plot[plot[i]] 
          + gamma_year[year_index[i]];
   }
@@ -63,26 +66,31 @@ model {
   
   sigma_plot ~ exponential(1);
   sigma_year ~ exponential(1);
-  sigma ~ exponential(1);
-  nu ~ gamma(2, 0.1);
+  beta_orig ~ normal(0, 2);               // Slightly tightened from 10
   
   // Separate Dirichlet priors for each environmental variable
   // Using 2.0 concentration to keep chains stable amidst collinearity
   for (i in 1:n_spp) {
-    w_prec[i] ~ dirichlet(rep_vector(2.0, K)); 
+    w_clim[i] ~ dirichlet(rep_vector(2.0, K)); 
   }
   
   // Vectorized matrix priors
   to_vector(beta_0) ~ normal(0, 1);  
-  to_vector(beta_prec) ~ normal(0, 0.5);
+  to_vector(beta_size) ~ normal(1, 2);
+  to_vector(beta_clim) ~ normal(0, 1);
   
-  y ~  student_t(nu, mu, sigma);
+  y ~ bernoulli_logit(p);
 }
 
 generated quantities {
-  real y_rep[n_obs];
+  array[n_obs] int y_rep;
   for(i in 1:n_obs){
-    y_rep[i] = student_t_rng(nu, mu[i], sigma);
+    y_rep[i] = bernoulli_logit_rng(p[i]);
+  }
+  
+  //add log likelihood to output
+  vector[n_obs] log_lik;
+  for(i in 1:n_obs){
+    log_lik[i] = bernoulli_logit_lpmf(y[i] | p[i]);
   }
 }
-
