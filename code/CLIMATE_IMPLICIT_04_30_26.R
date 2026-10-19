@@ -343,28 +343,18 @@ summary_df_all_beta0s$median[summary_df_all_beta0s$spec=="LOAR" & summary_df_all
 summary_df_all_beta0s$lower[summary_df_all_beta0s$spec=="LOAR" & summary_df_all_beta0s$year>last_loar_year]<-NA
 summary_df_all_beta0s$upper[summary_df_all_beta0s$spec=="LOAR" & summary_df_all_beta0s$year>last_loar_year]<-NA
 
-#plotting endo effect stacked
-ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = endo)) +
-  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
-  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
-  geom_line(linewidth = 0.5) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
-  labs(x = "Year", y = "probaility of surviving",
-       title = "Change in probability of E+ and E- survival with year") +
-  geom_hline(yintercept = 0) +
-  theme_minimal()+
-  facet_grid("spec")
-
 #plotting endo effect grids
 ggplot(summary_df_all_beta0s, aes(x = year, y = median, colour = endo, fill = endo)) +
-  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
-  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue"), labels = c("E+", "E-")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue"), labels = c("E+", "E-")) +
   geom_line(linewidth = 0.5) +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
   labs(x = "Year", y = "probaility of surviving",
-       title = "Change in probability of E+ and E- survival with year") +
+       colour = "Endophyte status",
+       fill = "Endophyte status") +
   geom_hline(yintercept = 0) +
-  theme_minimal()+
+  theme_minimal() +
+  theme(legend.position = "bottom") +
   facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
 ##PLOTTING CORRELATION COEFFICENTS
@@ -448,22 +438,11 @@ summary_df_all_s$median[summary_df_all_s$spec=="LOAR" & summary_df_all_s$year>la
 summary_df_all_s$lower[summary_df_all_s$spec=="LOAR" & summary_df_all_s$year>last_loar_year]<-NA
 summary_df_all_s$upper[summary_df_all_s$spec=="LOAR" & summary_df_all_s$year>last_loar_year]<-NA
 
-#plotting endo effect stacked
-ggplot(summary_df_all_s, aes(x = year, y = median)) +
-  geom_line(linewidth = 0.5, col = "mediumpurple3") +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
-  labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- survival with year") +
-  geom_hline(yintercept = 0) +
-  theme_minimal()+
-  facet_grid("spec")
-
 #plotting endo effect grids
 ggplot(summary_df_all_s, aes(x = year, y = median)) +
   geom_line(linewidth = 0.5, col = "mediumpurple3") +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
-  labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- survival with year") +
+  labs(x = "Year", y = "Endophyte effect") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
@@ -571,28 +550,18 @@ summary_df_all_beta0i$median[summary_df_all_beta0i$spec=="LOAR" & summary_df_all
 summary_df_all_beta0i$lower[summary_df_all_beta0i$spec=="LOAR" & summary_df_all_beta0i$year>last_loar_year]<-NA
 summary_df_all_beta0i$upper[summary_df_all_beta0i$spec=="LOAR" & summary_df_all_beta0i$year>last_loar_year]<-NA
 
-#plotting endo estimates stacked
+#plotting endo effect grids
 ggplot(summary_df_all_beta0i, aes(x = year, y = median, colour = endo, fill = endo)) +
-  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
-  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
+  scale_color_manual(values = c("deeppink1", "cornflowerblue"), labels = c("E+", "E-")) +
+  scale_fill_manual(values = c("deeppink1", "cornflowerblue"), labels = c("E+", "E-")) +
   geom_line(linewidth = 0.5) +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
   labs(x = "Year", y = "inflorescence count",
-       title = "Change in inflorescence count of E+ and E- with year") +
+       colour = "Endophyte status",
+       fill = "Endophyte status") +
   geom_hline(yintercept = 0) +
-  theme_minimal()+
-  facet_grid("spec")
-
-#plotting endo estimates grids
-ggplot(summary_df_all_beta0i, aes(x = year, y = median, colour = endo, fill = endo)) +
-  scale_color_manual(values = c("deeppink1", "cornflowerblue")) +
-  scale_fill_manual(values = c("deeppink1", "cornflowerblue")) +
-  geom_line(linewidth = 0.5) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) + 
-  labs(x = "Year", y = "inflorescence count",
-       title = "Change in inflorescence count of E+ and E- with year") +
-  geom_hline(yintercept = 0) +
-  theme_minimal()+
+  theme_minimal() +
+  theme(legend.position = "bottom") +
   facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)
 
 ##PLOTTING CORRELATION COEFFICENTS
@@ -672,22 +641,12 @@ summary_df_all_i$median[summary_df_all_i$spec=="LOAR" & summary_df_all_i$year>la
 summary_df_all_i$lower[summary_df_all_i$spec=="LOAR" & summary_df_all_i$year>last_loar_year]<-NA
 summary_df_all_i$upper[summary_df_all_i$spec=="LOAR" & summary_df_all_i$year>last_loar_year]<-NA
 
-#plotting endo effect stacked
-ggplot(summary_df_all_i, aes(x = year, y = median)) +
-  geom_line(linewidth = 0.5, col = "mediumpurple3") +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
-  labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- inflorescence count with year") +
-  geom_hline(yintercept = 0) +
-  theme_minimal()+
-  facet_grid("spec")
 
 #plotting endo effect grids
 ggplot(summary_df_all_i, aes(x = year, y = median)) +
   geom_line(linewidth = 0.5, col = "mediumpurple3") +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "mediumpurple", color = NA) + #should color = species
-  labs(x = "Year", y = "Endophyte effect",
-       title = "Difference of E+ and E- inflorescence count with year") +
+  labs(x = "Year", y = "Endophyte effect") +
   geom_hline(yintercept = 0) +
   theme_minimal()+
   facet_wrap(~spec, scales = "free_y", nrow = 2, ncol = 4)

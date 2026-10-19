@@ -33,7 +33,6 @@ parameters {
   real<lower=0> sigma_plot;
   real<lower=0> sigma_year;
   
-  // Split into separate weight simplexes for each climate variable
   array[n_spp] simplex[K] w_clim;         // Climate lag weights
 }
 
