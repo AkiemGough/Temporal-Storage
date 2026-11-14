@@ -323,23 +323,52 @@ long_df_all_ws_ppt$monthsprior <- case_when(long_df_all_ws_ppt$threemonth == "A"
 long_df_all_ws_ppt$monthsprior <- factor(long_df_all_ws_ppt$monthsprior,
                                          levels=c("1-3","4-6","7-9","10-12","13-15","16-18","19-21","22-24"))
 
+summary_df_all_ws_ppt %>% arrange(draw,spec,monthsprior)
+
 summary_df_all_ws_ppt <- long_df_all_ws_ppt %>%
+  group_by(draw,spec) %>% 
+  mutate(
+    cum_weight = cumsum(weight),
+    .groups = "drop") %>% 
   group_by(spec,monthsprior) %>% 
   summarize(
     median_weight = median(weight),
     lower_weight = quantile(weight, 0.05),
     upper_weight = quantile(weight, 0.95),
+    cum_median_weight = median(cum_weight),
+    cum_lower_weight = quantile(cum_weight, 0.05),
+    cum_upper_weight = quantile(cum_weight, 0.95),
     .groups = "drop")
 
-summary_df_all_ws_ppt %>%
-  filter(spec == "AGPE") %>%
-  mutate(median_cum_weight = cumsum(median_weight)) %>%
-  ggplot(aes(x = monthsprior, y = median_cum_weight)) +
-  geom_hline(yintercept = 0.75, linetype = 2, color = "red") +
-  geom_line(aes(group = spec)) +
-  geom_point()
-
 #ggplot(summary_df_all_wf_ppt)+ geom_point(aes(x=threemonth,y=median_weight))+ facet_grid("spec")
+ggplot(data = summary_df_all_ws_ppt, aes(x = monthsprior, y = cum_median_weight, color = spec, fill=spec, group=spec)) +
+  geom_point() + geom_line() +
+  scale_color_manual(
+    values = c(
+      "AGPE" = "olivedrab",
+      "ELRI" = "goldenrod",
+      "ELVI" = "darkorange",
+      "FESU" = "tomato",
+      "LOAR" = "deeppink",
+      "POAL" = "purple",
+      "POAU" = "slateblue",
+      "POSY" = "cornflowerblue")) +
+  scale_fill_manual(
+    values = c("AGPE" = "olivedrab",
+               "ELRI" = "goldenrod",
+               "ELVI" = "darkorange",
+               "FESU" = "tomato",
+               "LOAR" = "deeppink",
+               "POAL" = "purple",
+               "POAU" = "slateblue",
+               "POSY" = "cornflowerblue")) +
+  geom_line(linewidth = 0.5) +
+  geom_ribbon(aes(ymin = cum_lower_weight, ymax = cum_upper_weight), alpha = 0.15, color = NA) +
+  geom_hline(yintercept = 0.8, linetype = 2, color = "azure4") +
+  labs(x = "months prior", 
+       y = "weight",
+       title = "Weights of Precipitation in Each Time Scale on Probability of Survival")
+
 
 ggplot(data = summary_df_all_ws_ppt, aes(x = monthsprior, y = median_weight, color = spec, group=spec)) +
   geom_point() + geom_line() +
